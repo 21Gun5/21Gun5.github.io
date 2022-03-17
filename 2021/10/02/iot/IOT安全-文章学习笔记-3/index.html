@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] IOT安全-文章学习笔记-3IoT 设备固件分析之网络协议 fuzz 概要：fuzz概念、boofuzz原理及实战 程序分析4法：模糊测试、补丁比对、工具静态扫描（如ida/ghidra脚本）、人工审计 模糊测试  黑盒测试的思想、构造大量的畸形数据作为输入，来发现安全缺陷或漏洞 测试用例生成方式：基于变异的、基于生成的 对目标程序的理解程度：黑盒、灰盒、白盒 动态分析技术，需要有真实">
+<meta name="keywords" content="路由器,漏洞分析,栈溢出,摄像头,命令注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOT安全-文章学习笔记-3">
+<meta property="og:url" content="http://21guns.top/2021/10/02/iot/IOT安全-文章学习笔记-3/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] IOT安全-文章学习笔记-3IoT 设备固件分析之网络协议 fuzz 概要：fuzz概念、boofuzz原理及实战 程序分析4法：模糊测试、补丁比对、工具静态扫描（如ida/ghidra脚本）、人工审计 模糊测试  黑盒测试的思想、构造大量的畸形数据作为输入，来发现安全缺陷或漏洞 测试用例生成方式：基于变异的、基于生成的 对目标程序的理解程度：黑盒、灰盒、白盒 动态分析技术，需要有真实">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:00:24.742Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IOT安全-文章学习笔记-3">
+<meta name="twitter:description" content="[TOC] IOT安全-文章学习笔记-3IoT 设备固件分析之网络协议 fuzz 概要：fuzz概念、boofuzz原理及实战 程序分析4法：模糊测试、补丁比对、工具静态扫描（如ida/ghidra脚本）、人工审计 模糊测试  黑盒测试的思想、构造大量的畸形数据作为输入，来发现安全缺陷或漏洞 测试用例生成方式：基于变异的、基于生成的 对目标程序的理解程度：黑盒、灰盒、白盒 动态分析技术，需要有真实">
+
+<link rel="canonical" href="http://21guns.top/2021/10/02/iot/IOT安全-文章学习笔记-3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IOT安全-文章学习笔记-3 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/10/02/iot/IOT安全-文章学习笔记-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IOT安全-文章学习笔记-3
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-02 09:23:44" itemprop="dateCreated datePublished" datetime="2021-10-02T09:23:44+08:00">2021-10-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:00:24" itemprop="dateModified" datetime="2022-02-21T16:00:24+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="IOT安全-文章学习笔记-3"><a href="#IOT安全-文章学习笔记-3" class="headerlink" title="IOT安全-文章学习笔记-3"></a>IOT安全-文章学习笔记-3</h1><h2 id="IoT-设备固件分析之网络协议-fuzz"><a href="#IoT-设备固件分析之网络协议-fuzz" class="headerlink" title="IoT 设备固件分析之网络协议 fuzz"></a>IoT 设备固件分析之网络协议 fuzz</h2><ul>
+<li>概要：fuzz概念、boofuzz原理及实战</li>
+<li>程序分析4法：模糊测试、补丁比对、工具静态扫描（如ida/ghidra脚本）、人工审计</li>
+<li><p>模糊测试</p>
+<ul>
+<li>黑盒测试的思想、构造大量的畸形数据作为输入，来发现安全缺陷或漏洞</li>
+<li>测试用例生成方式：基于变异的、基于生成的</li>
+<li>对目标程序的理解程度：黑盒、灰盒、白盒</li>
+<li>动态分析技术，需要有真实设备，或固件仿真</li>
+</ul>
+</li>
+<li><p>网络协议分两类：</p>
+<ul>
+<li>文本协议，如HTTP、FTP等，数据包内容都是可见字符</li>
+<li>二进制协议，数据包内容大部分是不可见字符，在工控设备如PLC中比较常见，私有协议</li>
+<li>笔者sulley测文本、kitty测二进制，实际二者均能对两类协议进行测试</li>
+</ul>
+</li>
+<li><p>IoT设备的异常监控</p>
+<ul>
+<li>通过可用性判断，但粒度比较粗</li>
+<li>异常后需要环境恢复，如重启设备，一般崩溃后会自动重启</li>
+</ul>
+</li>
+<li><p>Boofuzz是Sulley的继承者</p>
+<ul>
+<li>主要步骤：构造请求、设置会话、监控及重启机制、开始fuzz</li>
+<li>原理见官网、实战见本文</li>
+</ul>
+</li>
+</ul>
+<h2 id="Zyxel设备eCos固件加载地址分析"><a href="#Zyxel设备eCos固件加载地址分析" class="headerlink" title="Zyxel设备eCos固件加载地址分析"></a>Zyxel设备eCos固件加载地址分析</h2><ul>
+<li>链接<ul>
+<li>原文：<a href="https://cq674350529.github.io/2021/03/04/Zyxel设备eCos固件加载地址分析/" target="_blank" rel="noopener">https://cq674350529.github.io/2021/03/04/Zyxel设备eCos固件加载地址分析/</a></li>
+<li>英文：<a href="https://ecos.wtf/2021/03/30/ecos-load-address" target="_blank" rel="noopener">https://ecos.wtf/2021/03/30/ecos-load-address</a></li>
+<li>固件：<a href="https://www.zyxel.com/support/download_landing/product/rgs200_12p_13.shtml?c=gb&amp;l=en&amp;pid=20160321160003&amp;tab=Firmware&amp;pname=RGS200-12P" target="_blank" rel="noopener">https://www.zyxel.com/support/download_landing/product/rgs200_12p_13.shtml?c=gb&amp;l=en&amp;pid=20160321160003&amp;tab=Firmware&amp;pname=RGS200-12P</a></li>
+<li>脚本：<a href="https://gist.github.com/cq674350529/74e5b6d31780882c54c80302172ad753" target="_blank" rel="noopener">https://gist.github.com/cq674350529/74e5b6d31780882c54c80302172ad753</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="使用Ghidra-P-Code进行辅助逆向分析"><a href="#使用Ghidra-P-Code进行辅助逆向分析" class="headerlink" title="使用Ghidra P-Code进行辅助逆向分析"></a>使用Ghidra P-Code进行辅助逆向分析</h2><ul>
+<li>参考：<ul>
+<li><a href="https://github.com/HackOvert/GhidraSnippets" target="_blank" rel="noopener">https://github.com/HackOvert/GhidraSnippets</a></li>
+<li><a href="https://blag.nullteilerfrei.de/2020/02/02/defeating-sodinokibi-revil-string-obfuscation-in-ghidra/" target="_blank" rel="noopener">https://blag.nullteilerfrei.de/2020/02/02/defeating-sodinokibi-revil-string-obfuscation-in-ghidra/</a></li>
+<li>ghidra API Helper</li>
+</ul>
+</li>
+<li>编写脚本：<ul>
+<li>rename_func：利用报错信息来重命名函数</li>
+<li>get_caller：找到函数的所有调用，并解析出参数</li>
+<li>以tplink-archer-c5设备、v4版本、httpd程序、cdbg_print函数为例</li>
+</ul>
+</li>
+</ul>
+<h2 id="00-BinDiff二进制比较简介"><a href="#00-BinDiff二进制比较简介" class="headerlink" title="00-BinDiff二进制比较简介"></a>00-BinDiff二进制比较简介</h2><p><a href="https://mp.weixin.qq.com/s/fPjqO_L5aHxzVUu8GtIgeA" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/fPjqO_L5aHxzVUu8GtIgeA</a></p>
+<p><a href="http://blog.nsfocus.net/bindiff/" target="_blank" rel="noopener">http://blog.nsfocus.net/bindiff/</a></p>
+<ul>
+<li>两种方法<ul>
+<li>bindiff直接对两个idb进行比较</li>
+<li>IDA中用BinDiff插件比较</li>
+<li>（推荐法2）</li>
+</ul>
+</li>
+<li>方便符号迁移，先new再old<ul>
+<li>先IDA打开new.i64</li>
+<li>Edit-&gt;Plugins-&gt;BinDiff (Ctrl-6)-&gt;Diff Database-&gt;选择old.i64（实测路径不可有中文）</li>
+<li>此时，primary为new，secondary为old</li>
+</ul>
+</li>
+<li>方便看漏洞点，先old再new<ul>
+<li>只能看先打开的的反编译，为方便查看漏洞点，应先old</li>
+<li>primary-old-漏洞版</li>
+<li>secondary-new-修复版</li>
+</ul>
+</li>
+<li>比较结束后会打开四个窗口，绝大多数情况下，只需要关心”Matched Functions”</li>
+<li>使用技巧<ul>
+<li>Zoom to Basicblock，放大block</li>
+<li>Fit Graph Content恢复原大小</li>
+<li>Toogle Proximity Browsing切换显示模式，只显示目标块附近的块</li>
+<li>Copy Basic Block Address复制块地址</li>
+</ul>
+</li>
+<li>其它<ul>
+<li>bindiff7-win10，有的按钮显示乱码，英文正常</li>
+</ul>
+</li>
+<li><p>未完待看</p>
+<h2 id="部分IoT设备逆向工程知识点"><a href="#部分IoT设备逆向工程知识点" class="headerlink" title="部分IoT设备逆向工程知识点"></a>部分IoT设备逆向工程知识点</h2></li>
+</ul>
+<p><a href="https://mp.weixin.qq.com/s/g6Un-QvXVbTyr7YSOfRfqg" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/g6Un-QvXVbTyr7YSOfRfqg</a></p>
+<h2 id="IoT设备逆向工程中的函数识别"><a href="#IoT设备逆向工程中的函数识别" class="headerlink" title="IoT设备逆向工程中的函数识别"></a>IoT设备逆向工程中的函数识别</h2><p><a href="https://mp.weixin.qq.com/s/eODNgJ_Tq2MDQP4ZbwnoaA" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/eODNgJ_Tq2MDQP4ZbwnoaA</a></p>
+<ul>
+<li>符号迁移：<ul>
+<li>场景：分析过一个裸格式的IoT固件，已经重命名一批关键函数，某天需要分析另一个与前者高度接近的新版固件</li>
+<li>法1: 用BinDiff、PatchDiff2进行二进制比较</li>
+<li>法2: IDB2PAT插件，从idb中导出pat再制作sig（ELF/IDB -&gt; PAT -&gt; SIG）</li>
+</ul>
+</li>
+<li>未完待看</li>
+</ul>
+<h2 id="Whitepaper-Router-Vulnerability-Present-for-a-Decade"><a href="#Whitepaper-Router-Vulnerability-Present-for-a-Decade" class="headerlink" title="Whitepaper-Router_Vulnerability_Present_for_a_Decade"></a>Whitepaper-Router_Vulnerability_Present_for_a_Decade</h2><ul>
+<li>概要：非技术文章，只了解大概</li>
+<li>CVE- 2021-20090，，并非是buffalo路由器所独有的，而是其底层的Arcadyan软件，影响了多个厂家的设备</li>
+<li>buffalo与arcadyan，二者是何关系？后者制造设备、提供固件，前者仅是个品牌？</li>
+<li>受影响的设备都有漏洞A，但一部分设备有漏洞B，在其它设备上并不存在，说明至少有两个软件提供商</li>
+<li>现代软件的复杂性，依赖于第三方代码及共享库的重用，导致供应链风险</li>
+</ul>
+<h2 id="浅谈固件Fuzz"><a href="#浅谈固件Fuzz" class="headerlink" title="浅谈固件Fuzz"></a>浅谈固件Fuzz</h2><p><a href="https://mp.weixin.qq.com/s/IL-wIM8wePZL07l9YJnX_Q" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/IL-wIM8wePZL07l9YJnX_Q</a></p>
+<ul>
+<li><p>概述：fuzz综述、firm-AFL</p>
+</li>
+<li><p>ps：学术化，实践性不高，学习思路</p>
+</li>
+<li><p>两论文（详见pdf）</p>
+<ul>
+<li>嵌入式fuzz综述：What You Corrupt Is Not What You Crash: Challenges in Fuzzing Embedded Devices</li>
+<li>一种fuzz方案：FIRM-AFL: High-Throughput Greybox Fuzzing of IoT Firmware via Augmented Process Emulation</li>
+</ul>
+</li>
+<li><p>设备从操作系统层面可以分为三类</p>
+<ul>
+<li>基于 Linux：如大部分的摄像头、路由器。</li>
+<li>自定义操作系统：如uClinux、VxWorks </li>
+<li>没有抽象操作系统：不存在内核与用户层的逻辑分离。很少Fuzz ，设备代码量较小，只用逆向说不定都可以还原</li>
+</ul>
+</li>
+<li><p>嵌入式设备Fuzz 的难点</p>
+<ul>
+<li>错误检测</li>
+<li>性能和可扩展性</li>
+<li>插桩</li>
+</ul>
+</li>
+<li><p>QEMU</p>
+<ul>
+<li>用户模式仅模拟 CPU 的运行，而系统模式除了模拟 CPU 的运行，还要管理、模拟外围的设备</li>
+<li>用户模式的执行速度大概比系统模式快了10倍，但有时仅用户模式是无法运行程序的</li>
+</ul>
+</li>
+<li><p>Firm-AFL</p>
+<ul>
+<li>思路：两模式相结合，系统模式提供用户模式无法运行时的环境，用户模式作为主要的运行状态来提高虚拟性能</li>
+<li>类似AFL（先forkserser再fork其它），先启动系统模式的实例，在某个特定点，fork出其它用户模式的实例</li>
+<li>两个模式下的实例，需要共享一些东西来进行同步</li>
+<li>[翻译]Firm-AFL：高效的IOT固件灰盒fuzz：<a href="https://bbs.pediy.com/thread-266036.htm" target="_blank" rel="noopener">https://bbs.pediy.com/thread-266036.htm</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="车联网安全之CAN协议浅谈"><a href="#车联网安全之CAN协议浅谈" class="headerlink" title="车联网安全之CAN协议浅谈"></a>车联网安全之CAN协议浅谈</h2><p><a href="https://mp.weixin.qq.com/s/wbuuiDTdAXWo0_BRd8u7sA" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/wbuuiDTdAXWo0_BRd8u7sA</a></p>
+<ul>
+<li><p>ecu在can总线协议的网络中相互连接</p>
+</li>
+<li><p>can</p>
+<ul>
+<li>无法短时间内更替且安全性极低</li>
+<li>车联网安全的一个重要研究方向</li>
+<li>can帧结构：id、dlc、data</li>
+</ul>
+</li>
+<li><p>data中信号分为五种，主要工作便是识别其中各个位的含义，如fbca算法</p>
+</li>
+</ul>
+<h2 id="ARM固件加载基址"><a href="#ARM固件加载基址" class="headerlink" title="ARM固件加载基址"></a>ARM固件加载基址</h2><ul>
+<li>两种：猜、算</li>
+<li>switch跳转表：记录case的绝对地址</li>
+<li>switch有两种跳转：1-jmp 基址+偏移到case、2-jmp 相对地址到default</li>
+<li>break跳出switch：switch结束处或者default（可将二者等同）</li>
+<li>跳转表记录线性的case，如果某个case没有，则填充default的，即default的绝对地址放在了跳转表中</li>
+<li>数学公式（将0作为基址，真假针对default）：真=真基址+偏移，假=0+偏移，二者相减</li>
+<li>default出现在两处：jmp相对地址、跳转表中的绝对地址，尽管形式不同，但最终是同值的。以0为基址时，绝对地址是真，相对地址是假，因为此时相对地址即偏移即假地址，加了0嘛，真-假=真基址，即绝对地址-相对地址=基址</li>
+<li>用了论文中：基于跳转表定位加载基址的第二种方法，对于第一种的评价不对，一法思想是：对于同一个case，其在跳转表中的差值、代码块中的差值是一样的（差值即case语句长度），通过差值来判定出某个具体的case。</li>
+</ul>
+<h2 id="常见嵌入式Web服务器CGI处理功能简要分析"><a href="#常见嵌入式Web服务器CGI处理功能简要分析" class="headerlink" title="常见嵌入式Web服务器CGI处理功能简要分析"></a>常见嵌入式Web服务器CGI处理功能简要分析</h2><p><a href="https://larry.ngrep.me/2020/02/03/iot-web-server-cgi-handler-analysis/" target="_blank" rel="noopener">https://larry.ngrep.me/2020/02/03/iot-web-server-cgi-handler-analysis/</a></p>
+<ul>
+<li>uhttpd-源码分析-LuCI：<ul>
+<li>即最终调用的<code>/www/cgi-bin/luci</code>，遵循MVC的后端Web处理<a href="https://github.com/openwrt/luci/wiki" target="_blank" rel="noopener">框架</a></li>
+<li><code>/usr/lib/lua/luci/controller</code>目录下的lua脚本包含请求url的相关路由信息</li>
+<li>脚本中的<code>index</code>函数，调用<code>entry (path, target, title, order)</code>函数创建dispatching node</li>
+<li>关注<code>target</code>参数，可能传递<code>call</code>函数，来调用函数处理请求</li>
+<li>其它部分同：chamd5-关于路由器的CGI漏洞分析及挖掘</li>
+</ul>
+</li>
+<li>uhhtpd-实例-命令执行<ul>
+<li>斐讯路由器，基于openwrt，虽然用lighttpd，但最终调用luci</li>
+<li>/usr/lib/lua/luci/controller/admin/autoupgrade.lua文件中的index函数</li>
+<li>entry({“admin”, “more_sysset”, “autoupgrade”, “save”}, call(“save”), nil, nil)，target参数为call-save</li>
+<li>save函数：接收用户数据local time = luci.http.formvalue(“autoUpTime”)、命令指定拼接local time = luci.http.formvalue(“autoUpTime”)</li>
+</ul>
+</li>
+<li>lua其它<ul>
+<li>为加速执行，lua脚本会预编译成为字节码，故需要<a href="https://webcache.googleusercontent.com/search?q=cache:DRSZOu-QEBUJ:storypku.com/2015/07/+&amp;cd=5&amp;hl=zh-CN&amp;ct=clnk" target="_blank" rel="noopener">反编译</a>（如tplink-c5400中，LuaQ开头的标识）</li>
+<li>更改lua虚拟机的<a href="https://e3pem.github.io/2019/07/03/IoT/小米路由器从开始到放弃/" target="_blank" rel="noopener">情况</a>，需要逆向解析其自定义的opcode，并配合历史固件版本分析</li>
+<li>lua语言自身的<a href="https://conference.hitb.org/hitbsecconf2019ams/materials/D1T1 - SeasCoASA - Exploiting a Small Leak in a Great Ship - Kaiyi Xu &amp; Lily Tang.pdf" target="_blank" rel="noopener">安全问题</a></li>
+</ul>
+</li>
+<li>todo：只看了02-uhttpd</li>
+</ul>
+<h2 id="CVE-2020-24581-D-Link-DSL-2888A-远程命令执行漏洞分析"><a href="#CVE-2020-24581-D-Link-DSL-2888A-远程命令执行漏洞分析" class="headerlink" title="CVE-2020-24581 D-Link DSL-2888A 远程命令执行漏洞分析"></a>CVE-2020-24581 D-Link DSL-2888A 远程命令执行漏洞分析</h2><p><a href="https://www.anquanke.com/post/id/229323" target="_blank" rel="noopener">https://www.anquanke.com/post/id/229323</a></p>
+<ul>
+<li>概要：认证绕过、命令执行、httpd与cgi</li>
+<li>通告信息（参考链接中）：<ul>
+<li>D-Link: Multiple Security Vulnerabilities Leading to RCE</li>
+<li>认证绕过1：无效的认证机制L：登录界面，输入任意密码；尽管提示密码错误，但已经产生有效的访问session；随后可访问任何需要认证的页面</li>
+<li>认证绕过2：通过源ip来进行认证、可伪造管理员的ip</li>
+<li>信息泄漏：8008端口、/tmp/cfg/lib_cfg_cfgcmd、/tmp/.nvram、明文的账号/密码</li>
+<li>ftp配置错误：路由器有文件共享功能，通过ftp实现；ftp没有控制好路径，能访问到系统目录；ftp+ip、登录（信息泄漏时获取到密码）、get /etc/passwd下载敏感文件</li>
+<li>命令执行：隐藏功能点，未web界面上不可见（不可触发）、需认证，但认证机制是无效的可绕过</li>
+</ul>
+</li>
+<li>未授权命令执行<ul>
+<li>命令执行：execute_cmd.cgi，隐藏功能，web界面不可访问</li>
+<li>认证绕过：随便输入密码就可达到认证效果</li>
+</ul>
+</li>
+<li>dhttpd执行cgi<ul>
+<li>先加载cgi模块（web初始化函数中，还有goform组件，目录分别为/goform、/cgi-bin）</li>
+<li>拼接路径“/cgi-bin”与cgi</li>
+<li>stat判断文件是否存在</li>
+<li>access判断是否有执行权限</li>
+<li>chdir改变当前目录</li>
+<li>给cgi配置环境变量</li>
+<li>将cgi及环境变量传递给execve，执行cgi</li>
+</ul>
+</li>
+<li>execute_cmd.cgi<ul>
+<li>从环境变量QUERY_STRING中获取到第二个参数的值，反引号命令执行，无任何过滤</li>
+<li>第二个参数的键值均没有验证，故只要是第二个参数的值均可作为命令执行，参数名无所谓</li>
+</ul>
+</li>
+<li>参数的传播：ajax.js拼接url、xmlhttp.open发送到dhttpd、通过环境变量传给cgi</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/10/02/iot/IOT安全-文章学习笔记-3/" title="IOT安全-文章学习笔记-3">http://21guns.top/2021/10/02/iot/IOT安全-文章学习笔记-3/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/栈溢出/" rel="tag"># 栈溢出</a>
+              <a href="/tags/摄像头/" rel="tag"># 摄像头</a>
+              <a href="/tags/命令注入/" rel="tag"># 命令注入</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/23/iot/利用uboot getshell/" rel="prev" title="uboot getshell">
+      <i class="fa fa-chevron-left"></i> uboot getshell
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/" rel="next" title="ARM-X对Tenda AC15的固件模拟">
+      ARM-X对Tenda AC15的固件模拟 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IOT安全-文章学习笔记-3"><span class="nav-number">1.</span> <span class="nav-text">IOT安全-文章学习笔记-3</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT-设备固件分析之网络协议-fuzz"><span class="nav-number">1.1.</span> <span class="nav-text">IoT 设备固件分析之网络协议 fuzz</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zyxel设备eCos固件加载地址分析"><span class="nav-number">1.2.</span> <span class="nav-text">Zyxel设备eCos固件加载地址分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用Ghidra-P-Code进行辅助逆向分析"><span class="nav-number">1.3.</span> <span class="nav-text">使用Ghidra P-Code进行辅助逆向分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#00-BinDiff二进制比较简介"><span class="nav-number">1.4.</span> <span class="nav-text">00-BinDiff二进制比较简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部分IoT设备逆向工程知识点"><span class="nav-number">1.5.</span> <span class="nav-text">部分IoT设备逆向工程知识点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT设备逆向工程中的函数识别"><span class="nav-number">1.6.</span> <span class="nav-text">IoT设备逆向工程中的函数识别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Whitepaper-Router-Vulnerability-Present-for-a-Decade"><span class="nav-number">1.7.</span> <span class="nav-text">Whitepaper-Router_Vulnerability_Present_for_a_Decade</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#浅谈固件Fuzz"><span class="nav-number">1.8.</span> <span class="nav-text">浅谈固件Fuzz</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#车联网安全之CAN协议浅谈"><span class="nav-number">1.9.</span> <span class="nav-text">车联网安全之CAN协议浅谈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM固件加载基址"><span class="nav-number">1.10.</span> <span class="nav-text">ARM固件加载基址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见嵌入式Web服务器CGI处理功能简要分析"><span class="nav-number">1.11.</span> <span class="nav-text">常见嵌入式Web服务器CGI处理功能简要分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CVE-2020-24581-D-Link-DSL-2888A-远程命令执行漏洞分析"><span class="nav-number">1.12.</span> <span class="nav-text">CVE-2020-24581 D-Link DSL-2888A 远程命令执行漏洞分析</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

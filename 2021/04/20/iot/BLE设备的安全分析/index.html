@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] BLE设备的安全分析BLE基础知识 概要：蓝牙、BLE协议栈、Android API 专题有两个主线：BLE设备、智能门锁的安全研究  蓝牙，即Bluetooth，有两种形式  传统蓝牙BR（Basic Rate），蓝牙耳机/音箱 低功耗蓝牙BLE（Bluetooth Low Energy），各种IoT设备，如蓝牙手环等。   蓝牙的数据传输模型：Physical层、Logical层和">
+<meta name="keywords" content="BLE协议,智能手环">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BLE设备的安全分析">
+<meta property="og:url" content="http://21guns.top/2021/04/20/iot/BLE设备的安全分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] BLE设备的安全分析BLE基础知识 概要：蓝牙、BLE协议栈、Android API 专题有两个主线：BLE设备、智能门锁的安全研究  蓝牙，即Bluetooth，有两种形式  传统蓝牙BR（Basic Rate），蓝牙耳机/音箱 低功耗蓝牙BLE（Bluetooth Low Energy），各种IoT设备，如蓝牙手环等。   蓝牙的数据传输模型：Physical层、Logical层和">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:12:14.262Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BLE设备的安全分析">
+<meta name="twitter:description" content="[TOC] BLE设备的安全分析BLE基础知识 概要：蓝牙、BLE协议栈、Android API 专题有两个主线：BLE设备、智能门锁的安全研究  蓝牙，即Bluetooth，有两种形式  传统蓝牙BR（Basic Rate），蓝牙耳机/音箱 低功耗蓝牙BLE（Bluetooth Low Energy），各种IoT设备，如蓝牙手环等。   蓝牙的数据传输模型：Physical层、Logical层和">
+
+<link rel="canonical" href="http://21guns.top/2021/04/20/iot/BLE设备的安全分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>BLE设备的安全分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/04/20/iot/BLE设备的安全分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BLE设备的安全分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-04-20 09:23:44" itemprop="dateCreated datePublished" datetime="2021-04-20T09:23:44+08:00">2021-04-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:12:14" itemprop="dateModified" datetime="2022-02-21T15:12:14+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="BLE设备的安全分析"><a href="#BLE设备的安全分析" class="headerlink" title="BLE设备的安全分析"></a>BLE设备的安全分析</h1><h2 id="BLE基础知识"><a href="#BLE基础知识" class="headerlink" title="BLE基础知识"></a>BLE基础知识</h2><ul>
+<li>概要：蓝牙、BLE协议栈、Android API</li>
+<li><p>专题有两个主线：BLE设备、智能门锁的安全研究</p>
+</li>
+<li><p>蓝牙，即Bluetooth，有两种形式</p>
+<ul>
+<li>传统蓝牙BR（Basic Rate），蓝牙耳机/音箱</li>
+<li>低功耗蓝牙BLE（Bluetooth Low Energy），各种IoT设备，如蓝牙手环等。</li>
+</ul>
+</li>
+<li><p>蓝牙的数据传输模型：Physical层、Logical层和L2CAP层</p>
+<ul>
+<li>类比OSI七层协议：发送时，高层应用将数据发送给L2CAP层，并逐层向下流动；接收时，设备从Physical层获得数据，并逐层向上流动</li>
+<li>L2CAP层：高层应用中需要收发的BLE数据在此，这些数据可能在应用层中被加密，但没有被BLE协议栈加密</li>
+<li>Physical层：3个广播信道和37个数据通信信道。两个BLE设备连接时，随机挑选一个广播信道进行广播，连接建立后，在37个通信信道上跳频通信</li>
+<li>Logical层：完成BLE通信过程中的各种逻辑控制。BLE通信过程存在master（主动扫描并发起连接）和slave（不断发送广播并等待连接）两方，scanner-扫描状态、advertiser-广播状态。</li>
+</ul>
+</li>
+<li><p>IoT设备需要与Android/IOS手机通信，BLE是一种常见方式</p>
+</li>
+<li><p>蓝牙BLE通信</p>
+<ul>
+<li>扫描周围的蓝牙BLE设备，并选择，API：start/stopScan</li>
+<li>与设备通信，即收发数据，API：write/readCharacteristic</li>
+</ul>
+</li>
+<li><p>相关概念</p>
+<ul>
+<li>每个BLE设备对应一个profile（描述设备）</li>
+<li>一个profile包含多个service（设备提供的服务）</li>
+<li>一个service有多个characteristic，service依靠characteristic来完成</li>
+<li>Service和Characteristic各自拥有一个标识UUID，API利用UUID找到service和characteristic</li>
+</ul>
+</li>
+</ul>
+<h2 id="BLE灯泡"><a href="#BLE灯泡" class="headerlink" title="BLE灯泡"></a>BLE灯泡</h2><ul>
+<li><p>概要：app日志分析获取ble通信数据、nRF conent与设备通信、不经绑定直接控制灯泡</p>
+</li>
+<li><p>获取BLE通信内容3法</p>
+<ul>
+<li>HCI Log：Android系统提供，包含蓝牙的所有日志</li>
+<li>app分析：逆向app，查看其日志/Hook关键函数</li>
+<li>BLE嗅探：直接嗅探周围BLE通信的数据</li>
+</ul>
+</li>
+<li><p>app日志分析</p>
+<ul>
+<li>本设备较简单，app日志直接打印出BLE通信内容</li>
+<li>App日志可以通过DDMS、ADB或其他工具查看，如AndroidKiller</li>
+<li>多次调整亮度，对比多条日志，找异同点</li>
+<li>有一个字节与亮度成线性相关</li>
+</ul>
+</li>
+<li><p>BLE数据包格式</p>
+<ul>
+<li>灯泡的MAC地址</li>
+<li>Service/Characteristic UUID</li>
+<li>通信内容</li>
+</ul>
+</li>
+<li><p>nRF Connect</p>
+<ul>
+<li>调试BLE设备的免费app，iOS/Android两个版本</li>
+<li>3功能：作为master扫描周围设备、与BLE设备通信、作为Advertiser发送广播包</li>
+</ul>
+</li>
+<li><p>nRF Connect控制灯泡</p>
+<ul>
+<li>通过MAC地址，找到灯泡</li>
+<li>与灯泡建立BLE连接，找到Service/Characteristic的UUID</li>
+<li>向Characteristic写入控制灯泡亮度的通信数据</li>
+</ul>
+</li>
+<li><p>绑定的逻辑缺陷</p>
+<ul>
+<li>理想情况：每个BLE灯泡都必须完成绑定之后，才能正常使用</li>
+<li>绕过：app与设备之间并没有严格的绑定关系，仅仅是app本地登记一下灯泡，单向登记并非双向绑定</li>
+</ul>
+</li>
+</ul>
+<h2 id="BLE智能手环"><a href="#BLE智能手环" class="headerlink" title="BLE智能手环"></a>BLE智能手环</h2><ul>
+<li><p>概要：dongle重刷固件、伪造广播数据</p>
+</li>
+<li><p>手环通信方式</p>
+<ul>
+<li>猜测通过WiFi/4G，但并没有相关设置</li>
+<li>有关于BLE通信的设置，故判断依靠BLE通信</li>
+</ul>
+</li>
+<li><p>步数上报服务器</p>
+<ul>
+<li>假设1：手环不停广播，某个设备扫描附近的广播数据</li>
+<li>假设2：某个设备以轮询的方式和手环建立连接、收集信息、断开连接</li>
+<li>某个收集信息的设备，类似路由器，确实有“蓝牙路由器”相关产品</li>
+<li>验证1：抓取手环的广播包</li>
+<li>验证2：nRF connect连接手环，观察所有characteristic，看是否有可疑数据</li>
+</ul>
+</li>
+<li><p>抓包验证1</p>
+<ul>
+<li>1：数据包类型为过滤条件，记录蓝牙MAC地址</li>
+<li>2：换个位置，重新抓包。对比两次抓包，发现某MAC出现两次，即手环</li>
+<li>3：手环MAC为过滤条件，广播数据+手环步数=广播的第9字节为步数</li>
+<li>工具：sniffer+dongle，nRF connect也可</li>
+</ul>
+</li>
+<li><p>伪造广播数据</p>
+<ul>
+<li>nRF connect可发送BLE广播，但受限于Android系统，不能设置MAC地址</li>
+<li>需要一个自由度更高的设备，dongle可以，但需重刷固件</li>
+<li>dongle固件刷写后，可伪造成手环（设置mac地址），广播自定义的步数数据</li>
+</ul>
+</li>
+<li><p>重构工程</p>
+<ul>
+<li>dongle采用CC2540芯片（8051的CPU内核），故IAR For 8051作为IDE</li>
+<li>芯片开发包中，找到蓝牙广播样例程序</li>
+<li>调整代码，即设置广播数据，并编译工程</li>
+<li>编译后，刷写dongle，覆盖其原本固件（firmware文件夹有备份）</li>
+</ul>
+</li>
+<li><p>dongle重刷固件</p>
+<ul>
+<li>cc debugger连接USB dongle和pc</li>
+<li>SmartRF Flash Programmer工具（sniffer同系列）</li>
+<li>设置MAC地址为手环的，Location选择Secondary</li>
+<li><p>Primary保存出厂MAC地址，无法更改</p>
+</li>
+<li><p>Secondary保存自定义MAC地址，若存在会优先使用</p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ul>
+<li><a href="https://www.4hou.com/posts/o6LY" target="_blank" rel="noopener">https://www.4hou.com/posts/o6LY</a></li>
+<li><a href="https://www.4hou.com/posts/Q549" target="_blank" rel="noopener">https://www.4hou.com/posts/Q549</a></li>
+<li><a href="https://www.4hou.com/posts/GQy0" target="_blank" rel="noopener">https://www.4hou.com/posts/GQy0</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/04/20/iot/BLE设备的安全分析/" title="BLE设备的安全分析">http://21guns.top/2021/04/20/iot/BLE设备的安全分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/BLE协议/" rel="tag"># BLE协议</a>
+              <a href="/tags/智能手环/" rel="tag"># 智能手环</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/" rel="prev" title="通过补丁对比发现Cisco RV110W的多个漏洞">
+      <i class="fa fa-chevron-left"></i> 通过补丁对比发现Cisco RV110W的多个漏洞
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/05/09/iot/TP-Link wr886nv6固件分析/" rel="next" title="TP-Link wr886nv6固件分析">
+      TP-Link wr886nv6固件分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#BLE设备的安全分析"><span class="nav-number">1.</span> <span class="nav-text">BLE设备的安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#BLE基础知识"><span class="nav-number">1.1.</span> <span class="nav-text">BLE基础知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BLE灯泡"><span class="nav-number">1.2.</span> <span class="nav-text">BLE灯泡</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BLE智能手环"><span class="nav-number">1.3.</span> <span class="nav-text">BLE智能手环</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

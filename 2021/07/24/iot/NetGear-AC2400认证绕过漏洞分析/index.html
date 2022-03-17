@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] NetGear-AC2400认证绕过漏洞分析00-pre 固件下载：https://www.netgear.com/support/product/AC2400.aspx，1.2.0.74 和 1.2.0.76 两个版本固件 漏洞通告：https://www.zerodayinitiative.com/advisories/ZDI-20-1451/  123This vulnerabi">
+<meta name="keywords" content="路由器,漏洞分析,认证绕过">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NetGear-AC2400认证绕过漏洞分析">
+<meta property="og:url" content="http://21guns.top/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] NetGear-AC2400认证绕过漏洞分析00-pre 固件下载：https://www.netgear.com/support/product/AC2400.aspx，1.2.0.74 和 1.2.0.76 两个版本固件 漏洞通告：https://www.zerodayinitiative.com/advisories/ZDI-20-1451/  123This vulnerabi">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-22T01:42:57.966Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NetGear-AC2400认证绕过漏洞分析">
+<meta name="twitter:description" content="[toc] NetGear-AC2400认证绕过漏洞分析00-pre 固件下载：https://www.netgear.com/support/product/AC2400.aspx，1.2.0.74 和 1.2.0.76 两个版本固件 漏洞通告：https://www.zerodayinitiative.com/advisories/ZDI-20-1451/  123This vulnerabi">
+
+<link rel="canonical" href="http://21guns.top/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>NetGear-AC2400认证绕过漏洞分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NetGear-AC2400认证绕过漏洞分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-24 14:41:33" itemprop="dateCreated datePublished" datetime="2021-07-24T14:41:33+08:00">2021-07-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-22 09:42:57" itemprop="dateModified" datetime="2022-02-22T09:42:57+08:00">2022-02-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="NetGear-AC2400认证绕过漏洞分析"><a href="#NetGear-AC2400认证绕过漏洞分析" class="headerlink" title="NetGear-AC2400认证绕过漏洞分析"></a>NetGear-AC2400认证绕过漏洞分析</h1><h2 id="00-pre"><a href="#00-pre" class="headerlink" title="00-pre"></a>00-pre</h2><ul>
+<li>固件下载：<a href="https://www.netgear.com/support/product/AC2400.aspx，1.2.0.74" target="_blank" rel="noopener">https://www.netgear.com/support/product/AC2400.aspx，1.2.0.74</a> 和 1.2.0.76 两个版本固件</li>
+<li>漏洞通告：<a href="https://www.zerodayinitiative.com/advisories/ZDI-20-1451/" target="_blank" rel="noopener">https://www.zerodayinitiative.com/advisories/ZDI-20-1451/</a></li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">This vulnerability allows network-adjacent attackers to bypass authentication on affected installations of NETGEAR R6020, R6080, R6120, R6220, R6260, R6700v2, R6800, R6900v2, R7450, JNR3210, WNR2020, Nighthawk AC2100, and Nighthawk AC2400 routers. Authentication is not required to exploit this vulnerability.</span><br><span class="line"></span><br><span class="line">The specific flaw exists within the mini_httpd service, <span class="built_in">which</span> listens on TCP port 80 by default. The issue results from incorrect string matching logic when accessing protected pages. An attacker can leverage this <span class="keyword">in</span> conjunction with other vulnerabilities to execute code <span class="keyword">in</span> the context of root.</span><br></pre></td></tr></table></figure>
+<h2 id="01-定位"><a href="#01-定位" class="headerlink" title="01-定位"></a>01-定位</h2><ul>
+<li>Shift+F12 搜索字符串，漏洞位于处理用户请求的位置，所以直接搜索 Content-Length 或者其他请求头中会出现的字符串</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 incorrect string matching logic when accessing protected pages，可见是处理用户请求，其实一般都是</span></span><br><span class="line"><span class="comment"># 2 Content-Length、Content-Type、Host等常见的http请求头来定位</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>通过交叉引用可以定位到函数 0x40A540 (1.2.0.74)，其中存在以下代码片段</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 好像是一个报错的信息，哪个文件的哪个函数的哪一行</span></span><br><span class="line"><span class="comment"># 通过此，可判定函数名，handle_request</span></span><br><span class="line">v4 = (FILE *)fopen64(<span class="string">"/dev/console"</span>, <span class="string">"a+"</span>);</span><br><span class="line"><span class="keyword">if</span> ( v4 )</span><br><span class="line">&#123;</span><br><span class="line">  fprintf(v4, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"handle_request"</span>, 1634);</span><br><span class="line">  fputs(<span class="string">"read\n"</span>, v4);</span><br><span class="line">  fclose(v4);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>handle_request，用于处理http请求（通过名字），只有main中一处调用</li>
+</ul>
+<h2 id="02-修复点"><a href="#02-修复点" class="headerlink" title="02-修复点"></a>02-修复点</h2><ul>
+<li>ida 68 + bindiff 43，找到修改项</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 确实找到0x40A540 vs 0040B5CC这一项，相似度0.65</span></span><br><span class="line"><span class="comment"># 不是一上来就bindiff看，往往有很多，不好定位，要换个思路：先找到相关函数，再bindiff验证是否不同，再细看</span></span><br><span class="line"><span class="comment"># 文中说ida75 + bindiff 6可，但之前测过好像不行</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>如何修复的？</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 原话：比较两份代码，主要逻辑变化不大，但是新版中添加了 SSO 相关逻辑，即单点登录，猜测官方通过引入单点登录的手段对漏洞进行修复。（怎么看出主要逻辑变化不大的？硬看？</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ida75 反编译my_handle_requests函数，76中出现了大量“sso”字符串（36次），而74中一个都没有</span></span><br><span class="line"><span class="comment"># sso，单点登录（Single Sign On），用户只需要登录一次就可以访问所有相互信任的应用系统</span></span><br><span class="line"><span class="comment"># 猜测官方通过引入单点登录的手段对来对漏洞进行修复，待验证//here</span></span><br></pre></td></tr></table></figure>
+<h2 id="03-关键函数"><a href="#03-关键函数" class="headerlink" title="03-关键函数"></a>03-关键函数</h2><h3 id="1-auth-check"><a href="#1-auth-check" class="headerlink" title="1-auth_check"></a>1-auth_check</h3><ul>
+<li>找处理login请求的函数</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 auth、check等字符串</span></span><br><span class="line"><span class="comment"># 2 如上mini_httpd.c特定代码段的方式，看还有哪些函数</span></span><br><span class="line">fprintf(v30, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"auth_check"</span>, 3682);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1 找到在.text:00407FC0处，重命名为my_auth_check</span></span><br><span class="line"><span class="comment"># 2 被my_handle_request调用</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>判断is_setup_wizard标记（自命名的</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#  检查某标记，不为1则正常登录</span></span><br><span class="line"><span class="comment">#  为1则跳过，进一步检查是否是lan用户，如果不是则丢弃</span></span><br><span class="line">char *__fastcall my_auth_check(int a1)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> ( is_setup_wizard != 1 )</span><br><span class="line">  &#123;</span><br><span class="line">  	<span class="comment"># 正常的登录逻辑</span></span><br><span class="line">  &#125;</span><br><span class="line">  v2 = check_lan_guest();</span><br><span class="line">  <span class="keyword">if</span> ( !v2 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment"># 如果from wan，则丢弃请求</span></span><br><span class="line">    v4 = <span class="string">"/bin/echo genie from wan, drop request &gt; /dev/console"</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="2-handle-request"><a href="#2-handle-request" class="headerlink" title="2-handle_request"></a>2-handle_request</h3><ul>
+<li>何处赋值is_setup_wizard标记</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 交叉引用 is_setup_wizard，找到my_handle_request中</span></span><br><span class="line"><span class="comment"># 但不全，需要反编译窗口中继续手动找</span></span><br><span class="line"><span class="comment"># 有多处，需分析后取舍，比如1229行调用my_auth_check，要找之前的、离他最近的，要833行，而555行不可</span></span><br><span class="line">  <span class="keyword">if</span> ( path_exist(path_1, off_427E50, method_str_1)</span><br><span class="line">    || (path_3 = path_1, strstr(path_1, <span class="string">"htpwd_recovery.cgi"</span>))</span><br><span class="line">    &amp;&amp; (method_post = get_method_str(3), !strcasecmp(method_str_1, method_post))</span><br><span class="line">    || strstr(path_3, <span class="string">"PNPX_GetShareFolderList"</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    what_1 = 0;<span class="comment"># 只满足外层if时</span></span><br><span class="line">    what_2 = 0;<span class="comment"># 清0</span></span><br><span class="line">    <span class="keyword">if</span> ( strstr(path_1, <span class="string">"currentsetting.htm"</span>) )</span><br><span class="line">      is_setup_wizard = 1;<span class="comment"># 两层if都要满足</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 要执行到，有2个if要满足</span></span><br><span class="line"><span class="comment"># 内层：请求的path中有"currentsetting.htm"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 外层：3个或关系，其中一个是&amp;起来的，即a || b&amp;&amp;c || d，&amp;&amp;优先级高于||</span></span><br><span class="line"><span class="comment"># 要求1：访问的path要在off_427e50中</span></span><br><span class="line">.data:00427E50 off_427E50:     .word aCurrentsetting_0  <span class="comment"># DATA XREF: my_handle_request+1B80↑o</span></span><br><span class="line">.data:00427E50                                          <span class="comment"># my_handle_request:loc_40C178↑o</span></span><br><span class="line">.data:00427E50                                          <span class="comment"># "currentsetting.htm"</span></span><br><span class="line">.data:00427E54                 .word aUpdateSettingH    <span class="comment"># "update_setting.htm"</span></span><br><span class="line">.data:00427E58                 .word aDebuginfoHtm      <span class="comment"># "debuginfo.htm"</span></span><br><span class="line">.data:00427E5C                 .word aImportantUpdat    <span class="comment"># "important_update.htm"</span></span><br><span class="line">.data:00427E60                 .word aMnuTopHtm         <span class="comment"># "MNU_top.htm"</span></span><br><span class="line">.data:00427E64                 .word aWarningPgHtm      <span class="comment"># "warning_pg.htm"</span></span><br><span class="line">.data:00427E68                 .word aMultiLoginHtml    <span class="comment"># "multi_login.html"</span></span><br><span class="line">.data:00427E6C                 .word a401RecoveryHtm    <span class="comment"># "401_recovery.htm"</span></span><br><span class="line">.data:00427E70                 .word a401AccessDenie    <span class="comment"># "401_access_denied.htm"</span></span><br><span class="line">.data:00427E74                 .word aBrsNetgearSucc    <span class="comment"># "BRS_netgear_success.html"</span></span><br><span class="line">.data:00427E78                 .word aBrsTopHtml        <span class="comment"># "BRS_top.html"</span></span><br><span class="line">.data:00427E7C                 .word aBrsMiiicasaSuc    <span class="comment"># "BRS_miiicasa_success.html"</span></span><br><span class="line">.data:00427E80                 .word aOpenvpnConfirm    <span class="comment"># "openvpn_confirm_update.htm"</span></span><br><span class="line">.data:00427E84                 .word aTcExistUnitHij    <span class="comment"># "tc_exist_unit_hijack.htm"</span></span><br><span class="line">.data:00427E88                 .word aBrsDataDetailH    <span class="comment"># "BRS_data_detail.htm"</span></span><br><span class="line">.data:00427E8C                 .word aBrsFullTcnHtm     <span class="comment"># "BRS_full_tcn.htm"</span></span><br><span class="line">.data:00427E90                 .word 0</span><br><span class="line"><span class="comment"># 要求2: 访问的path中包含"htpwd_recovery.cgi"，并且请求类型是POST</span></span><br><span class="line">const char *__fastcall get_method_str(int a1)</span><br><span class="line">&#123;</span><br><span class="line">  switch ( a1 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> 2:</span><br><span class="line">      <span class="built_in">return</span> <span class="string">"HEAD"</span>;</span><br><span class="line">    <span class="keyword">case</span> 3:</span><br><span class="line">      <span class="built_in">return</span> <span class="string">"POST"</span>;</span><br><span class="line">    <span class="keyword">case</span> 1:</span><br><span class="line">      <span class="built_in">return</span> <span class="string">"GET"</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">return</span> <span class="string">"UNKNOWN"</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 要求3: path中有"PNPX_GetShareFolderList"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 只满足外层if时，还会赋值2全局变量为0，可能会用到</span></span><br></pre></td></tr></table></figure>
+<h3 id="3-do-file"><a href="#3-do-file" class="headerlink" title="3-do_file"></a>3-do_file</h3><ul>
+<li>my_handle_request中还调用了my_do_file</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 由名字do_file可大致猜出：执行cig文件</span></span><br><span class="line"><span class="comment"># httpd 只充当处理请求的角色，在确定了访问哪些接口之后，它会调用相应的 cgi 程序，此函数就负责解析和调用这些 cgi 程序</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ( !what_2</span><br><span class="line">    || is_setup_wizard</span><br><span class="line">    || *v7 != <span class="string">'0'</span></span><br><span class="line">    || *v8 == <span class="string">'b'</span></span><br><span class="line">    || !authorization</span><br><span class="line">    || !*authorization</span><br><span class="line">    || !strncmp(path_1, <span class="string">"/cgi-bin/genie.cgi"</span>, 0x12u) )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( access(<span class="string">"/tmp/dbg_sessionid"</span>, 0) )</span><br><span class="line">      goto LABEL_43;</span><br><span class="line">    v14 = fopen64(<span class="string">"/dev/console"</span>, <span class="string">"a+"</span>);</span><br><span class="line">    <span class="keyword">if</span> ( !v14 )</span><br><span class="line">      goto LABEL_43;</span><br><span class="line">    fprintf(v14, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"do_file"</span>, 2539);</span><br><span class="line">    fprintf(</span><br><span class="line">      v14,</span><br><span class="line">      <span class="string">"no need verify for no auth or soap or genie.cgi, %d, %d, %s, %s, %s\n"</span>,</span><br><span class="line">      what_2,</span><br><span class="line">      is_setup_wizard,</span><br><span class="line">      v7,</span><br><span class="line">      v8,</span><br><span class="line">      authorization);</span><br><span class="line">    v15 = v14;</span><br><span class="line">    goto LABEL_42;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 满足if时，会"no need verify for no auth or soap or genie.cgi"</span></span><br><span class="line"><span class="comment"># 而经过my_handle_request中，what_2会=0，而is_setup_wizard会=1，满足</span></span><br></pre></td></tr></table></figure>
+<h2 id="04-认证绕过"><a href="#04-认证绕过" class="headerlink" title="04-认证绕过"></a>04-认证绕过</h2><ul>
+<li>某些接口确实不需要权限验证就能访问，但是在实现这项功能时使用了 strstr 而不是精确匹配，导致出现绕过的问题</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( strstr(path_1, <span class="string">"currentsetting.htm"</span>) )</span><br><span class="line">	is_setup_wizard = 1;<span class="comment"># 两层if都要满足</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>AC2400 存在一个可以开启 debug 模式的接口：/setup.cgi?todo=debug</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 直接访问，401</span></span><br><span class="line"><span class="comment"># /setup.cgi?todo=debug&amp;x=currentsetting.htm，绕过认证</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>绕过逻辑</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 使my_handle_request中is_setup_wizard=1，what_2=0</span></span><br><span class="line"><span class="comment"># 使my_auth_check中进入正常login的流程</span></span><br><span class="line"><span class="comment"># 使my_do_file中可打印no_need_verify那条语句</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>注意：比较片面化，没有从用户输入到绕过的完整处理路径</li>
+</ul>
+<h2 id="05-其他"><a href="#05-其他" class="headerlink" title="05-其他"></a>05-其他</h2><ul>
+<li>通过特定代码段，来判定函数名</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 好像是一个报错的信息，哪个文件的哪个函数的哪一行</span></span><br><span class="line"><span class="comment"># 通过此，可判定函数名，handle_request</span></span><br><span class="line">v4 = (FILE *)fopen64(<span class="string">"/dev/console"</span>, <span class="string">"a+"</span>);</span><br><span class="line"><span class="keyword">if</span> ( v4 )</span><br><span class="line">&#123;</span><br><span class="line">  fprintf(v4, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"handle_request"</span>, 1634);</span><br><span class="line">  fputs(<span class="string">"read\n"</span>, v4);</span><br><span class="line">  fclose(v4);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>通过“源码+报错”方式找到如下函数</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">fprintf(v3, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"cgi_interpose_output"</span>, 3098);</span><br><span class="line">fprintf(v37, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"make_envp"</span>, 3387);</span><br><span class="line">fprintf(v15, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"add_headers"</span>, 4129);</span><br><span class="line">fprintf(v6, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"auth_check"</span>, 3487);</span><br><span class="line">fprintf(v4, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"do_file"</span>, 2515);</span><br><span class="line">fprintf(fp_console, <span class="string">"[%s::%s():%d] "</span>, <span class="string">"mini_httpd.c"</span>, <span class="string">"handle_request"</span>, 1639);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>其他可用链接，<a href="https://gist.github.com/Donearm/978555" target="_blank" rel="noopener">https://gist.github.com/Donearm/978555</a></li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注：对于不同型号的设备，能够绕过验证的功能不完全一致，某些可以用于 GET 请求，另一些可能只对 POST 请求有效。某些可能只对 htm 页面有效，其它只对 cgi 有效。</span></span><br><span class="line"></span><br><span class="line">DEBUGURL = <span class="string">'http://192.168.0.1/setup.cgi?todo=debug'</span></span><br><span class="line">REBOOTURL = <span class="string">'http://192.168.0.1/setup.cgi?next_file=diag.htm&amp;todo=reboot'</span></span><br><span class="line"><span class="comment">#DISCONNECTURL = 'http://192.168.0.1/setup.cgi?todo=disconnect&amp;this_file=st_poe.htm&amp;next_file=st_poe.htm'</span></span><br><span class="line">DISCONNECTURL = <span class="string">'http://192.168.0.1/setup.cgi?todo=disconnect'</span></span><br><span class="line"><span class="comment">#CONNECTURL = 'http://192.168.0.1/setup.cgi?todo=connect&amp;this_file=st_poe.htm&amp;next_file=st_poe.htm'</span></span><br><span class="line">CONNECTURL = <span class="string">'http://192.168.0.1/setup.cgi?todo=connect'</span></span><br><span class="line">STATTBLURL = <span class="string">'http://192.168.0.1/setup.cgi?next_file=stattbl.htm'</span></span><br><span class="line">LOGOUTURL = <span class="string">'http://192.168.0.1/setup.cgi?todo=logout'</span></span><br><span class="line">INTERVALURL = <span class="string">'http://192.168.0.1/setup.cgi?next_file=interval.htm'</span></span><br><span class="line">STATUSURL = <span class="string">'http://192.168.0.1/setup.cgi?next_file=s_status.htm'</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>此外，NetGear 存在某些历史漏洞，也是登录验证绕过，触发方法是在 URL 中添加空字节或者添加 1.jpg 等字符串，参考链接</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/zer0yu/CVE_Request/tree/master/netgear</span><br><span class="line">https://www.zerodayinitiative.com/advisories/ZDI-19-866/</span><br></pre></td></tr></table></figure>
+<ul>
+<li>//here</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">在这个函数中还存在一些登录逻辑，相关代码如下</span><br><span class="line"></span><br><span class="line">strlcpy(v101, dword_429734, 10000);</span><br><span class="line">  v0 = strrchr(v101, 47);</span><br><span class="line">  <span class="keyword">if</span> ( v0 )</span><br><span class="line">    *v0 = 0;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    strlcpy(v101, <span class="string">"."</span>, 10000);</span><br><span class="line">  <span class="keyword">if</span> ( is_usb_session )</span><br><span class="line">  &#123;</span><br><span class="line">    usb_auth_check(v101);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> ( login_or_not )</span><br><span class="line">  &#123;</span><br><span class="line">    maybe_login(v101);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  判断了 login_or_not 变量，如果不等于 0 就执行 login，同上，当构造满足特定要求的请求时，login_or_not 会被设置成 0，也能绕过这个逻辑。</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>参考：<a href="https://wzt.ac.cn/2021/01/13/AC2400_vuln/" target="_blank" rel="noopener">https://wzt.ac.cn/2021/01/13/AC2400_vuln/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/" title="NetGear-AC2400认证绕过漏洞分析">http://21guns.top/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/认证绕过/" rel="tag"># 认证绕过</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/19/reverse/ida-ghidra使用记录/" rel="prev" title="ida-ghidra使用记录">
+      <i class="fa fa-chevron-left"></i> ida-ghidra使用记录
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/26/iot/某嵌入式设备固件分析/" rel="next" title="某嵌入式设备固件分析">
+      某嵌入式设备固件分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#NetGear-AC2400认证绕过漏洞分析"><span class="nav-number">1.</span> <span class="nav-text">NetGear-AC2400认证绕过漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00-pre"><span class="nav-number">1.1.</span> <span class="nav-text">00-pre</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-定位"><span class="nav-number">1.2.</span> <span class="nav-text">01-定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-修复点"><span class="nav-number">1.3.</span> <span class="nav-text">02-修复点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-关键函数"><span class="nav-number">1.4.</span> <span class="nav-text">03-关键函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-auth-check"><span class="nav-number">1.4.1.</span> <span class="nav-text">1-auth_check</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-handle-request"><span class="nav-number">1.4.2.</span> <span class="nav-text">2-handle_request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-do-file"><span class="nav-number">1.4.3.</span> <span class="nav-text">3-do_file</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-认证绕过"><span class="nav-number">1.5.</span> <span class="nav-text">04-认证绕过</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#05-其他"><span class="nav-number">1.6.</span> <span class="nav-text">05-其他</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

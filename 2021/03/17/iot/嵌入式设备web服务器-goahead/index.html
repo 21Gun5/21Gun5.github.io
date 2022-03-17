@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] version 2.1.8initWebs linux/web.c  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081static">
+<meta name="keywords" content="IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="嵌入式设备web服务器-goahead">
+<meta property="og:url" content="http://21guns.top/2021/03/17/iot/嵌入式设备web服务器-goahead/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] version 2.1.8initWebs linux/web.c  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081static">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:04:28.340Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="嵌入式设备web服务器-goahead">
+<meta name="twitter:description" content="[toc] version 2.1.8initWebs linux/web.c  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081static">
+
+<link rel="canonical" href="http://21guns.top/2021/03/17/iot/嵌入式设备web服务器-goahead/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>嵌入式设备web服务器-goahead | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/03/17/iot/嵌入式设备web服务器-goahead/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          嵌入式设备web服务器-goahead
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-17 14:41:13" itemprop="dateCreated datePublished" datetime="2021-03-17T14:41:13+08:00">2021-03-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:04:28" itemprop="dateModified" datetime="2022-02-21T16:04:28+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="version-2-1-8"><a href="#version-2-1-8" class="headerlink" title="version 2.1.8"></a>version 2.1.8</h1><h2 id="initWebs"><a href="#initWebs" class="headerlink" title="initWebs"></a>initWebs</h2><blockquote>
+<p>linux/web.c</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">initWebs</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">hostent</span>	*<span class="title">hp</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">in_addr</span>	<span class="title">intaddr</span>;</span></span><br><span class="line">	<span class="keyword">char</span>			host[<span class="number">128</span>], dir[<span class="number">128</span>], webdir[<span class="number">128</span>];</span><br><span class="line">	<span class="keyword">char</span>			*cp;</span><br><span class="line">	<span class="keyword">char_t</span>			wbuf[<span class="number">128</span>];<span class="comment">//辅助作用的缓冲区</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 初始化socket子系统</span></span><br><span class="line">	<span class="comment">// 对 socketList、socketMax、socketHighestFd赋值</span></span><br><span class="line">	socketOpen();</span><br><span class="line"></span><br><span class="line">	<span class="comment">////Initialize the User Management database</span></span><br><span class="line">	<span class="meta">#<span class="meta-keyword">ifdef</span> USER_MANAGEMENT_SUPPORT</span></span><br><span class="line">		umOpen();</span><br><span class="line">		umRestore(T(<span class="string">"umconfig.txt"</span>));</span><br><span class="line">	    <span class="built_in">printf</span>(<span class="string">"open um!\n"</span>);   <span class="comment">//for debug by xie</span></span><br><span class="line">	<span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 *	Define the local Ip address, host name, default home page and the</span></span><br><span class="line"><span class="comment">	 *	root web directory.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (gethostname(host, <span class="keyword">sizeof</span>(host)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		error(E_L, E_LOG, T(<span class="string">"Can't get hostname"</span>));</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Debug the hosts is: %s\n"</span>, host);   <span class="comment">//for debug by xie</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> ((hp = gethostbyname(host)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can't get host address\n"</span>);   <span class="comment">//for debug by xie</span></span><br><span class="line">		error(E_L, E_LOG, T(<span class="string">"Can't get host address"</span>));</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">memcpy</span>((<span class="keyword">char</span> *) &amp;intaddr, (<span class="keyword">char</span> *) hp-&gt;h_addr_list[<span class="number">0</span>],</span><br><span class="line">		(<span class="keyword">size_t</span>) hp-&gt;h_length);</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">	<span class="comment">// 配置web服务器选项</span></span><br><span class="line">	<span class="built_in">sprintf</span>(webdir, <span class="string">"%s"</span>, rootWeb);    <span class="comment">//add by xie 2007-11-19</span></span><br><span class="line">	websSetDefaultDir(webdir);<span class="comment">// 设置web目录</span></span><br><span class="line">	cp = inet_ntoa(intaddr);</span><br><span class="line">	ascToUni(wbuf, cp, min(<span class="built_in">strlen</span>(cp) + <span class="number">1</span>, <span class="keyword">sizeof</span>(wbuf)));<span class="comment">// 编码转换，调用memcpy</span></span><br><span class="line">	websSetIpaddr(wbuf);<span class="comment">// 设置服务器IP，调用strcpy对websIpaddr赋值</span></span><br><span class="line">	ascToUni(wbuf, host, min(<span class="built_in">strlen</span>(host) + <span class="number">1</span>, <span class="keyword">sizeof</span>(wbuf)));<span class="comment">// 设置xxx之前，一般要先编码转换</span></span><br><span class="line">	websSetHost(wbuf);<span class="comment">// 设置主机名，调用strcpy对websHost赋值</span></span><br><span class="line">	websSetDefaultPage(T(<span class="string">"home.asp"</span>));<span class="comment">// 设置默认主页</span></span><br><span class="line">	websSetPassword(password);<span class="comment">//设置密码，调用strcpy对websPassword赋值</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 在指定端口开启web服务，若port关闭，则按顺序往下试，直到retries次</span></span><br><span class="line">	websOpenServer(port, retries);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 指定uri的处理函数，函数是按顺序调用的</span></span><br><span class="line">	<span class="comment">// First create the URL handlers. Note: handlers are called in sorted order</span></span><br><span class="line">	<span class="comment">// with the longest path handler examined first. Here we define the securityhandler, forms handler and the default web page handler.</span></span><br><span class="line">	websUrlHandlerDefine(T(<span class="string">""</span>), <span class="literal">NULL</span>, <span class="number">0</span>, websSecurityHandler,WEBS_HANDLER_FIRST);<span class="comment">// first最先调用</span></span><br><span class="line">	websUrlHandlerDefine(T(<span class="string">"/goform"</span>), <span class="literal">NULL</span>, <span class="number">0</span>, websFormHandler, <span class="number">0</span>);</span><br><span class="line">	websUrlHandlerDefine(T(<span class="string">"/cgi-bin"</span>), <span class="literal">NULL</span>, <span class="number">0</span>, websCgiHandler, <span class="number">0</span>);</span><br><span class="line">	websUrlHandlerDefine(T(<span class="string">""</span>), <span class="literal">NULL</span>, <span class="number">0</span>, websDefaultHandler,WEBS_HANDLER_LAST);<span class="comment">// last最后调用</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//Now define two test procedures. Replace these with your application</span></span><br><span class="line">	<span class="comment">//relevant ASP script procedures and form functions.</span></span><br><span class="line">	websAspDefine(T(<span class="string">"aspTest"</span>), aspTest);</span><br><span class="line">	websFormDefine(T(<span class="string">"formTest"</span>), formTest);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">//Create the Form handlers for the User Management pages</span></span><br><span class="line">	<span class="comment">// /goform/xxx形式uri的函数处理，多次调用websAspDefine(T("yyy"), xxx);</span></span><br><span class="line">	<span class="comment">// 基于asp和form的两种：websAspDefine和websFormDefine、asp简单form稍复杂</span></span><br><span class="line">	<span class="comment">// 用户基于此goahead框架，可自行添加的用户界面</span></span><br><span class="line">	<span class="meta">#<span class="meta-keyword">ifdef</span> USER_MANAGEMENT_SUPPORT</span></span><br><span class="line">		formDefineUserMgmt();</span><br><span class="line">	<span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 默认路径的处理函数</span></span><br><span class="line">	websUrlHandlerDefine(T(<span class="string">"/"</span>), <span class="literal">NULL</span>, <span class="number">0</span>, websHomePageHandler, <span class="number">0</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="websSecurityHandler"><a href="#websSecurityHandler" class="headerlink" title="websSecurityHandler"></a>websSecurityHandler</h2><blockquote>
+<p>security.c</p>
+</blockquote>
+<h2 id="websRec（结构体"><a href="#websRec（结构体" class="headerlink" title="websRec（结构体"></a>websRec（结构体</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">websRec</span> &#123;</span></span><br><span class="line">	<span class="keyword">ringq_t</span>			header;				<span class="comment">/* Header dynamic string */</span></span><br><span class="line">	<span class="keyword">time_t</span>			since;				<span class="comment">/* Parsed if-modified-since time */</span></span><br><span class="line">	<span class="keyword">sym_fd_t</span>		cgiVars;			<span class="comment">/* CGI standard variables */</span></span><br><span class="line">	<span class="keyword">sym_fd_t</span>		cgiQuery;			<span class="comment">/* CGI decoded query string */</span></span><br><span class="line">	<span class="keyword">time_t</span>			timestamp;			<span class="comment">/* Last transaction with browser */</span></span><br><span class="line">	<span class="keyword">int</span>				timeout;			<span class="comment">/* Timeout handle */</span></span><br><span class="line">	<span class="keyword">char_t</span>			ipaddr[<span class="number">32</span>];			<span class="comment">/* Connecting ipaddress */</span></span><br><span class="line">	<span class="keyword">char_t</span>			type[<span class="number">64</span>];			<span class="comment">/* Mime type */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*dir;				<span class="comment">/* Directory containing the page */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*path;				<span class="comment">/* Path name without query */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*url;				<span class="comment">/* Full request url */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*host;				<span class="comment">/* Requested host */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*lpath;				<span class="comment">/* Cache local path name */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*query;				<span class="comment">/* Request query */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*decodedQuery;		<span class="comment">/* Decoded request query */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*authType;			<span class="comment">/* Authorization type (Basic/DAA) */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*password;			<span class="comment">/* Authorization password */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*userName;			<span class="comment">/* Authorization username */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*cookie;			<span class="comment">/* Cookie string */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*userAgent;			<span class="comment">/* User agent (browser) */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*protocol;			<span class="comment">/* Protocol (normally HTTP) */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*protoVersion;		<span class="comment">/* Protocol version */</span></span><br><span class="line">	<span class="keyword">int</span>				sid;				<span class="comment">/* Socket id (handler) */</span></span><br><span class="line">	<span class="keyword">int</span>				listenSid;			<span class="comment">/* Listen Socket id */</span></span><br><span class="line">	<span class="keyword">int</span>				port;				<span class="comment">/* Request port number */</span></span><br><span class="line">	<span class="keyword">int</span>				state;				<span class="comment">/* Current state */</span></span><br><span class="line">	<span class="keyword">int</span>				flags;				<span class="comment">/* Current flags -- see above */</span></span><br><span class="line">	<span class="keyword">int</span>				code;				<span class="comment">/* Request result code */</span></span><br><span class="line">	<span class="keyword">int</span>				clen;				<span class="comment">/* Content length */</span></span><br><span class="line">	<span class="keyword">int</span>				wid;				<span class="comment">/* Index into webs */</span></span><br><span class="line">	<span class="keyword">char_t</span>			*cgiStdin;			<span class="comment">/* filename for CGI stdin */</span></span><br><span class="line">	<span class="keyword">int</span>				docfd;				<span class="comment">/* Document file descriptor */</span></span><br><span class="line">	<span class="keyword">int</span>				numbytes;			<span class="comment">/* Bytes to transfer to browser */</span></span><br><span class="line">	<span class="keyword">int</span>				written;			<span class="comment">/* Bytes actually transferred */</span></span><br><span class="line">	<span class="keyword">void</span>			(*writeSocket)(struct websRec *wp);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DIGEST_ACCESS_SUPPORT</span></span><br><span class="line">    <span class="keyword">char_t</span>			*realm;		<span class="comment">/* usually the same as "host" from websRec */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*nonce;		<span class="comment">/* opaque-to-client string sent by server */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*digest;	<span class="comment">/* digest form of user password */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*uri;		<span class="comment">/* URI found in DAA header */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*opaque;	<span class="comment">/* opaque value passed from server */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*nc;		<span class="comment">/* nonce count */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*cnonce;	<span class="comment">/* check nonce */</span></span><br><span class="line">    <span class="keyword">char_t</span>			*qop;		<span class="comment">/* quality operator */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> WEBS_SSL_SUPPORT</span></span><br><span class="line">	websSSL_t		*wsp;		<span class="comment">/* SSL data structure */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125; websRec;</span><br><span class="line"><span class="keyword">typedef</span> websRec	*<span class="keyword">webs_t</span>;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/03/17/iot/嵌入式设备web服务器-goahead/" title="嵌入式设备web服务器-goahead">http://21guns.top/2021/03/17/iot/嵌入式设备web服务器-goahead/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/15/iot/小豚摄像头的安全分析/" rel="prev" title="小豚摄像头的安全分析">
+      <i class="fa fa-chevron-left"></i> 小豚摄像头的安全分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/18/iot/嵌入式设备web服务器-boa/" rel="next" title="嵌入式设备web服务器-boa">
+      嵌入式设备web服务器-boa <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#version-2-1-8"><span class="nav-number">1.</span> <span class="nav-text">version 2.1.8</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#initWebs"><span class="nav-number">1.1.</span> <span class="nav-text">initWebs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#websSecurityHandler"><span class="nav-number">1.2.</span> <span class="nav-text">websSecurityHandler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#websRec（结构体"><span class="nav-number">1.3.</span> <span class="nav-text">websRec（结构体</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

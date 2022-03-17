@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] uboot-getshell 任意键进入uboot，修改环境变量  123456789101112131415161718192021222324252627282930313233lxl@MBP  ~  minicom -c onU-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)DRAM:  64 MiB8 MiBCreate">
+<meta name="keywords" content="IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="uboot getshell">
+<meta property="og:url" content="http://21guns.top/2021/09/23/iot/利用uboot getshell/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] uboot-getshell 任意键进入uboot，修改环境变量  123456789101112131415161718192021222324252627282930313233lxl@MBP  ~  minicom -c onU-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)DRAM:  64 MiB8 MiBCreate">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-17T09:41:29.277Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="uboot getshell">
+<meta name="twitter:description" content="[toc] uboot-getshell 任意键进入uboot，修改环境变量  123456789101112131415161718192021222324252627282930313233lxl@MBP  ~  minicom -c onU-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)DRAM:  64 MiB8 MiBCreate">
+
+<link rel="canonical" href="http://21guns.top/2021/09/23/iot/利用uboot getshell/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>uboot getshell | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/09/23/iot/利用uboot getshell/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          uboot getshell
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-23 14:41:33" itemprop="dateCreated datePublished" datetime="2021-09-23T14:41:33+08:00">2021-09-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-17 17:41:29" itemprop="dateModified" datetime="2022-02-17T17:41:29+08:00">2022-02-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h2 id="uboot-getshell"><a href="#uboot-getshell" class="headerlink" title="uboot-getshell"></a>uboot-getshell</h2><ul>
+<li>任意键进入uboot，修改环境变量</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">lxl@MBP  ~  minicom -c on</span><br><span class="line">U-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)</span><br><span class="line"></span><br><span class="line">DRAM:  64 MiB</span><br><span class="line">8 MiB</span><br><span class="line">Create flash partition table init OK!</span><br><span class="line">ANYKA SDHC/MMC4.0: 0</span><br><span class="line">Load Env CRC OK!</span><br><span class="line">In:    serial</span><br><span class="line">Out:   serial</span><br><span class="line">Err:   serial</span><br><span class="line">Net:   AKEthernet-0</span><br><span class="line"></span><br><span class="line">Hit any key to stop autoboot:  3</span><br><span class="line"> 0</span><br><span class="line"></span><br><span class="line">anyka$</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改环境变量并保存</span></span><br><span class="line"><span class="comment"># bootargs的init=/bin/sh</span></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$setenv</span> bootargs console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$saveenv</span></span><br><span class="line"></span><br><span class="line">Saving Environment to SPI Flash...</span><br><span class="line">Env save <span class="keyword">done</span> OK</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br></pre></td></tr></table></figure>
+<ul>
+<li>重启，uboot后进入sh，修改自启程序，实现常驻</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0 mtdblock8对应/mnt/mtd，jffs2文件系统（自启程序nvipcstart.sh位于此）</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">tmpfs on /tmp <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">tmpfs on /var <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">devpts on /dev/pts <span class="built_in">type</span> devpts (rw,relatime,mode=600,ptmxmode=000)</span><br><span class="line">tmpfs on /mnt/mtd <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">sysfs on /sys <span class="built_in">type</span> sysfs (rw,relatime)</span><br><span class="line">/dev/mtdblock5 on /usr <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock6 on /mvs <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock7 on /ext <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock8 on /mnt/mtd <span class="built_in">type</span> jffs2 (rw,relatime)</span><br><span class="line">/dev/loop0 on /tmp/ramdisk <span class="built_in">type</span> vfat (rw,relatime,fmask=0022,dmask=0022,codepage=cp437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 1 进入sh</span></span><br><span class="line">/bin/sh: c��ɹ���off</span><br><span class="line">~ <span class="comment"># ls</span></span><br><span class="line">bin   dev   etc   ext   init  lib   mnt   mvs   proc  sbin  sys   tmp   usr   var</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 mount命令需挂载proc（本身挂载proc就需要mount，不矛盾？）</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">mount: no /proc/mounts</span><br><span class="line">~ <span class="comment"># mount -t proc /proc</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 挂载mtdblock8</span></span><br><span class="line">~ <span class="comment"># cd mnt/mtd</span></span><br><span class="line">/mnt/mtd <span class="comment"># ls</span></span><br><span class="line">/mnt/mtd <span class="comment"># mount -t jffs2 /dev/mtdblock8 /mnt/mtd</span></span><br><span class="line">/mnt/mtd <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">/dev/mtdblock8 on /mnt/mtd <span class="built_in">type</span> jffs2 (rw,relatime)</span><br><span class="line"></span><br><span class="line">/mnt/mtd <span class="comment"># cd ..</span></span><br><span class="line">/mnt <span class="comment"># cd mtd/</span></span><br><span class="line">/mnt/mtd <span class="comment"># ls</span></span><br><span class="line">DDNSClient.ini          inet.conf               prerun</span><br><span class="line">ResetBind.ini           ipsourceserver.ini      recorde.ini</span><br><span class="line">as9ipcwatchdog          isp_mis2006.conf        recorder</span><br><span class="line">as9nvserver             mqtest_stop             resolv.conf</span><br><span class="line">as9updatednsip          mtd_remount.sh          stopallapp.sh</span><br><span class="line">asnvdvrclientdemo       mv_clog_cache.data      styleId</span><br><span class="line">audiofile_player        mvconf                  user_info.ini</span><br><span class="line">authority.ini           mvsound                 venc.cfg</span><br><span class="line">dns_last_serverips.ini  network_Info.ini        vg_boot.sh</span><br><span class="line">h265_1920x1080.cfg      nvconfig.ini            vsipbroadcast</span><br><span class="line">idcheck.sh              nvipcstart.sh           wificonf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 修改系统自启程序，实现常驻</span></span><br><span class="line">/mnt/mtd <span class="comment"># cat nvipcstart.sh</span></span><br><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">hostname V380E</span><br><span class="line">/sbin/telnetd -p 2323 -l /bin/sh &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 umount（是否必要？）</span></span><br><span class="line"><span class="comment"># 实测reboot不行</span></span><br><span class="line">/mnt <span class="comment"># umount /mnt/mtd</span></span><br><span class="line">/mnt <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">/mnt <span class="comment"># reboot</span></span><br><span class="line">/mnt <span class="comment"># ls</span></span><br><span class="line">mtd     nand    sdcard</span><br></pre></td></tr></table></figure>
+<ul>
+<li>telnet连接</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 再次进入uboot，将bootargs复原</span></span><br><span class="line">U-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)</span><br><span class="line">Hit any key to stop autoboot:  3</span><br><span class="line"> 0</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$setenv</span> bootargs console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line">anyka<span class="variable">$saveenv</span></span><br><span class="line"></span><br><span class="line">Saving Environment to SPI Flash...</span><br><span class="line">Env save <span class="keyword">done</span> OK</span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 实测reset无效</span></span><br><span class="line">anyka<span class="variable">$reset</span></span><br><span class="line">           resetting ...</span><br><span class="line">heartbeat = 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 再次启动，uboot可正常引导系统</span></span><br><span class="line"><span class="comment"># telnet连接</span></span><br><span class="line">lxl@192  ~  telnet 192.168.0.106 2323</span><br><span class="line">Trying 192.168.0.106...</span><br><span class="line">Connected to 192.168.0.106.</span><br><span class="line">Escape character is <span class="string">'^]'</span>.</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/09/23/iot/利用uboot getshell/" title="uboot getshell">http://21guns.top/2021/09/23/iot/利用uboot getshell/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/21/iot/Netgear固件中的多个漏洞/" rel="prev" title="Netgear固件中的多个漏洞">
+      <i class="fa fa-chevron-left"></i> Netgear固件中的多个漏洞
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/10/02/iot/IOT安全-文章学习笔记-3/" rel="next" title="IOT安全-文章学习笔记-3">
+      IOT安全-文章学习笔记-3 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#uboot-getshell"><span class="nav-number">1.</span> <span class="nav-text">uboot-getshell</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

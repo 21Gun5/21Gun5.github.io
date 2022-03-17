@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] ZyXEL-NSA310固件分析00-pre 固件：https://drivers.softpedia.com/get/FIRMWARE/Zyxel/ZyXEL-NSA310-Media-Server-Firmware-470AFK1C0.shtml binwalk  1234567891011121314151617181920212223242526# binwalk也会产生误报，">
+<meta name="keywords" content="IOT安全,固件分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZyXEL-NSA310固件分析">
+<meta property="og:url" content="http://21guns.top/2021/05/23/iot/ZyXEL-NSA310固件分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] ZyXEL-NSA310固件分析00-pre 固件：https://drivers.softpedia.com/get/FIRMWARE/Zyxel/ZyXEL-NSA310-Media-Server-Firmware-470AFK1C0.shtml binwalk  1234567891011121314151617181920212223242526# binwalk也会产生误报，">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-64954.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-064953.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-064957.jpg">
+<meta property="og:updated_time" content="2022-03-04T06:50:02.080Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ZyXEL-NSA310固件分析">
+<meta name="twitter:description" content="[toc] ZyXEL-NSA310固件分析00-pre 固件：https://drivers.softpedia.com/get/FIRMWARE/Zyxel/ZyXEL-NSA310-Media-Server-Firmware-470AFK1C0.shtml binwalk  1234567891011121314151617181920212223242526# binwalk也会产生误报，">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-64954.jpg">
+
+<link rel="canonical" href="http://21guns.top/2021/05/23/iot/ZyXEL-NSA310固件分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ZyXEL-NSA310固件分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/05/23/iot/ZyXEL-NSA310固件分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZyXEL-NSA310固件分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-23 14:41:33" itemprop="dateCreated datePublished" datetime="2021-05-23T14:41:33+08:00">2021-05-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-04 14:50:02" itemprop="dateModified" datetime="2022-03-04T14:50:02+08:00">2022-03-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="ZyXEL-NSA310固件分析"><a href="#ZyXEL-NSA310固件分析" class="headerlink" title="ZyXEL-NSA310固件分析"></a>ZyXEL-NSA310固件分析</h1><h2 id="00-pre"><a href="#00-pre" class="headerlink" title="00-pre"></a>00-pre</h2><ul>
+<li>固件：<a href="https://drivers.softpedia.com/get/FIRMWARE/Zyxel/ZyXEL-NSA310-Media-Server-Firmware-470AFK1C0.shtml" target="_blank" rel="noopener">https://drivers.softpedia.com/get/FIRMWARE/Zyxel/ZyXEL-NSA310-Media-Server-Firmware-470AFK1C0.shtml</a></li>
+<li>binwalk</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># binwalk也会产生误报，但有两个地方大致正确：0x13D、0x56EE45（怎么判断的？推测/验证中可见，这是两个文件的开头</span></span><br><span class="line"><span class="comment"># 0x3435貌似是uimage的一部分（怎么判断？推测/验证中可见</span></span><br><span class="line"><span class="comment"># uImage从0x13D开始，那么前面可能是相关头信息（一般固件都是从0开始</span></span><br><span class="line"></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ binwalk 470AFK1C0.bin </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">317           0x13D           uImage header, header size: 64 bytes, header CRC: 0xB430E9EB, created: 2014-04-15 01:34:59, image size: 5696712 bytes, Data Address: 0x8000, Entry Point: 0x8000, data CRC: 0xD0375CFE, OS: Linux, CPU: ARM, image <span class="built_in">type</span>: OS Kernel Image, compression <span class="built_in">type</span>: none, image name: <span class="string">"Linux-2.6.31.8"</span></span><br><span class="line">13365         0x3435          gzip compressed data, maximum compression, from Unix, last modified: 2014-04-15 01:34:58</span><br><span class="line">5697093       0x56EE45        gzip compressed data, maximum compression, from Unix, last modified: 2014-04-15 01:35:13</span><br><span class="line">8105054       0x7BAC5E        MySQL ISAM index file Version 8</span><br><span class="line">47240237      0x2D0D42D       Executable script, shebang: <span class="string">"/bin/sh"</span></span><br><span class="line">47240446      0x2D0D4FE       Unix path: /zyxel/mnt/info/revision`<span class="string">"</span></span><br><span class="line"><span class="string">47240830      0x2D0D67E       Unix path: /usr/local/zy-pkgs/tmp list | egrep "</span>(pkgName:)|(status:)<span class="string">" &gt; <span class="variable">$&#123;INSTALLED_PKGS&#125;</span></span></span><br><span class="line"><span class="string">47242007      0x2D0DB17       Unix path: /usr/local/zy-pkgs/tmp -recursive remove <span class="variable">$&#123;pkgsInstalled&#125;</span></span></span><br><span class="line"><span class="string">47242203      0x2D0DBDB       Unix path: /i-data/md0/admin/zy-pkgs/ZYPKGS</span></span><br><span class="line"><span class="string">47242240      0x2D0DC00       Unix path: /i-data/md0/admin/zy-pkgs/*.zpkg</span></span><br><span class="line"><span class="string">47242350      0x2D0DC6E       Unix path: /usr/local/zy-pkgs/tmp list | egrep "</span>(pkgName:)|(status:)<span class="string">"</span></span><br><span class="line"><span class="string">47242548      0x2D0DD34       Executable script, shebang: "</span>/bin/sh<span class="string">"</span></span><br><span class="line"><span class="string">47242612      0x2D0DD74       Unix path: /etc/zyxel/storage/webdisk.db ]; then</span></span><br><span class="line"><span class="string">47242665      0x2D0DDA9       Unix path: /etc/zyxel/storage/webdisk.db 'update webdisk set upload_bandwidth=250'"</span> &gt; /dev/console</span><br><span class="line">47242762      0x2D0DE0A       Unix path: /etc/zyxel/storage/webdisk.db <span class="string">'update webdisk set upload_bandwidth=250'</span></span><br><span class="line">47242843      0x2D0DE5B       Unix path: /etc/zyxel/storage/webdisk.db .d &gt; /dev/console 2&gt;&amp;1</span><br><span class="line">47243053      0x2D0DF2D       Unix path: /zyxel/mnt/info/revision`<span class="string">"</span></span><br><span class="line"><span class="string">47243132      0x2D0DF7C       Unix path: /etc/zyxel/conf/startup-config.conf"</span></span><br></pre></td></tr></table></figure>
+<h2 id="01-发现规律"><a href="#01-发现规律" class="headerlink" title="01-发现规律"></a>01-发现规律</h2><ul>
+<li>hexdump发现规律：1蓝色 + 1蓝色 +  4红色 + data绿色（data长度由4红色指定，小端</li>
+</ul>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-64954.jpg" alt="image-20210121152025381"></p>
+<ul>
+<li>不考虑4字节data，整理成表，进一步观察（未识别ascii的便0x形式，并且也小端表示）</li>
+</ul>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-064953.jpg" alt="image-20210121152941918"></p>
+<h2 id="02-推测-验证"><a href="#02-推测-验证" class="headerlink" title="02-推测/验证"></a>02-推测/验证</h2><ul>
+<li>0002、0102、0402处，其值类似hash值</li>
+<li>xx10、xxA0以及ffff共9处，其值类似文件中地址/偏移</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0010处，其值为0x10d，这个规律从0x30开始的，故加上之前的0x30，0x10d+0x30=0x13d，正是binwalk中uimage的开始，确实是文件中偏移，故一共有9个文件偏移</span></span><br><span class="line">317           0x13D           uImage header, header size: 64 bytes,</span><br><span class="line"></span><br><span class="line"><span class="comment"># 9个文件偏移中，除前1后2，中间6个，两两一组，共3组，都是+1的关系，推测：前者是旧的结束、后者是新的开始，正好差1</span></span><br><span class="line"><span class="comment"># 0010处的0x10d+0x30=0x13d是uimage的开始，0110处的56ee14是uimage的结束，而56ee15新的开始</span></span><br><span class="line"><span class="comment"># 所以：9个文件偏移中，前8个组成了4个文件（第9同第8一致，且是ffff，应该是一个结束的标记，无他用）</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>加上最开始的0x30偏移，共组成10部分：头部信息、上面的规律字典、4文件的开始及结束</li>
+</ul>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2022-03-04-064957.jpg" alt="image-20210121160408202"></p>
+<ul>
+<li>验证hash与文件偏移的对应</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 如上，0x13d-0x56ee44 是第一个文件（也就解释了binwalk中“0x3435貌似是uimage的一部分”的说法</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># dd提取第一个文件</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ dd <span class="keyword">if</span>=470AFK1C0.bin skip=317 count=5696776 bs=1 of=uimage.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取md5的hash值，正好是0002处的hash</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ md5sum uimage.bin </span><br><span class="line">41eacd652ed51989d9f413956293583d  uimage.bin</span><br></pre></td></tr></table></figure>
+<ul>
+<li>共4个文件，而hash值只有3个，为什么数量没对应上？</li>
+</ul>
+<h2 id="03-文件1-uImage"><a href="#03-文件1-uImage" class="headerlink" title="03-文件1-uImage"></a>03-文件1-uImage</h2><h3 id="1-获取uImage"><a href="#1-获取uImage" class="headerlink" title="1-获取uImage"></a>1-获取uImage</h3><ul>
+<li><p>dd提取：dd if=470AFK1C0.bin skip=317 count=5696776 bs=1 of=uimage.bin</p>
+</li>
+<li><p>uImage文件是一个启动镜像（boot image），其内包含内核及RAM（Linux kernel and a RAM disk）</p>
+</li>
+</ul>
+<h3 id="2-获取zImage"><a href="#2-获取zImage" class="headerlink" title="2-获取zImage"></a>2-获取zImage</h3><ul>
+<li>有现成工具extract_uImage.sh，可用于提取（随便Google即可<a href="https://gist.github.com/adamvr/1079762" target="_blank" rel="noopener">https://gist.github.com/adamvr/1079762</a></li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ chmod +x extract_uimage.sh </span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ ./extract_uimage.sh uimage.bin </span><br><span class="line">Checking <span class="keyword">for</span> uImage magic word...</span><br><span class="line">4 bytes copied, 0.00199709 s, 2.0 kB/s</span><br><span class="line">uImage recognized.</span><br><span class="line"></span><br><span class="line">Extracting data...</span><br><span class="line">5696712 bytes (5.7 MB, 5.4 MiB) copied, 0.140504 s, 40.5 MB/s</span><br><span class="line"></span><br><span class="line">Checking <span class="keyword">for</span> ARM mach-type...</span><br><span class="line">3 bytes copied, 0.000224081 s, 13.4 kB/s</span><br><span class="line"></span><br><span class="line">Checking <span class="keyword">for</span> zImage...</span><br><span class="line">4 bytes copied, 0.000866957 s, 4.6 kB/s</span><br><span class="line">4 bytes copied, 0.00021174 s, 18.9 kB/s</span><br><span class="line">4 bytes copied, 0.000206447 s, 19.4 kB/s</span><br><span class="line">zImage recognized with start 0x00000000, end 0x0056ECC8 and size 5696712.</span><br><span class="line">&gt;&gt;&gt; uimage.bin extracted to zImage</span><br><span class="line"><span class="comment"># 得到zImage</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ ls</span><br><span class="line">470AFK1C0.bin  extract_uimage.sh  uimage.bin  zImage</span><br></pre></td></tr></table></figure>
+<ul>
+<li>zImage用来启动Linux，其包含了Linux内核和RAM disk，RAM就是设备上根目录</li>
+</ul>
+<h3 id="3-自动提取"><a href="#3-自动提取" class="headerlink" title="3-自动提取"></a>3-自动提取</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># binwalk -Me可直接解开</span></span><br><span class="line">_zImage.extracted/_32B8.extracted/_1C1E0.extracted/cpio-root$ ls</span><br><span class="line">bin  dev  e-data  etc  home  i-data  init  lib  linuxrc  mnt  proc  ram_bin  root  sbin  sys  tmp  usr  var  zyxel</span><br></pre></td></tr></table></figure>
+<h3 id="4-手动提取"><a href="#4-手动提取" class="headerlink" title="4-手动提取"></a>4-手动提取</h3><ul>
+<li>dd + gunzip得到more.bin.gz </li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 只有一个gzip压缩的数据包</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ binwalk zImage </span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">12984         0x32B8          gzip compressed data, maximum compression, from Unix, last modified: 2014-04-15 01:34:58</span><br><span class="line"><span class="comment"># dd提取，gunzip解压</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ dd <span class="keyword">if</span>=zImage of=more.bin.gz skip=12984 bs=1</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ gunzip more.bin.gz </span><br><span class="line">gzip: more.bin.gz: decompression OK, trailing garbage ignored</span><br></pre></td></tr></table></figure>
+<ul>
+<li>dd+gunzip得到initrd.bin</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 还有一个gzip包，怀疑是ram disk</span></span><br><span class="line"><span class="comment"># gzip后还有许多乱七八糟的，怀疑是binwalk误报，其后面那些很可能就是其一部分</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ binwalk more.bin </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">79173         0x13545         Certificate <span class="keyword">in</span> DER format (x509 v3), header length: 4, sequence length: 13588</span><br><span class="line">115168        0x1C1E0         gzip compressed data, maximum compression, from Unix, last modified: 2014-04-15 01:34:23</span><br><span class="line">2938524       0x2CD69C        Linux kernel version <span class="string">"2.6.31.8 (root@nasbuilder-desktop) (gcc version 4.3.2 (sdk3.3-ct-ng-1.4.1) ) #5 Tue Apr 15 09:34:41 CST 2014"</span></span><br><span class="line">3158684       0x30329C        CRC32 polynomial table, little endian</span><br><span class="line">3663117       0x37E50D        Unix path: /release_build/NSA310/470AFK1b1/linux-2.6.31.8/arch/arm/include/asm/dma-mapping.h</span><br><span class="line">...</span><br><span class="line"><span class="comment"># dd提取并gunzip解压</span></span><br><span class="line"><span class="comment"># 注意：binwalk可能有误报，115168处是gzip开始，那么其后面可能都是其一部分，故未指定count</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ dd <span class="keyword">if</span>=more.bin of=initrd.bin.gz bs=1 skip=115168</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ gunzip initrd.bin.gz </span><br><span class="line">gzip: initrd.bin.gz: decompression OK, trailing garbage ignored</span><br></pre></td></tr></table></figure>
+<ul>
+<li>cpio挂载</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#  cpio类型，并且file name: "/bin/tail"（出现了所有Linux文件系统该有的文件）</span></span><br><span class="line"><span class="comment"># 很久之前，unix时代，RAM disk是CPIO格式的一种，因此这就是ram disk</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ binwalk initrd.bin </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">0             0x0             ASCII cpio archive (SVR4 with no CRC), file name: <span class="string">"/init"</span>, file name length: <span class="string">"0x00000006"</span>, file size: <span class="string">"0x00000B4C"</span></span><br><span class="line">116           0x74            Executable script, shebang: <span class="string">"/bin/sh"</span></span><br><span class="line">2179          0x883           Unix path: /proc/sys/net/ipv4/ip_local_port_range</span><br><span class="line">2233          0x8B9           Unix path: /proc/sys/vm/min_free_kbytes</span><br><span class="line">2276          0x8E4           Unix path: /proc/sys/vm/vfs_cache_pressure</span><br><span class="line">2320          0x910           Unix path: /proc/sys/vm/dirty_background_ratio</span><br><span class="line">2368          0x940           Unix path: /proc/sys/vm/dirty_ratio</span><br><span class="line">3008          0xBC0           ASCII cpio archive (SVR4 with no CRC), file name: <span class="string">"/bin"</span>, file name length: <span class="string">"0x00000005"</span>, file size: <span class="string">"0x00000000"</span></span><br><span class="line">3124          0xC34           ASCII cpio archive (SVR4 with no CRC), file name: <span class="string">"/bin/tail"</span>, file name length: <span class="string">"0x0000000A"</span>, file size: <span class="string">"0x00000008"</span></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment"># cpio挂载ram disk，ls发现确实是Linux系统（同binwalk -Me一致）</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ mkdir ram_disk &amp;&amp; <span class="built_in">cd</span> ram_disk/</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15/ram_disk$ sudo cpio -i --no-absolute-filenames &lt;../initrd.bin </span><br><span class="line">cpio: Removing leading `/<span class="string">' from member names</span></span><br><span class="line"><span class="string">cpio: init not created: newer or same age version exists</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">13448 blocks</span></span><br><span class="line"><span class="string">lxl@ubuntu:~/Desktop/tmp/15/ram_disk$ ls</span></span><br><span class="line"><span class="string">bin  dev  e-data  etc  home  i-data  init  lib  linuxrc  mnt  proc  ram_bin  root  sbin  sys  tmp  usr  var  zyxel</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>完整流程<ul>
+<li>firmware.bin</li>
+<li>（dd）uImage.bin：启动镜像（boot image），其内包含内核及RAM（Linux kernel and a RAM disk）</li>
+<li>（extract_uimage.sh脚本）zImage：用来启动Linux，其包含了Linux内核和RAM disk，RAM就是设备上根目录</li>
+<li>（dd+gunzip）more.bin</li>
+<li>（dd+gunzip）initrd.bin：cpio格式的ram disk</li>
+<li>cpio挂载</li>
+</ul>
+</li>
+</ul>
+<h2 id="04-文件2-filesystem"><a href="#04-文件2-filesystem" class="headerlink" title="04-文件2-filesystem"></a>04-文件2-filesystem</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># dd提取（见binwalk及文件分布图</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ dd <span class="keyword">if</span>=470AFK1C0.bin of=2.bin skip=5697093 bs=1 count=41543144</span><br><span class="line">41543144+0 records <span class="keyword">in</span></span><br><span class="line">41543144+0 records out</span><br><span class="line">41543144 bytes (42 MB, 40 MiB) copied, 99.2337 s, 419 kB/s</span><br><span class="line"></span><br><span class="line"><span class="comment"># gzip包，故改后缀后解压</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ file 2.bin </span><br><span class="line">2.bin: gzip compressed data, last modified: Tue Apr 15 01:35:13 2014, max compression, from Unix</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ mv 2.bin 2.bin.gz</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ gunzip 2.bin.gz </span><br><span class="line"></span><br><span class="line"><span class="comment"># Linux 的ext2 文件系统</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ file 2.bin </span><br><span class="line">2.bin: Linux rev 1.0 ext2 filesystem data, UUID=97a57b28-89af-4bd8-9a97-aa3a3afac867</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建目录并挂载</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ mkdir filesystem</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ sudo mount 2.bin ./filesystem</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ ls filesystem/</span><br><span class="line">bin  etc  lib  lost+found  sbin  tmp  tmp.tar.gz  usr  var</span><br></pre></td></tr></table></figure>
+<h2 id="05-其他"><a href="#05-其他" class="headerlink" title="05-其他"></a>05-其他</h2><ul>
+<li>binwalk也会产生误报</li>
+<li>文件1、2中均得到了Linux文件系统，有什么区别？</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15/ram_disk$ ls</span><br><span class="line">bin  dev  e-data  etc  home  i-data  init  lib  linuxrc  mnt  proc  ram_bin  root  sbin  sys  tmp  usr  var  zyxel</span><br><span class="line"><span class="comment"># 2 </span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/15$ ls filesystem/</span><br><span class="line">bin  etc  lib  lost+found  sbin  tmp  tmp.tar.gz  usr  var</span><br></pre></td></tr></table></figure>
+<p>//here</p>
+<p><a href="https://will03.github.io/posts/CVE-2020-9054-Analysis/#附錄" target="_blank" rel="noopener">https://will03.github.io/posts/CVE-2020-9054-Analysis/#附錄</a></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 共18组</span></span><br><span class="line">id          len               data</span><br><span class="line">00 00       04 00 00 00       31 2E 30 30 </span><br><span class="line">01 00       0D 00 00 00       56 35 2E 32 31 28 41 41 53 5A 2E 33 29 </span><br><span class="line">02 00       05 00 00 00       35 31 31 37 33 </span><br><span class="line">01 01       04 00 00 00       42 32 30 33 </span><br><span class="line">00 02       20 00 00 00       39 61 65 37 37 36 34 38 62 37 66 35 61 63 30 36 34 62 33 34 61 63 38 39 65 38 31 34 65 61 31 66 </span><br><span class="line">01 02       20 00 00 00       66 62 36 64 39 30 65 63 61 62 63 36 36 66 62 36 35 31 37 63 31 62 61 65 33 63 35 32 63 65 32 63 </span><br><span class="line">02 02       04 00 00 00       35 41 32 44 </span><br><span class="line">03 02       04 00 00 00       30 30 30 30 </span><br><span class="line">04 02       20 00 00 00       32 39 63 61 38 66 61 63 38 32 34 31 34 35 64 66 38 37 63 63 30 61 34 38 62 34 36 34 62 36 32 38 </span><br><span class="line">00 10       04 00 00 00       0E 01 00 00 </span><br><span class="line">01 10       04 00 00 00       B5 63 71 00 </span><br><span class="line">04 10       04 00 00 00       B6 63 71 00 </span><br><span class="line">05 10       04 00 00 00       AB CF 93 03 </span><br><span class="line">00 A0       04 00 00 00       AC CF 93 03 </span><br><span class="line">01 A0       04 00 00 00       16 D4 93 03 </span><br><span class="line">02 A0       04 00 00 00       17 D4 93 03 </span><br><span class="line">03 A0       04 00 00 00       CC D7 93 03 </span><br><span class="line">FF FF       none              CC D7 93 03<span class="comment"># 没有len，同上个data一致，应该是结束标记</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 整理如下</span></span><br><span class="line">id= 0000	  len= 4	  data= 1.00</span><br><span class="line">id= 0100	  len= 13  	data= V5.21(AASZ.3)</span><br><span class="line">id= 0200	  len= 5	  data= 51173</span><br><span class="line">id= 0101	  len= 4	  data= B203</span><br><span class="line">id= 0002	  len= 32  	data= 9ae77648b7f5ac064b34ac89e814ea1f</span><br><span class="line">id= 0102	  len= 32  	data= fb6d90ecabc66fb6517c1bae3c52ce2c</span><br><span class="line">id= 0202	  len= 4	  data= 5A2D</span><br><span class="line">id= 0302	  len= 4	  data= 0000</span><br><span class="line">id= 0402	  len= 32  	data= 29ca8fac824145df87cc0a48b464b628</span><br><span class="line">id= 0010	  len= 4	  data= 0x10e<span class="comment"># 文件1，大小=后-此+1，偏移=此+0x30</span></span><br><span class="line">id= 0110	  len= 4	  data= 0x7163B5</span><br><span class="line">id= 0410	  len= 4	  data= 0x7163B6 <span class="comment"># 文件2</span></span><br><span class="line">id= 0510	  len= 4	  data= 0x393CFAB   </span><br><span class="line">id= 00a0	  len= 4	  data= 0x393CFAC<span class="comment"># 文件3</span></span><br><span class="line">id= 01a0	  len= 4	  data= 0x393D416</span><br><span class="line">id= 02a0	  len= 4	  data= 0x393D417<span class="comment"># 文件4</span></span><br><span class="line">id= 03a0	  len= 4	  data= 0x393D7CC</span><br><span class="line">id= FFFF    len=无     data=0x393D7CC（没有len，同上个data一致，应该是结束标记</span><br></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 共4文件，3个hash</span></span><br><span class="line"><span class="comment"># 计算偏移时，要加上前面的0x30</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取4个文件（大小=后-此+1，偏移=此+0x30</span></span><br><span class="line"><span class="comment"># skip=318 = 0x10e + 0x30</span></span><br><span class="line"><span class="comment"># count=7430824 = 0x7163B5 - 0x10e + 1</span></span><br><span class="line">dd <span class="keyword">if</span>=521AASZ3C0.bin of=f1.bin skip=318 bs=1 count=7430824</span><br><span class="line">dd <span class="keyword">if</span>=521AASZ3C0.bin of=f2.bin skip=7431142 bs=1 count=7431095</span><br><span class="line">dd <span class="keyword">if</span>=521AASZ3C0.bin of=f3.bin skip=60018652 bs=1 count=1131</span><br><span class="line">dd <span class="keyword">if</span>=521AASZ3C0.bin of=f4.bin skip=60019783 bs=1 count=950</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只有f1即uimage能与3个hash匹配上</span></span><br><span class="line"><span class="comment"># 3个hash也不是完全匹配上的，这个匹配上1个，文中匹配上2个</span></span><br><span class="line"><span class="comment"># 同文中的固件不同，但f3和f4的hash却与文中一致，这应该是不变的东西</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ md5sum f*</span><br><span class="line">9ae77648b7f5ac064b34ac89e814ea1f  f1.bin</span><br><span class="line">2754f09320c8e97a11ed2eca66e85f55  f2.bin</span><br><span class="line">df27a44b76a9fe182834c785f1713054  f3.bin</span><br><span class="line">66450075a442dadba541ab9dab57f7fd  f4.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># f1、f2较大，有用数据在f1、f2中</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ ll f*</span><br><span class="line">-rw-r--r-- 1 lxl lxl 7430824 Jan 25 16:05 f1.bin</span><br><span class="line">-rw-r--r-- 1 lxl lxl 7431095 Jan 25 16:06 f2.bin</span><br><span class="line">-rw-r--r-- 1 lxl lxl    1131 Jan 25 16:06 f3.bin</span><br><span class="line">-rw-r--r-- 1 lxl lxl     950 Jan 25 16:06 f4.bin</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ file f*</span><br><span class="line">f1.bin: u-boot legacy uImage, Linux-3.2.54, Linux/ARM, OS Kernel Image (Not compressed), 7430760 bytes, Fri Feb 21 02:36:45 2020, Load Address: 0x0F008000, Entry Point: 0x0F008000, Header CRC: 0x0CCCB906, Data CRC: 0xBA861EEC</span><br><span class="line">f2.bin: gzip compressed data, last modified: Fri Feb 21 06:43:55 2020, max compression, from Unix</span><br><span class="line">f3.bin: POSIX shell script, ASCII text executable</span><br><span class="line">f4.bin: POSIX shell script, ASCII text executable</span><br><span class="line"></span><br><span class="line"><span class="comment"># 直接binwalk -Me即可，f3/4并未得到</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 综上，f1/2文件大，有用数据一般在此，f3/4较小，但不同固件中，hash却一致，应该是某种固定的数据</span></span><br><span class="line"></span><br><span class="line">找相应固件//here</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>参考：<a href="https://www.pentestpartners.com/security-blog/using-hexdump-analysis-for-firmware-extraction-a-how-to/" target="_blank" rel="noopener">https://www.pentestpartners.com/security-blog/using-hexdump-analysis-for-firmware-extraction-a-how-to/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/05/23/iot/ZyXEL-NSA310固件分析/" title="ZyXEL-NSA310固件分析">http://21guns.top/2021/05/23/iot/ZyXEL-NSA310固件分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+              <a href="/tags/固件分析/" rel="tag"># 固件分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/23/iot/果加智能门锁的安全分析/" rel="prev" title="果加智能门锁的安全分析">
+      <i class="fa fa-chevron-left"></i> 果加智能门锁的安全分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/06/02/iot/TP-Link Archer A7漏洞分析及利用/" rel="next" title="TP-Link Archer A7漏洞分析及利用">
+      TP-Link Archer A7漏洞分析及利用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ZyXEL-NSA310固件分析"><span class="nav-number">1.</span> <span class="nav-text">ZyXEL-NSA310固件分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00-pre"><span class="nav-number">1.1.</span> <span class="nav-text">00-pre</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-发现规律"><span class="nav-number">1.2.</span> <span class="nav-text">01-发现规律</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-推测-验证"><span class="nav-number">1.3.</span> <span class="nav-text">02-推测/验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-文件1-uImage"><span class="nav-number">1.4.</span> <span class="nav-text">03-文件1-uImage</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-获取uImage"><span class="nav-number">1.4.1.</span> <span class="nav-text">1-获取uImage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-获取zImage"><span class="nav-number">1.4.2.</span> <span class="nav-text">2-获取zImage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-自动提取"><span class="nav-number">1.4.3.</span> <span class="nav-text">3-自动提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-手动提取"><span class="nav-number">1.4.4.</span> <span class="nav-text">4-手动提取</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-文件2-filesystem"><span class="nav-number">1.5.</span> <span class="nav-text">04-文件2-filesystem</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#05-其他"><span class="nav-number">1.6.</span> <span class="nav-text">05-其他</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

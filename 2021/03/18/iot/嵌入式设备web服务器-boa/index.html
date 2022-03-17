@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 0.94.14rc21http://www.boa.org/boa-0.94.14rc21.tar.gz boa.c：main12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970">
+<meta name="keywords" content="IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="嵌入式设备web服务器-boa">
+<meta property="og:url" content="http://21guns.top/2021/03/18/iot/嵌入式设备web服务器-boa/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 0.94.14rc21http://www.boa.org/boa-0.94.14rc21.tar.gz boa.c：main12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T09:49:18.490Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="嵌入式设备web服务器-boa">
+<meta name="twitter:description" content="[toc] 0.94.14rc21http://www.boa.org/boa-0.94.14rc21.tar.gz boa.c：main12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970">
+
+<link rel="canonical" href="http://21guns.top/2021/03/18/iot/嵌入式设备web服务器-boa/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>嵌入式设备web服务器-boa | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/03/18/iot/嵌入式设备web服务器-boa/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          嵌入式设备web服务器-boa
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-18 15:55:13" itemprop="dateCreated datePublished" datetime="2021-03-18T15:55:13+08:00">2021-03-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 17:49:18" itemprop="dateModified" datetime="2022-02-21T17:49:18+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="0-94-14rc21"><a href="#0-94-14rc21" class="headerlink" title="0.94.14rc21"></a>0.94.14rc21</h1><p><a href="http://www.boa.org/boa-0.94.14rc21.tar.gz" target="_blank" rel="noopener">http://www.boa.org/boa-0.94.14rc21.tar.gz</a></p>
+<h2 id="boa-c：main"><a href="#boa-c：main" class="headerlink" title="boa.c：main"></a>boa.c：main</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> server_s;               <span class="comment">/* boa socket */</span></span><br><span class="line">    <span class="keyword">pid_t</span> pid;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// umask命令指定在建立文件时预设的权限掩码。umask可用来设定[权限掩码]，类似chmod 777</span></span><br><span class="line">    <span class="comment">/* set umask to u+rw, u-x, go-rwx */</span></span><br><span class="line">    <span class="comment">/* according to the man page, umask always succeeds */</span></span><br><span class="line">    umask(<span class="number">077</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// time_t time(time_t *seconds) 返回自纪元起经过的时间，以秒为单位</span></span><br><span class="line">    <span class="comment">/* but first, update timestamp, because log_error_time uses it */</span></span><br><span class="line">    (<span class="keyword">void</span>) time(&amp;current_time);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置时区</span></span><br><span class="line">    <span class="comment">/* set timezone right away */</span></span><br><span class="line">    tzset();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 复制dev/null到标准输入文件描述符</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 先打开，获取fd</span></span><br><span class="line">        <span class="keyword">int</span> devnullfd = <span class="number">-1</span>;</span><br><span class="line">        devnullfd = open(<span class="string">"/dev/null"</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="comment">//log_error_mesg_fatal的宏，打印出错时日志信息</span></span><br><span class="line">        <span class="comment">/* make STDIN point to /dev/null */</span></span><br><span class="line">        <span class="keyword">if</span> (devnullfd == <span class="number">-1</span>) &#123;</span><br><span class="line">            DIE(<span class="string">"can't open /dev/null"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 将fd复制，之后用STDIN_FILENO即同效果</span></span><br><span class="line">        <span class="comment">// STDIN_FILENO 0   /* standard input file descriptor */</span></span><br><span class="line">        <span class="keyword">if</span> (dup2(devnullfd, STDIN_FILENO) == <span class="number">-1</span>) &#123;</span><br><span class="line">            DIE(<span class="string">"can't dup2 /dev/null to STDIN_FILENO"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 关闭原来的fd</span></span><br><span class="line">        (<span class="keyword">void</span>) close(devnullfd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    parse_commandline(argc, argv);<span class="comment">// 解析命令行参数</span></span><br><span class="line">    fixup_server_root();<span class="comment">// 确保服务器的根目录是有效的</span></span><br><span class="line">    read_config_files();<span class="comment">// 读取配置文件</span></span><br><span class="line">    create_common_env();<span class="comment">// 设置cgi相关的常用环境变量</span></span><br><span class="line">    open_logs();<span class="comment">// 日志相关</span></span><br><span class="line">    server_s = create_server_socket();<span class="comment">// 创建socket</span></span><br><span class="line">    init_signals();<span class="comment">// 设置信号的处理函数</span></span><br><span class="line">    build_needs_escape();<span class="comment">// 字符相关</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 后台运行，fork新进程</span></span><br><span class="line">    <span class="comment">/* background ourself */</span></span><br><span class="line">    <span class="keyword">if</span> (do_fork) &#123;</span><br><span class="line">        pid = fork();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        pid = getpid();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 选择父/子进程</span></span><br><span class="line">    <span class="keyword">switch</span> (pid) &#123;</span><br><span class="line">    <span class="comment">// 子进程创建失败</span></span><br><span class="line">    <span class="keyword">case</span> <span class="number">-1</span>:</span><br><span class="line">        <span class="comment">/* error */</span></span><br><span class="line">        perror(<span class="string">"fork/getpid"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    <span class="comment">// fork后子进程返回0</span></span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        <span class="comment">/* child, success */</span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="comment">// 本身的父进程</span></span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="comment">// 将进程号写入pid file</span></span><br><span class="line">        <span class="comment">/* parent, success */</span></span><br><span class="line">        <span class="keyword">if</span> (pid_file != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            FILE *PID_FILE = fopen(pid_file, <span class="string">"w"</span>);</span><br><span class="line">            <span class="keyword">if</span> (PID_FILE != <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(PID_FILE, <span class="string">"%d"</span>, pid);<span class="comment">// pid file，只有一行，记录的是相应进程的pid</span></span><br><span class="line">                fclose(PID_FILE);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                perror(<span class="string">"fopen pid file"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果创建了子进程就不用写了</span></span><br><span class="line">        <span class="keyword">if</span> (do_fork)</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 丢弃多余的权限，最小权限原则</span></span><br><span class="line">    drop_privs();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* main loop */</span></span><br><span class="line">    timestamp();<span class="comment">//记录时间、打印启动时信息</span></span><br><span class="line">    status.requests = <span class="number">0</span>;<span class="comment">// 请求数</span></span><br><span class="line">    status.errors = <span class="number">0</span>;<span class="comment">// 错误数</span></span><br><span class="line">    start_time = current_time;<span class="comment">//开始时间</span></span><br><span class="line">    loop(server_s);<span class="comment">// 开启服务器，循环监听</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="config-c：read-config-files"><a href="#config-c：read-config-files" class="headerlink" title="config.c：read_config_files"></a>config.c：read_config_files</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">read_config_files</span><span class="params">(<span class="keyword">void</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    FILE *config;</span><br><span class="line"></span><br><span class="line">    current_uid = getuid();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 指定默认的配置文件</span></span><br><span class="line">    <span class="keyword">if</span> (!config_file_name) &#123;</span><br><span class="line">        config_file_name = DEFAULT_CONFIG_FILE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 访问权限控制</span></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">ifdef</span> ACCESS_CONTROL</span></span><br><span class="line">        access_init();</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endif</span>                          <span class="comment">/* ACCESS_CONTROL */</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 读取配置文件</span></span><br><span class="line">    config = fopen(config_file_name, <span class="string">"r"</span>);</span><br><span class="line">    <span class="keyword">if</span> (!config) &#123;</span><br><span class="line">        <span class="built_in">fputs</span>(<span class="string">"Could not open boa.conf for reading.\n"</span>, <span class="built_in">stderr</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 解析配置</span></span><br><span class="line">    parse(config);</span><br><span class="line">    fclose(config);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置主机名</span></span><br><span class="line">    <span class="keyword">if</span> (!server_name) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">hostent</span> *<span class="title">he</span>;</span></span><br><span class="line">        <span class="keyword">char</span> temp_name[<span class="number">100</span>];</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回本地主机的标准主机名</span></span><br><span class="line">        <span class="keyword">if</span> (gethostname(temp_name, <span class="number">100</span>) == <span class="number">-1</span>) &#123;</span><br><span class="line">            perror(<span class="string">"gethostname:"</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 用域名或主机名获取IP地址（hostent结构体</span></span><br><span class="line">        he = gethostbyname(temp_name);</span><br><span class="line">        <span class="keyword">if</span> (he == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            perror(<span class="string">"gethostbyname:"</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 用获取到的hostent结构体来设置</span></span><br><span class="line">        server_name = strdup(he-&gt;h_name);</span><br><span class="line">        <span class="keyword">if</span> (server_name == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            perror(<span class="string">"strdup:"</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置tmp目录</span></span><br><span class="line">    tempdir = getenv(<span class="string">"TMP"</span>);</span><br><span class="line">    <span class="keyword">if</span> (tempdir == <span class="literal">NULL</span>)</span><br><span class="line">        tempdir = <span class="string">"/tmp"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// here</span></span><br><span class="line">    <span class="keyword">if</span> (single_post_limit &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Invalid value for single_post_limit: %d\n"</span>,</span><br><span class="line">                single_post_limit);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (vhost_root &amp;&amp; virtualhost) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Both VHostRoot and VirtualHost were enabled, and "</span></span><br><span class="line">                <span class="string">"they are mutually exclusive.\n"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (vhost_root &amp;&amp; document_root) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,</span><br><span class="line">                <span class="string">"Both VHostRoot and DocumentRoot were enabled, and "</span></span><br><span class="line">                <span class="string">"they are mutually exclusive.\n"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!default_vhost) &#123;</span><br><span class="line">        default_vhost = DEFAULT_VHOST;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> USE_SETRLIMIT</span></span><br><span class="line">    <span class="keyword">if</span> (cgi_rlimit_cpu &lt; <span class="number">0</span>)</span><br><span class="line">        cgi_rlimit_cpu = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cgi_rlimit_data &lt; <span class="number">0</span>)</span><br><span class="line">        cgi_rlimit_data = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cgi_nice &lt; <span class="number">0</span>)</span><br><span class="line">        cgi_nice = <span class="number">0</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (max_connections &lt; <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">rlimit</span> <span class="title">rl</span>;</span></span><br><span class="line">        <span class="keyword">int</span> c;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* has not been set explicitly */</span></span><br><span class="line">        c = getrlimit(RLIMIT_NOFILE, &amp;rl);</span><br><span class="line">        <span class="keyword">if</span> (c &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            DIE(<span class="string">"getrlimit"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        max_connections = rl.rlim_cur;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (max_connections &gt; FD_SETSIZE - <span class="number">20</span>)</span><br><span class="line">        max_connections = FD_SETSIZE - <span class="number">20</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ka_timeout &lt; <span class="number">0</span>) ka_timeout=<span class="number">0</span>;  <span class="comment">/* not worth a message */</span></span><br><span class="line">    <span class="comment">/* save some time */</span></span><br><span class="line">    default_timeout = (ka_timeout ? ka_timeout : REQUEST_TIMEOUT);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_POLL</span></span><br><span class="line">    default_timeout *= <span class="number">1000</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (default_type == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        DIE(<span class="string">"DefaultType *must* be set!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="select-c：loop"><a href="#select-c：loop" class="headerlink" title="select.c：loop"></a>select.c：loop</h2><h2 id="requests-c：process-requests"><a href="#requests-c：process-requests" class="headerlink" title="requests.c：process_requests"></a>requests.c：process_requests</h2><h2 id="read-c：read-header"><a href="#read-c：read-header" class="headerlink" title="read.c：read_header"></a>read.c：read_header</h2>
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/03/18/iot/嵌入式设备web服务器-boa/" title="嵌入式设备web服务器-boa">http://21guns.top/2021/03/18/iot/嵌入式设备web服务器-boa/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/17/iot/嵌入式设备web服务器-goahead/" rel="prev" title="嵌入式设备web服务器-goahead">
+      <i class="fa fa-chevron-left"></i> 嵌入式设备web服务器-goahead
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/30/iot/NETGEAR R7800漏洞定位及分析/" rel="next" title="NETGEAR R7800漏洞定位及分析">
+      NETGEAR R7800漏洞定位及分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0-94-14rc21"><span class="nav-number">1.</span> <span class="nav-text">0.94.14rc21</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#boa-c：main"><span class="nav-number">1.1.</span> <span class="nav-text">boa.c：main</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#config-c：read-config-files"><span class="nav-number">1.2.</span> <span class="nav-text">config.c：read_config_files</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#select-c：loop"><span class="nav-number">1.3.</span> <span class="nav-text">select.c：loop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#requests-c：process-requests"><span class="nav-number">1.4.</span> <span class="nav-text">requests.c：process_requests</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#read-c：read-header"><span class="nav-number">1.5.</span> <span class="nav-text">read.c：read_header</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

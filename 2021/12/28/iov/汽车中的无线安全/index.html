@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="汽车中的无线安全简介 嵌入式无线系统易于攻击 依赖较短的通信距离作为安全保障 没有检查数据有效性的措施   需要工具 可编程电台：可能需要两台，以便同时收发信号 软件无线电即SDR设备：重要指标为采样率、可与GNU Radio配合工作">
+<meta name="keywords" content="IOV安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="汽车中的无线安全">
+<meta property="og:url" content="http://21guns.top/2021/12/28/iov/汽车中的无线安全/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="汽车中的无线安全简介 嵌入式无线系统易于攻击 依赖较短的通信距离作为安全保障 没有检查数据有效性的措施   需要工具 可编程电台：可能需要两台，以便同时收发信号 软件无线电即SDR设备：重要指标为采样率、可与GNU Radio配合工作">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-03-05T13:04:08.358Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="汽车中的无线安全">
+<meta name="twitter:description" content="汽车中的无线安全简介 嵌入式无线系统易于攻击 依赖较短的通信距离作为安全保障 没有检查数据有效性的措施   需要工具 可编程电台：可能需要两台，以便同时收发信号 软件无线电即SDR设备：重要指标为采样率、可与GNU Radio配合工作">
+
+<link rel="canonical" href="http://21guns.top/2021/12/28/iov/汽车中的无线安全/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>汽车中的无线安全 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/12/28/iov/汽车中的无线安全/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          汽车中的无线安全
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-28 11:25:18" itemprop="dateCreated datePublished" datetime="2021-12-28T11:25:18+08:00">2021-12-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-05 21:04:08" itemprop="dateModified" datetime="2022-03-05T21:04:08+08:00">2022-03-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOV安全/" itemprop="url" rel="index"><span itemprop="name">IOV安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="汽车中的无线安全"><a href="#汽车中的无线安全" class="headerlink" title="汽车中的无线安全"></a>汽车中的无线安全</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><ul>
+<li>嵌入式无线系统易于攻击<ul>
+<li>依赖较短的通信距离作为安全保障</li>
+<li>没有检查数据有效性的措施</li>
+</ul>
+</li>
+<li>需要工具<ul>
+<li>可编程电台：可能需要两台，以便同时收发信号</li>
+<li>软件无线电即SDR设备：重要指标为采样率、可与GNU Radio配合工作<a id="more"></a></li>
+<li>GNU Radio：过滤信号、识别调制方式、帮助从无线信号得到可识别和操作的数据</li>
+</ul>
+</li>
+<li>信号调制<ul>
+<li>指无线信号中表示二进制数据的方式，区分二进制0/1</li>
+<li>为了应用正确的调制器，需识别信号所采用的调制方式</li>
+<li>常用的方式有两种：幅移键控ASK、频移键控FSK</li>
+</ul>
+</li>
+</ul>
+<h2 id="TPMS攻击"><a href="#TPMS攻击" class="headerlink" title="TPMS攻击"></a>TPMS攻击</h2><ul>
+<li><p>TPMS即胎压检测系统</p>
+<ul>
+<li>安装在轮胎内，将胎压等信息发送给ECU，再通过仪表等设备展示给司机</li>
+<li>由于TREAD法案，其被广泛应用，故成为普适的攻击目标</li>
+<li>大多数使用射频方式与ECU通信，通信频率依设备而异（本章重点）</li>
+<li>某些采用蓝牙通信，通信距离更远但支持安全通信，故难以拦截和接入</li>
+</ul>
+</li>
+<li><p>信号监听</p>
+<ul>
+<li>TPMS的低泄漏特征：其信号强度弱，故传播距离近，可增加低噪声放大器来提升嗅探范围</li>
+<li>TPMS以间隔时间发送信号，车速未达标时不发送，故对发动机未启动的车辆进行研究时，应发送唤醒信号触发其响应</li>
+<li>收到TPMS信号后，需对其解码来获得可理解的内容</li>
+</ul>
+</li>
+<li><p>TPMS数据包</p>
+<ul>
+<li>结构：包头、ID、压力及温度、标志、校验和</li>
+<li>传感器ID，可识别目标指纹，用于跟踪或触发事件</li>
+<li>若使用曼彻斯特编码，需在分析前对数据包解码</li>
+</ul>
+</li>
+<li>激活信号<ul>
+<li>信号以间隔时间发送，可用SDR向TPMS发送激活信号，手动来触发响应</li>
+<li>发送激活信号和响应之间存在延迟，故拦截响应时需注意</li>
+<li>TPMS传感器不对输入进行校验，但ECU会检查以确保识别信号ID</li>
+</ul>
+</li>
+<li>TPMS攻击举例<ul>
+<li>通过布置接收器，可对车辆进行跟踪</li>
+<li>感知到某TPMS传感器ID时，触发特定事件</li>
+<li>设置GNU radio为发送模式，向传感器洪泛激活请求，耗尽电池</li>
+</ul>
+</li>
+</ul>
+<h2 id="遥控钥匙攻击"><a href="#遥控钥匙攻击" class="headerlink" title="遥控钥匙攻击"></a>遥控钥匙攻击</h2><ul>
+<li>简介<ul>
+<li>无钥匙进入系统中广泛应用了RFID技术，而早期采用红外技术</li>
+<li>使用低频DFID，可保证遥控钥匙电池耗尽时，钥匙系统也可正常工作</li>
+<li>使用gqrx，可在遥控钥匙向车辆发送RFID信号时，识别其频率</li>
+</ul>
+</li>
+<li>遥控钥匙攻击<ul>
+<li>干扰信号：在RFID接收器通带范围内，向接收机发送垃圾数据，干扰其接收</li>
+<li>回放攻击：将请求存储后，可回放信号来开启车门</li>
+<li>前向预测攻击：观察多次质询-响应过程，可对下次质询做预测</li>
+<li>字典攻击：将多次的交换信息存储于字典中，使用收集的密钥反复请求应答器的质询，直至匹配字典中的响应</li>
+<li>硬件攻击：导出应答器存储器的内存数据，从而获得密钥</li>
+<li>CAN总线逆向：若可访问CAN总线，即可重放开启或锁定的数据包</li>
+<li>应答器复制机：从目标车辆中获取应答器信号，用其制作克隆版钥匙</li>
+</ul>
+</li>
+<li>攻击PKES<ul>
+<li>//here，未完待续</li>
+</ul>
+</li>
+</ul>
+<h2 id="防盗系统攻击"><a href="#防盗系统攻击" class="headerlink" title="防盗系统攻击"></a>防盗系统攻击</h2><blockquote>
+<p>参考：《汽车黑客大曝光》</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/12/28/iov/汽车中的无线安全/" title="汽车中的无线安全">http://21guns.top/2021/12/28/iov/汽车中的无线安全/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOV安全/" rel="tag"># IOV安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/20/iov/车间通信安全/" rel="prev" title="车间通信安全">
+      <i class="fa fa-chevron-left"></i> 车间通信安全
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/01/07/iot/如何提取D-Link解密密钥/" rel="next" title="如何提取D-Link解密密钥">
+      如何提取D-Link解密密钥 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#汽车中的无线安全"><span class="nav-number">1.</span> <span class="nav-text">汽车中的无线安全</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TPMS攻击"><span class="nav-number">1.2.</span> <span class="nav-text">TPMS攻击</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#遥控钥匙攻击"><span class="nav-number">1.3.</span> <span class="nav-text">遥控钥匙攻击</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#防盗系统攻击"><span class="nav-number">1.4.</span> <span class="nav-text">防盗系统攻击</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

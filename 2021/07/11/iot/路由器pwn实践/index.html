@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 路由器pwn实践 概要：登录后台、文件备份及恢复功能、获取固件、绕过固件校验实现重打包、开启telnet获取shell、利用mount修改文件内容、逆向程序获得关灯的指令 PS：重点都红线划出了 其它 lua当cgi后端，类似的，还有什么前后端？//here 报错如404，看信息泄漏 后台敏感功能：ping（可能命令执行）、文件备份及恢复（信息泄漏、系统修改 熵低，加密可能性低 文件校">
+<meta name="keywords" content="路由器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="路由器pwn实践">
+<meta property="og:url" content="http://21guns.top/2021/07/11/iot/路由器pwn实践/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 路由器pwn实践 概要：登录后台、文件备份及恢复功能、获取固件、绕过固件校验实现重打包、开启telnet获取shell、利用mount修改文件内容、逆向程序获得关灯的指令 PS：重点都红线划出了 其它 lua当cgi后端，类似的，还有什么前后端？//here 报错如404，看信息泄漏 后台敏感功能：ping（可能命令执行）、文件备份及恢复（信息泄漏、系统修改 熵低，加密可能性低 文件校">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:13:50.744Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="路由器pwn实践">
+<meta name="twitter:description" content="[toc] 路由器pwn实践 概要：登录后台、文件备份及恢复功能、获取固件、绕过固件校验实现重打包、开启telnet获取shell、利用mount修改文件内容、逆向程序获得关灯的指令 PS：重点都红线划出了 其它 lua当cgi后端，类似的，还有什么前后端？//here 报错如404，看信息泄漏 后台敏感功能：ping（可能命令执行）、文件备份及恢复（信息泄漏、系统修改 熵低，加密可能性低 文件校">
+
+<link rel="canonical" href="http://21guns.top/2021/07/11/iot/路由器pwn实践/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>路由器pwn实践 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/07/11/iot/路由器pwn实践/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          路由器pwn实践
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-11 14:41:33" itemprop="dateCreated datePublished" datetime="2021-07-11T14:41:33+08:00">2021-07-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:13:50" itemprop="dateModified" datetime="2022-02-21T16:13:50+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="路由器pwn实践"><a href="#路由器pwn实践" class="headerlink" title="路由器pwn实践"></a>路由器pwn实践</h1><ul>
+<li>概要：登录后台、文件备份及恢复功能、获取固件、绕过固件校验实现重打包、开启telnet获取shell、利用mount修改文件内容、逆向程序获得关灯的指令</li>
+<li>PS：重点都红线划出了</li>
+<li>其它<ul>
+<li>lua当cgi后端，类似的，还有什么前后端？//here</li>
+<li>报错如404，看信息泄漏</li>
+<li>后台敏感功能：ping（可能命令执行）、文件备份及恢复（信息泄漏、系统修改</li>
+<li>熵低，加密可能性低</li>
+<li>文件校验：大小和完整性（比如有size和crc等字段）</li>
+<li>64bit的hash，老路由器，算力不行，排除md5等算法（思路清奇）</li>
+<li>lua预编译成字节码文件（是不是类似于pyc），lua结尾，file查看为lua bytecode，一般luadec可反编译，但路由器环境特殊</li>
+</ul>
+</li>
+<li>分析bin文件布局<ul>
+<li>c8是zlib开始，binwalk和工具都提及了，主要分析header中字段</li>
+<li>size字段很容易识别，计算大小对比即可</li>
+<li>完整性字段，多次改变文件，看哪个地方变</li>
+</ul>
+</li>
+<li>敏感文件<ul>
+<li>获取文件系统后，找敏感文件，如配置</li>
+<li>文件系统内敏感文件，守护进程</li>
+<li>与某功能相关的程序，如led灯相关的ledkeytest（随手h/help猜测功能）</li>
+</ul>
+</li>
+<li>定位64bit的hash算法<ul>
+<li>大概猜一下流程：data经过zlib压缩，计算出data的crc，放入header，二者组合成最终bin文件</li>
+<li>函数流程：传入文件，打开文件，读到缓冲区，压缩数据，填充其他数据</li>
+<li>两流程神似，故断定</li>
+</ul>
+</li>
+<li>逆向scpd<ul>
+<li>逆向时，敏感字符串或函数名，config/conf/cfg等</li>
+<li>除了open、read、write和zlib的压缩函数，只有两个未命名函数</li>
+</ul>
+</li>
+<li>第一个，crc的准备工作<ul>
+<li>没有传参，故没有操作文件</li>
+<li>对.data段变量的写操作，即对一个全局变量赋值，很可能是初始化某一个表（加密或hash算法时常用到table）</li>
+</ul>
+</li>
+<li>第二个，crc计算，且有两处<ul>
+<li>传入了地址和大小</li>
+<li>crc常见操作，比如左移右移8啥的</li>
+<li>有两处crx计算，一处针对header，一处针对data，再拼接，32+32=64（上述两点从函数内部实现看，此从函数外部的调用看）</li>
+</ul>
+</li>
+<li>判定crc32b<ul>
+<li>参数3传入ffffffff，即～0，取反0得f</li>
+<li>交换大小段，crc返回值再取反</li>
+<li>crc32是左移8，而crc32b是右移8（文字错误图中对）</li>
+<li>b应该是big</li>
+<li>crc32、crc32b算法待学习//here</li>
+</ul>
+</li>
+<li>获取shell后<ul>
+<li>cat /proc/cpuinfo</li>
+<li>system type，mt7620，联发科的芯片</li>
+<li>32M内存怎么来的？tlb_entries？//here</li>
+<li>rootfs不可写怎么知道的？手动测试？一般/tmp是可写的吧//here</li>
+</ul>
+</li>
+<li>逆向ledkeytest<ul>
+<li>if判断（/proc/csp/loadtype内容是否为2）、取参数2给s、</li>
+<li>do循环、strcmp比较s和e0（e0作为字符串，基址+偏移的形式）、e4作为函数执行</li>
+<li>推测：基址是结构体数组首地址、struct=char * + callback回调函数（这种形式很常见）、最终形式是ledkeytest+ledoff</li>
+</ul>
+</li>
+<li>修改loadtype<ul>
+<li>表模式，默认是3，2应该是测试模式（lefkeytest即测试程序）</li>
+<li>修改1：patch程序，但rootfs不可写，只能固件重打包，风险大</li>
+<li>修改2：Linux下通用方法，mount挂载</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://www.52pojie.cn/thread-1400371-1-1.html" target="_blank" rel="noopener">https://www.52pojie.cn/thread-1400371-1-1.html</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/07/11/iot/路由器pwn实践/" title="路由器pwn实践">http://21guns.top/2021/07/11/iot/路由器pwn实践/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/03/iot/IDAPython-VxWorks固件解析/" rel="prev" title="IDAPython-VxWorks固件解析">
+      <i class="fa fa-chevron-left"></i> IDAPython-VxWorks固件解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/13/iot/D-Link两个认证绕过漏洞的分析/" rel="next" title="D-Link两个认证绕过漏洞的分析">
+      D-Link两个认证绕过漏洞的分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#路由器pwn实践"><span class="nav-number">1.</span> <span class="nav-text">路由器pwn实践</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] Netgear固件中的多个漏洞 概要：三个漏洞即：认证绕过、旁路攻击获取密码、密钥硬编码  文件系统，关注点  /www：html页面和.gif图片 /usr/sbin：各种自定义二进制文件，包括 HTTPd、FTPC 等   httpd  32 位大端 MIPS ELF 针对 uClibc (嵌入式设备的标准 libc）编译 整个服务器端逻辑 (CGI) 都被编译到其中（通过内部字符">
+<meta name="keywords" content="路由器,漏洞分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netgear固件中的多个漏洞">
+<meta property="og:url" content="http://21guns.top/2021/09/21/iot/Netgear固件中的多个漏洞/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] Netgear固件中的多个漏洞 概要：三个漏洞即：认证绕过、旁路攻击获取密码、密钥硬编码  文件系统，关注点  /www：html页面和.gif图片 /usr/sbin：各种自定义二进制文件，包括 HTTPd、FTPC 等   httpd  32 位大端 MIPS ELF 针对 uClibc (嵌入式设备的标准 libc）编译 整个服务器端逻辑 (CGI) 都被编译到其中（通过内部字符">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T09:48:32.650Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netgear固件中的多个漏洞">
+<meta name="twitter:description" content="[toc] Netgear固件中的多个漏洞 概要：三个漏洞即：认证绕过、旁路攻击获取密码、密钥硬编码  文件系统，关注点  /www：html页面和.gif图片 /usr/sbin：各种自定义二进制文件，包括 HTTPd、FTPC 等   httpd  32 位大端 MIPS ELF 针对 uClibc (嵌入式设备的标准 libc）编译 整个服务器端逻辑 (CGI) 都被编译到其中（通过内部字符">
+
+<link rel="canonical" href="http://21guns.top/2021/09/21/iot/Netgear固件中的多个漏洞/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Netgear固件中的多个漏洞 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/09/21/iot/Netgear固件中的多个漏洞/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Netgear固件中的多个漏洞
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-21 09:23:44" itemprop="dateCreated datePublished" datetime="2021-09-21T09:23:44+08:00">2021-09-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 17:48:32" itemprop="dateModified" datetime="2022-02-21T17:48:32+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="Netgear固件中的多个漏洞"><a href="#Netgear固件中的多个漏洞" class="headerlink" title="Netgear固件中的多个漏洞"></a>Netgear固件中的多个漏洞</h1><ul>
+<li><p>概要：三个漏洞即：认证绕过、旁路攻击获取密码、密钥硬编码</p>
+</li>
+<li><p>文件系统，关注点</p>
+<ul>
+<li>/www：html页面和.gif图片</li>
+<li>/usr/sbin：各种自定义二进制文件，包括 HTTPd、FTPC 等</li>
+</ul>
+</li>
+<li><p>httpd</p>
+<ul>
+<li>32 位大端 MIPS ELF</li>
+<li>针对 uClibc (嵌入式设备的标准 libc）编译</li>
+<li>整个服务器端逻辑 (CGI) 都被编译到其中（通过内部字符串推测，如accessCgi_xxx）</li>
+</ul>
+</li>
+<li><p>嵌入式web服务，关注点</p>
+<ul>
+<li>gif等静态资源，一般不需要身份验证即可访问，怎么处理的？</li>
+<li>如何执行身份验证？</li>
+<li>是否正确处理请求（即是否存在内存损坏错误）？</li>
+<li>是否实施了某些安全措施，例如（反）跨站点请求伪造令牌或内容安全策略？</li>
+</ul>
+</li>
+<li><p>认证绕过</p>
+<ul>
+<li>strcmp来处理form.css等文件、strstr来处理js等后缀，前者问题不大，后者可绕过</li>
+<li>对应关注点：一些不需身份验证的页面怎么处理的</li>
+<li>若先认证，再strstr处理js后缀，则不可，如扩展中其它型号</li>
+</ul>
+</li>
+<li><p>旁路攻击</p>
+<ul>
+<li>如何身份验证？user+pass、base64、http-header发送、与nvram中的对比</li>
+<li>username/password使用strcmp处理，strcmp 在 libc 中的实现是通过逐个字符比较直到观察到 NUL 终止符或直到发生不匹配来工作</li>
+<li>可以通过测量失败所需的时间来利用：第一个字符时为n时，时间最长，因此为n（若非n则立刻停止，若n则查第二个，时间长）可以重复此过程，直到泄露整个密码。</li>
+<li>基于 XOR 的内存比较来避免此类攻击，即使字节不匹配，该功能也会继续，即所花时间相等，OpenSSL的CRYPTO_memcmp就是这么实现的</li>
+<li>对应关注点：如何执行身份验证？</li>
+</ul>
+</li>
+<li><p>密钥硬编码</p>
+<ul>
+<li>备份/恢复功能，对应配置文件，高熵，被加密的</li>
+<li>逆向，发现des加密及硬编码的密钥</li>
+<li>同一个设备，一般加密方式是一样的，即能够解密配置文件的，也适用于nvram，能够解密获取password</li>
+</ul>
+</li>
+<li><p>其它</p>
+<ul>
+<li><p>ent指令查看熵，同binwalk -E（ent是啥？）</p>
+</li>
+<li><p>nm 命令显示指定File 中符号的信息</p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考</p>
+<ul>
+<li><a href="https://www.anquanke.com/post/id/246028" target="_blank" rel="noopener">https://www.anquanke.com/post/id/246028</a></li>
+<li><a href="https://www.microsoft.com/security/blog/2021/06/30/microsoft-finds-new-netgear-firmware-vulnerabilities-that-could-lead-to-identity-theft-and-full-system-compromise/" target="_blank" rel="noopener">https://www.microsoft.com/security/blog/2021/06/30/microsoft-finds-new-netgear-firmware-vulnerabilities-that-could-lead-to-identity-theft-and-full-system-compromise/</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/09/21/iot/Netgear固件中的多个漏洞/" title="Netgear固件中的多个漏洞">http://21guns.top/2021/09/21/iot/Netgear固件中的多个漏洞/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/19/iot/流量劫持漏洞-修改dns/" rel="prev" title="流量劫持漏洞-修改dns">
+      <i class="fa fa-chevron-left"></i> 流量劫持漏洞-修改dns
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/09/23/iot/利用uboot getshell/" rel="next" title="uboot getshell">
+      uboot getshell <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Netgear固件中的多个漏洞"><span class="nav-number">1.</span> <span class="nav-text">Netgear固件中的多个漏洞</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

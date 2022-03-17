@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Ghidra’s P-Code-识别程序敏感函数 参数情况：14处调用，5种情况  12345678910111213141516171819202122232425262728293031323334# const：常数# 共4	int x = 9;	int y = 10;	malloc(5);	malloc(x);	malloc(x + y);	malloc(5);# func-ret：函数返">
+<meta name="keywords" content="tool">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ghidra&#39;s P-Code-识别程序敏感函数">
+<meta property="og:url" content="http://21guns.top/2020/12/21/reverse/Ghidra's P-Code-识别程序敏感函数/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="Ghidra’s P-Code-识别程序敏感函数 参数情况：14处调用，5种情况  12345678910111213141516171819202122232425262728293031323334# const：常数# 共4	int x = 9;	int y = 10;	malloc(5);	malloc(x);	malloc(x + y);	malloc(5);# func-ret：函数返">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:51:06.109Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ghidra&#39;s P-Code-识别程序敏感函数">
+<meta name="twitter:description" content="Ghidra’s P-Code-识别程序敏感函数 参数情况：14处调用，5种情况  12345678910111213141516171819202122232425262728293031323334# const：常数# 共4	int x = 9;	int y = 10;	malloc(5);	malloc(x);	malloc(x + y);	malloc(5);# func-ret：函数返">
+
+<link rel="canonical" href="http://21guns.top/2020/12/21/reverse/Ghidra's P-Code-识别程序敏感函数/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Ghidra's P-Code-识别程序敏感函数 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2020/12/21/reverse/Ghidra's P-Code-识别程序敏感函数/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Ghidra's P-Code-识别程序敏感函数
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-21 09:23:44" itemprop="dateCreated datePublished" datetime="2020-12-21T09:23:44+08:00">2020-12-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:51:06" itemprop="dateModified" datetime="2022-02-21T15:51:06+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/软件安全-逆向/" itemprop="url" rel="index"><span itemprop="name">软件安全/逆向</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Ghidra’s-P-Code-识别程序敏感函数"><a href="#Ghidra’s-P-Code-识别程序敏感函数" class="headerlink" title="Ghidra’s P-Code-识别程序敏感函数"></a>Ghidra’s P-Code-识别程序敏感函数</h1><ul>
+<li>参数情况：14处调用，5种情况</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># const：常数</span></span><br><span class="line"><span class="comment"># 共4</span></span><br><span class="line">	int x = 9;</span><br><span class="line">	int y = 10;</span><br><span class="line">	malloc(5);</span><br><span class="line">	malloc(x);</span><br><span class="line">	malloc(x + y);</span><br><span class="line">	malloc(5);</span><br><span class="line"></span><br><span class="line"><span class="comment"># func-ret：函数返回，明确的返回值，自定义函数</span></span><br><span class="line"><span class="comment"># 共6</span></span><br><span class="line">	malloc(return3());</span><br><span class="line">	malloc(getNumber()+65);</span><br><span class="line">	malloc(getNumber2());</span><br><span class="line">	malloc(y + return3());</span><br><span class="line">	malloc(getarg1(888888));</span><br><span class="line">	malloc(phidemo());</span><br><span class="line"></span><br><span class="line"><span class="comment"># func-no-ret：函数返回，无法计算返回值，库函数</span></span><br><span class="line"><span class="comment"># 共2</span></span><br><span class="line">	malloc(strlen(string));</span><br><span class="line">	malloc(rand());</span><br><span class="line"></span><br><span class="line"><span class="comment"># arg：调用者参数</span></span><br><span class="line"><span class="comment"># 共1</span></span><br><span class="line">	malloc(z);</span><br><span class="line"></span><br><span class="line"><span class="comment"># multi：多个可能值</span></span><br><span class="line"><span class="comment"># 共1</span></span><br><span class="line">	int a = 0x4444;</span><br><span class="line">	<span class="keyword">if</span> (rand() &gt; 2)&#123;</span><br><span class="line">		a = z;</span><br><span class="line">	&#125;</span><br><span class="line">	malloc(a);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>有两处malloc</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># </span></span><br><span class="line">	Found malloc @ 0x400510</span><br><span class="line">	Found malloc @ 0x602020</span><br><span class="line">	</span><br><span class="line"><span class="comment"># 0x400510</span></span><br><span class="line">void * malloc(size_t __size)</span><br><span class="line">&#123;</span><br><span class="line">  void *pvVar1;</span><br><span class="line">  </span><br><span class="line">  pvVar1 = malloc(__size);</span><br><span class="line">  <span class="built_in">return</span> pvVar1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">004007bb		CALL &lt;EXTERNAL&gt;::malloc	UNCONDITIONAL_CALL</span><br><span class="line">004007c8		CALL &lt;EXTERNAL&gt;::malloc	UNCONDITIONAL_CALL</span><br><span class="line">...</span><br><span class="line">004007ee		CALL &lt;EXTERNAL&gt;::malloc	UNCONDITIONAL_CALL</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x602020</span></span><br><span class="line">void * malloc(size_t __size)</span><br><span class="line">&#123;</span><br><span class="line">                    /* WARNING: Bad instruction - Truncating control flow here */</span><br><span class="line">                    /* malloc@@GLIBC_2.2.5 */</span><br><span class="line">  halt_baddata();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">00400510	malloc	JMP qword ptr [-&gt;&lt;EXTERNAL&gt;::malloc]	COMPUTED_CALL_TERMINATOR</span><br><span class="line">00400510	malloc	JMP qword ptr [-&gt;&lt;EXTERNAL&gt;::malloc]	THUNK</span><br><span class="line">00601030	PTR_malloc_00601030	addr &lt;EXTERNAL&gt;::malloc	DATA</span><br></pre></td></tr></table></figure>
+<ul>
+<li>analyzefun-malloc(return3());</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0x4007ee </span></span><br><span class="line"><span class="comment"># 参数来自return3返回值</span></span><br><span class="line">int analyzefun(char * string, int z)&#123;</span><br><span class="line">	malloc(return3());</span><br><span class="line"></span><br><span class="line"><span class="comment"># 尽管有多处调用，但返回是明确值，故停止于const 3</span></span><br><span class="line">int <span class="function"><span class="title">return3</span></span>()&#123;</span><br><span class="line">	<span class="built_in">return</span> 3;</span><br><span class="line"></span><br><span class="line"><span class="comment"># flow结构</span></span><br><span class="line"><span class="comment"># analyzefun调用malloc，但参数来自return3</span></span><br><span class="line">cur_flow_caller_func: analyzefun</span><br><span class="line">child_flow_called_func: return3</span><br><span class="line"></span><br><span class="line"><span class="comment"># 子节点，新添caller_addr成员</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>analyzefun-malloc(getarg1(888888))</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0x400869</span></span><br><span class="line"><span class="comment"># 参数来自getarg1返回值</span></span><br><span class="line">int analyzefun(char * string, int z)&#123;</span><br><span class="line">	malloc(getarg1(888888));</span><br><span class="line"></span><br><span class="line"><span class="comment"># 返回值不确定，取决于调用方参数</span></span><br><span class="line">int getarg1(int j)&#123;</span><br><span class="line">	<span class="built_in">return</span> j+4;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># getarg1的调用：除了analyzefun，还有main</span></span><br><span class="line"><span class="comment"># 应该只看analyzefun的</span></span><br><span class="line">int main(int argv, char ** argc) &#123;</span><br><span class="line">	int jj = getarg1(5);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 代码修改</span></span><br><span class="line"><span class="comment"># trace_varnode：</span></span><br><span class="line">                Address caller_addr = def_pcode.getSeqnum().getTarget();</span><br><span class="line">                Function called_func = getFunctionAt(def_pcode.getInput(0).getAddress());</span><br><span class="line">                analyze_called_ret(flow, called_func, caller_addr, is_phi);</span><br><span class="line"><span class="comment"># analyze_called_ret</span></span><br><span class="line">            new_flow = new BasicFlow(called_func, caller_addr);</span><br><span class="line">            flow.add_child(new_flow);</span><br><span class="line"><span class="comment"># analyze_caller_arg</span></span><br><span class="line">                <span class="keyword">if</span> (parent_addr.getOffset() != flow.getAddress().getOffset()) &#123;</span><br><span class="line">                    <span class="built_in">continue</span>;</span><br><span class="line">                &#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>analyzefun-malloc(z)//here</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0x400855</span></span><br><span class="line"><span class="comment"># 来自调用方analyzefun参数</span></span><br><span class="line">int analyzefun(char * string, int z)&#123;</span><br><span class="line">	malloc(z);</span><br><span class="line">	</span><br><span class="line"><span class="comment"># 有多处调用analyzefun</span></span><br><span class="line">int intermediatefunc2(char * string, int y)&#123;</span><br><span class="line">	analyzefun(string, y);</span><br><span class="line">int main(int argv, char ** argc) &#123;</span><br><span class="line">	analyzefun(<span class="string">"foo"</span>, 77);</span><br><span class="line">	analyzefun(<span class="string">"bar"</span>, zz);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>成员func</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># func 取决于 is_child/parents</span></span><br><span class="line"><span class="comment"># child: called_func</span></span><br><span class="line"><span class="comment"># parent: caller_func</span></span><br><span class="line">class BasicFlow &#123;</span><br><span class="line">    // field</span><br><span class="line">    public long const_value;</span><br><span class="line">    private boolean is_parent;</span><br><span class="line">    private boolean is_child;</span><br><span class="line">    private Function func;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>flow输出</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 常数，malloc(5);</span></span><br><span class="line">5</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 函数返回值，malloc(return3());</span></span><br><span class="line">return3</span><br><span class="line">5</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 malloc(getNumber()+65);</span></span><br><span class="line">65 + getNumber</span><br><span class="line">65 + [9, atoi, rand, oneOf3, 77, 11]</span><br><span class="line">65 + [9, atoi, rand, [1,2,3], 77, 11]</span><br><span class="line">[65+9, 65+atoi, 65+rand, 65+[1,2,3], 65+77, 65+11]</span><br><span class="line">[65+9, 65+atoi, 65+rand, 65+1, 65+2, 65+3, 65+77, 65+11]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># </span></span><br><span class="line">SINK: call to malloc <span class="keyword">in</span> analyzefun @ 0x400805</span><br><span class="line">-C: getNumber</span><br><span class="line">--ØCONST: 9 (0x9)</span><br><span class="line">--ØC: atoi</span><br><span class="line">--Ø-C: atoi</span><br><span class="line">--ØC: rand</span><br><span class="line">--Ø-C: rand</span><br><span class="line">--ØC: oneOf3</span><br><span class="line">--Ø-ØCONST: 1 (0x1)</span><br><span class="line">--Ø-ØCONST: 2 (0x2)</span><br><span class="line">--Ø-ØCONST: 3 (0x3)</span><br><span class="line">--ØCONST: 77 (0x4d)</span><br><span class="line">--ØCONST: 11 (0xb)</span><br><span class="line">-CONST: 65 (0x41)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>暂不搞了<ul>
+<li>真实情况远没有此例子复杂，比如system参数一般是静态字符串，随用随查吧</li>
+<li>来自参数、返回值这些情况，调用流复杂，有没有更好的结构来表示</li>
+<li>怎样输出更直观，比如malloc(getNumber()+65)，最终[65+9, 65+atoi, 65+rand, 65+1, 65+2, 65+3, 65+77, 65+11]，加号怎么存储</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://www.riverloopsecurity.com/blog/2019/05/pcode/" target="_blank" rel="noopener">https://www.riverloopsecurity.com/blog/2019/05/pcode/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2020/12/21/reverse/Ghidra's P-Code-识别程序敏感函数/" title="Ghidra's P-Code-识别程序敏感函数">http://21guns.top/2020/12/21/reverse/Ghidra's P-Code-识别程序敏感函数/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/tool/" rel="tag"># tool</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/21/iot/IOT设备固件提取方法/" rel="prev" title="IOT设备固件提取方法">
+      <i class="fa fa-chevron-left"></i> IOT设备固件提取方法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/09/iot/v380摄像头固件重打包getshell/" rel="next" title="v380摄像头固件重打包getshell">
+      v380摄像头固件重打包getshell <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Ghidra’s-P-Code-识别程序敏感函数"><span class="nav-number">1.</span> <span class="nav-text">Ghidra’s P-Code-识别程序敏感函数</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

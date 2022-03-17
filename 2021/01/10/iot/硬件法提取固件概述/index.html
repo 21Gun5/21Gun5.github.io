@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 硬件法提取固件概述 概要：芯片封装、引脚定义、芯片夹、flashroom、openocd、芯片手册、提取固件（falsh外置/mcu内置） 为何免拆提取 拆卸+焊接，麻烦且考验动手能力 电烙铁、热吹风等工具的限制 客户不允许拆   固件存储位置：flash外置存储、mcu内置存储 芯片封装与引脚定义 SOP、QFP、QFN、BGA SOP、QFP针脚外露，可用芯片夹子实现免拆提取 后两">
+<meta name="keywords" content="固件提取">
+<meta property="og:type" content="article">
+<meta property="og:title" content="硬件法提取固件概述">
+<meta property="og:url" content="http://21guns.top/2021/01/10/iot/硬件法提取固件概述/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 硬件法提取固件概述 概要：芯片封装、引脚定义、芯片夹、flashroom、openocd、芯片手册、提取固件（falsh外置/mcu内置） 为何免拆提取 拆卸+焊接，麻烦且考验动手能力 电烙铁、热吹风等工具的限制 客户不允许拆   固件存储位置：flash外置存储、mcu内置存储 芯片封装与引脚定义 SOP、QFP、QFN、BGA SOP、QFP针脚外露，可用芯片夹子实现免拆提取 后两">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T09:48:46.954Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="硬件法提取固件概述">
+<meta name="twitter:description" content="[toc] 硬件法提取固件概述 概要：芯片封装、引脚定义、芯片夹、flashroom、openocd、芯片手册、提取固件（falsh外置/mcu内置） 为何免拆提取 拆卸+焊接，麻烦且考验动手能力 电烙铁、热吹风等工具的限制 客户不允许拆   固件存储位置：flash外置存储、mcu内置存储 芯片封装与引脚定义 SOP、QFP、QFN、BGA SOP、QFP针脚外露，可用芯片夹子实现免拆提取 后两">
+
+<link rel="canonical" href="http://21guns.top/2021/01/10/iot/硬件法提取固件概述/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>硬件法提取固件概述 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/01/10/iot/硬件法提取固件概述/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          硬件法提取固件概述
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-10 09:23:44" itemprop="dateCreated datePublished" datetime="2021-01-10T09:23:44+08:00">2021-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 17:48:46" itemprop="dateModified" datetime="2022-02-21T17:48:46+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h2 id="硬件法提取固件概述"><a href="#硬件法提取固件概述" class="headerlink" title="硬件法提取固件概述"></a>硬件法提取固件概述</h2><ul>
+<li>概要：芯片封装、引脚定义、芯片夹、flashroom、openocd、芯片手册、提取固件（falsh外置/mcu内置）</li>
+<li>为何免拆提取<ul>
+<li>拆卸+焊接，麻烦且考验动手能力</li>
+<li>电烙铁、热吹风等工具的限制</li>
+<li>客户不允许拆</li>
+</ul>
+</li>
+<li>固件存储位置：flash外置存储、mcu内置存储</li>
+<li>芯片封装与引脚定义<ul>
+<li>SOP、QFP、QFN、BGA</li>
+<li>SOP、QFP针脚外露，可用芯片夹子实现免拆提取</li>
+<li>后两者不可，如BGA封装在下面（文中没写QFN）</li>
+</ul>
+</li>
+<li>SOP<ul>
+<li>针脚外露，有8根或16根，即SOP8/16</li>
+<li>SOP8/16 封装的 Flash 在路由器、摄像头等 IOT 设备厂较为常见</li>
+<li>一个角上有小圆点，为第一针脚，其余逆时针排布</li>
+<li>型号代码一般是24或25开头（型号代码是啥？）//here</li>
+</ul>
+</li>
+<li>QFP<ul>
+<li>针脚外露，针脚数一般都在64以上</li>
+<li>针脚数不固定，没有统一标准，由厂商自行定义</li>
+<li>在小型IOT设备中可作为主控或协处理器（sop为flash，此为cpu）</li>
+<li>针脚定义见具体厂商的芯片手册、示例图见文中</li>
+</ul>
+</li>
+<li>BGA<ul>
+<li>I/O 端子在封装下方，提取固件则需要使用BGA返修台拆卸下来读取，不能实现免拆提取</li>
+<li>一般用于 CPU 和大容量存储</li>
+<li>同FFP，针脚定义见具体厂商的芯片手册、示例图见文中</li>
+</ul>
+</li>
+<li>芯片夹：SOP8/16脚测夹、芯片通用测试夹测试钩子、ECU 探针</li>
+<li>SOP8/16脚测夹<ul>
+<li>常用于 SPI 闪存的固件提取</li>
+<li>SOP8 以及 SOP16 封装的芯片</li>
+<li>示例图见文</li>
+</ul>
+</li>
+<li>芯片通用测试夹测试钩子<ul>
+<li>常用于SOP QFP 封装芯片的固件提取或协议分析</li>
+<li>第一种：适用针脚较少的芯片（如 SOP8 封装的）、勾式扁式分别对应单钩双钩、价格相对便宜</li>
+<li>第二种：夹子更细、用在有更多更细的针脚芯片上（如 QFP 封装的）、价格贵</li>
+<li>示例图见文</li>
+<li>第二种：夹子比较小，夹连续的针脚时有一定的困难，需要反复尝试</li>
+<li>第二种：由于没有支撑，可能刚夹上就被弹开，所以需要ECU 探针</li>
+</ul>
+</li>
+<li>ECU 探针<ul>
+<li>多用于汽车 ECU 固件提取，也可用于其它</li>
+<li>带有支架，只需要把探针搭在对应的芯片针脚上，搭而非夹</li>
+<li>如芯片通用测试夹测试钩子，第二种，刚夹上就被弹开的情况</li>
+<li>使用 ECU 探针读取固件方式与使用芯片通用测试夹测试钩子类似。唯一的差异是探针是搭在针脚上，而不是夹在针脚上</li>
+<li>示例图见文</li>
+</ul>
+</li>
+<li>从flash提取<ul>
+<li>读取 SOP8 封装的 SPI Flash较多</li>
+<li>软件：flashroom</li>
+<li>硬件：测试夹（即sop8/16）、编程器（CH341A较慢，用树莓派）</li>
+<li>步骤1，apt 安装flashroom</li>
+<li>步骤2，配置树莓派：启用其spi接口并加载spi模块</li>
+<li>步骤3，接线：找树莓派的引脚定义、找flash的引脚定义、flashroom给出二者如何连接（rpi header与spi flash的表）</li>
+<li>步骤4，提取：flashrom p linux_spi:dev=/dev/spidev0.0,spispeed=1000 r w25q_rasp.bin（p指定设备类型/读写速度、r保存路径、若写回flash则用w）</li>
+<li>接线时，用到了一块中介板子，怎么连的？//here</li>
+</ul>
+</li>
+<li>从mcu提取<ul>
+<li>固件位于mcu内置flash，通过调试接口（SWD/JTAG等）提取</li>
+<li>FT232H作为pc与mcu的中转，usb插电脑，怎么连接mcu？图没看懂//here）</li>
+</ul>
+</li>
+<li>硬件<ul>
+<li>测试夹：芯片通用测试夹测试钩子</li>
+<li>调试器：FT232H（提供USB到多种转接，如JTAG/SWD/UART），也可用 JLink、STLink 等调试器</li>
+</ul>
+</li>
+<li>软件：OpenOCD<ul>
+<li>Open OnChip Debugger，开源的片上调试器</li>
+<li>可以与 GDB 配合进行动态调试（具体步骤未提及//here）</li>
+<li>运行需两个配置文件：调试器和目标芯片的配置文件，openocd/scripts# openocd f interface/ft232hmoduleswd.cfg  f target/stm32f0x.cfg </li>
+<li>运行之后，使用 telnet 连接本地的 4444 端口与芯片进行交互</li>
+<li>help 查看支持命令、提取固件使用 dump_image</li>
+</ul>
+</li>
+<li>芯片手册<ul>
+<li>根据芯片丝印 STM32f030 RCT6，找手册</li>
+<li>采用 SWD进行调试：目录3.16Serial wire debug port (SWDP)：An Arm SWDP interface is provided to allow a serial wire debugging tool to be connected to the MCU.</li>
+<li>引脚定义：目录4Pinouts and pin descriptions：依据STM32f030，找到Table 11. STM32F030x4/6/8/C pin definitions，依据QFP64的封装方式，找到pin number为LQFP64那一列</li>
+</ul>
+</li>
+<li>内存映射：目录5 Memory mapping<ul>
+<li>CODE：广义上固件</li>
+<li>Flash memory：内置的 Flash（硬盘）</li>
+<li>System memory：预置了一段 BootLoader、为了从串口下载程序（ROM）</li>
+<li>SRAW：内置 SRAM、一般用于程序调试（内存）</li>
+<li>狭义上固件：Flash Memory 中，起始地址为 0x8000000 ，大小为 x40000</li>
+</ul>
+</li>
+<li>找调试接口<ul>
+<li>调试方式：读手册，swd，Serial Wire Debug，与JTAG的20个引脚相比，SWD只需要4个（或者5个）引脚</li>
+<li>封装方式：由图可见，采用QFP64封装，4x16=64</li>
+<li>芯片型号：看芯片丝印，STM32f030 RCT6</li>
+<li>确定调试接口：SWDIO（输入输出）、SWCLK（时钟）、VSS（电源）、RESET（重置）</li>
+</ul>
+</li>
+<li>步骤<ul>
+<li>openocd安装：apt、源码（厂商定制化的）</li>
+<li>接线：根据芯片丝印下载手册、手册中找调试接口</li>
+<li>固件位置及大小：手册</li>
+<li>启动openocd</li>
+<li>telnet 连接 locahsot:4444 端口：halt 中断代码执行、dump_image导出固件</li>
+<li>dump_image 格式： 文件名 起始地址 导出的数据长度，dump_image flash.bin 0x8000000 0x40000</li>
+</ul>
+</li>
+<li>代码读取保护<ul>
+<li>芯片开启代码读取保护（CRP/RDP），防止固件被提取</li>
+<li>此法（即openocd提取固件），可应用在 IOT 安全测试中，验证 CRP 是否开启</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://www.anquanke.com/post/id/227285" target="_blank" rel="noopener">https://www.anquanke.com/post/id/227285</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/01/10/iot/硬件法提取固件概述/" title="硬件法提取固件概述">http://21guns.top/2021/01/10/iot/硬件法提取固件概述/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/固件提取/" rel="tag"># 固件提取</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/09/iot/v380摄像头固件重打包getshell/" rel="prev" title="v380摄像头固件重打包getshell">
+      <i class="fa fa-chevron-left"></i> v380摄像头固件重打包getshell
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/13/iot/Netgear R6220 认证绕过漏洞分析/" rel="next" title="Netgear R6220 认证绕过漏洞分析">
+      Netgear R6220 认证绕过漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#硬件法提取固件概述"><span class="nav-number">1.</span> <span class="nav-text">硬件法提取固件概述</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

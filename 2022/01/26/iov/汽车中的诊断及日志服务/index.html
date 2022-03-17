@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="汽车中的诊断及日志服务 OBD-II连接器可用于汽车检修 汽车发生故障时，故障相关信息会被保存，并且故障指示灯-MIL点亮 汽车诊断功能由车辆主ECU处理，即动力系统控制模块PCM">
+<meta name="keywords" content="IOV安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="汽车中的诊断及日志服务">
+<meta property="og:url" content="http://21guns.top/2022/01/26/iov/汽车中的诊断及日志服务/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="汽车中的诊断及日志服务 OBD-II连接器可用于汽车检修 汽车发生故障时，故障相关信息会被保存，并且故障指示灯-MIL点亮 汽车诊断功能由车辆主ECU处理，即动力系统控制模块PCM">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-03-05T13:04:08.358Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="汽车中的诊断及日志服务">
+<meta name="twitter:description" content="汽车中的诊断及日志服务 OBD-II连接器可用于汽车检修 汽车发生故障时，故障相关信息会被保存，并且故障指示灯-MIL点亮 汽车诊断功能由车辆主ECU处理，即动力系统控制模块PCM">
+
+<link rel="canonical" href="http://21guns.top/2022/01/26/iov/汽车中的诊断及日志服务/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>汽车中的诊断及日志服务 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2022/01/26/iov/汽车中的诊断及日志服务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          汽车中的诊断及日志服务
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-01-26 11:25:18" itemprop="dateCreated datePublished" datetime="2022-01-26T11:25:18+08:00">2022-01-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-05 21:04:08" itemprop="dateModified" datetime="2022-03-05T21:04:08+08:00">2022-03-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOV安全/" itemprop="url" rel="index"><span itemprop="name">IOV安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="汽车中的诊断及日志服务"><a href="#汽车中的诊断及日志服务" class="headerlink" title="汽车中的诊断及日志服务"></a>汽车中的诊断及日志服务</h1><ul>
+<li>OBD-II连接器可用于汽车检修</li>
+<li>汽车发生故障时，故障相关信息会被保存，并且故障指示灯-MIL点亮</li>
+<li>汽车诊断功能由车辆主ECU处理，即动力系统控制模块PCM</li>
+</ul>
+<a id="more"></a>
+<h2 id="故障诊断代码-DTC"><a href="#故障诊断代码-DTC" class="headerlink" title="故障诊断代码-DTC"></a>故障诊断代码-DTC</h2><ul>
+<li>故障诊断代码即DTC，PCM将故障相关信息保存于此</li>
+<li>DTC可存储在不同的位置，如有的存在RAM断电丢失，而重要的DTC可存储在不受电源影响的区域</li>
+<li>故障分为软硬两种<ul>
+<li>软故障指一些间歇性故障可自行消除，而硬故障需要人工干预才可消除</li>
+<li>清除汽车DTC，观察故障是否重现，若仍存在则为硬故障</li>
+</ul>
+</li>
+<li>并非所有故障都会点亮MIL</li>
+<li>PCM在存储DTC时，会对发动机相关信息进行快照，将快照和DTC一起存放在冻结帧数据中。</li>
+<li>DTC格式<ul>
+<li>长度5个字符，两个字节即可表示</li>
+<li>第一个字符为字母，表示汽车部件，如P表示动力系统，B表示车身</li>
+<li>可在网上查询到某DTC的含义</li>
+<li>DTC与十六进制数据转换的问题，除了前两个字符，后3字符与十六机制一一对应</li>
+</ul>
+</li>
+<li>DTC扫描工具：可读取、清除DTC，非必需</li>
+<li>DTC的清除<ul>
+<li>PCM多次检查后不再发现故障，DTC清除，同时MIL熄灭</li>
+<li>软故障DTC可用扫描工具、断电来清除</li>
+<li>硬故障DTC和永久性DTC存储在NVRAM中，PCM检测不到故障时才清除</li>
+</ul>
+</li>
+</ul>
+<h2 id="统一诊断服务-UDS"><a href="#统一诊断服务-UDS" class="headerlink" title="统一诊断服务-UDS"></a>统一诊断服务-UDS</h2><ul>
+<li>简介<ul>
+<li>UDS，提供一种统一的展示汽车状态的方式，但效果不好，因为CAN数据包的内容不是统一的，因厂家等多因素而异</li>
+<li>汽车制造商将数据包的内容信息作为商品，UDS的作用是提供一种令该信息（部分而非全部）可用的途径</li>
+<li>UDS可提供诊断测试或固件修改等高级操作，原理是：通过UDS系统，诊断工具可发送一个执行某动作的请求，该请求产生信号（如CAN数据包），部件收到信号后执行动作</li>
+</ul>
+</li>
+<li>由于CAN数据帧长度大小限制为8，为发送更多数据，故UDS使用IOS-TP</li>
+<li>通过常规CAN发送IOS-TP的数据包，正响应：<ul>
+<li>请求：7df#02010d<ul>
+<li>7df：CAN ID，7df表示OBD诊断代码</li>
+<li>02：数据包大小，即010d</li>
+<li>01：诊断数据的模式（或称服务/SID），01表显示数据</li>
+<li>0d：子服务号（或称PID），0d表车速</li>
+</ul>
+</li>
+<li>响应：7e8#03410d00<ul>
+<li>7e8：请求CAN ID +8</li>
+<li>03：数据包大小，即410d00</li>
+<li>41：正响应在原有模式上+40，01+40=41，若负响应则直接0x7f</li>
+<li>0d：同请求，为请求显示车速的服务号</li>
+<li>00：具体服务对应的数据，即车速为0</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>通过常规CAN发送IOS-TP的数据包，负响应：<ul>
+<li>请求：7df#021101（服务11表重置ECU）</li>
+<li>响应：7e8#037F1111<ul>
+<li>7f：负响应则0x7f，而非+40</li>
+<li>前11：同请求，为重置ECU的服务号</li>
+<li>后11：错误原因，11表不支持的服务（具体错误代码可网上查询）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>通过IOS-TP发送数据包<ul>
+<li>可见《IOS-TP发送数据》一文</li>
+<li>个人理解，UDS的数据包格式为IOS-TP，但是发送方式有两种：常规CAN和IOS-TP（后者可发送大于8字节的数据）</li>
+</ul>
+</li>
+<li>诊断的模式及PID<ul>
+<li>需注意：模式也称服务/SID，而PID也称子服务，叫法不同罢了，暂不必纠结，理解就好</li>
+<li>诊断代码中数据的第一个字节表模式，手册中一般<code>$ + 十六机制数</code>表示，随后的1字节即PID</li>
+<li>遇到过的几种模式：0x01显示当前数据、0x09请求车辆信息（查询VIN码）</li>
+</ul>
+</li>
+<li>每个厂商都有自己专有的模式及PID，如何获取？<ul>
+<li>程序逆向法：即逆向经销商提供的相关软件</li>
+<li>暴力破解法：利用工具对车辆进行爆破，如CaringCaribou</li>
+</ul>
+</li>
+<li>为避免那些耗时长的操作被中断，需要使车辆保持诊断状态，可采取心跳机制，即通过脚本定时向车辆发送数据包</li>
+</ul>
+<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><ul>
+<li><p>EDR-事件数据记录器</p>
+<ul>
+<li>类似飞机的黑匣子</li>
+<li>多种信息可保存在EDR中，类似冻结帧，但二者保存的时机不同，前者事故，后者故障</li>
+<li>事故信息原本存储于安全气囊控制模块-ACM中，如今已分布存储在汽车多个ECU中，EDR可从ECU和传感器中收集数据，存储起来供车祸时恢复</li>
+<li>可使用CDR工具包从EDR中读取数据，两种方式：连接到OBD接口从主ECU中提取、不使用OBD直接连接具体设备</li>
+<li>SAE J1698标准中列举了一些用于事件数据收集的推荐方法，但并非所有的厂商都遵循此标准</li>
+</ul>
+</li>
+<li><p>ACN-自动事故呼救系统（意如其名），ACN是各制造商专有的，不同的ACN发送的信息也不同</p>
+</li>
+<li>安全研究者的角度<ul>
+<li>可将车辆的DTC或冻结数据帧作为目标来隐藏恶意行为（不太理解，等实例）</li>
+<li>检查发送的DTC，使用DTC中包含的信息来决定哪个部件受影响（同上）</li>
+<li>可通过UDS更新固件，可执行恶意程序</li>
+<li>可暴力破解厂商的诊断模式及PID</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：《汽车黑客大曝光》</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2022/01/26/iov/汽车中的诊断及日志服务/" title="汽车中的诊断及日志服务">http://21guns.top/2022/01/26/iov/汽车中的诊断及日志服务/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOV安全/" rel="tag"># IOV安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/01/24/iov/汽车中的总线协议/" rel="prev" title="汽车中的总线协议">
+      <i class="fa fa-chevron-left"></i> 汽车中的总线协议
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/01/27/iot/tenda多款设备认证绕过漏洞/" rel="next" title="tenda多款设备认证绕过漏洞">
+      tenda多款设备认证绕过漏洞 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#汽车中的诊断及日志服务"><span class="nav-number">1.</span> <span class="nav-text">汽车中的诊断及日志服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#故障诊断代码-DTC"><span class="nav-number">1.1.</span> <span class="nav-text">故障诊断代码-DTC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#统一诊断服务-UDS"><span class="nav-number">1.2.</span> <span class="nav-text">统一诊断服务-UDS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它"><span class="nav-number">1.3.</span> <span class="nav-text">其它</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

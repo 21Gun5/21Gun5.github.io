@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] 云丁鹿客智能门锁的安全分析上 概述：app与门锁的ble通信、app端（下篇是门锁固件端） 如何分析 切入点：门锁可通过手机BLE开锁，故从app的开锁流程开始 方法：日志、流量、逆向   Challenge/Response模式 a：通知指令：app与门锁建立BLE连接后，当使用app开启门锁时，app会先下发一条通知指令，告知门锁准备进入开锁流程 b：Challenge：门锁向手机">
+<meta name="keywords" content="智能门锁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="云丁鹿客智能门锁的安全分析">
+<meta property="og:url" content="http://21guns.top/2021/05/21/iot/云丁鹿客智能门锁的安全分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] 云丁鹿客智能门锁的安全分析上 概述：app与门锁的ble通信、app端（下篇是门锁固件端） 如何分析 切入点：门锁可通过手机BLE开锁，故从app的开锁流程开始 方法：日志、流量、逆向   Challenge/Response模式 a：通知指令：app与门锁建立BLE连接后，当使用app开启门锁时，app会先下发一条通知指令，告知门锁准备进入开锁流程 b：Challenge：门锁向手机">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:08:49.654Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="云丁鹿客智能门锁的安全分析">
+<meta name="twitter:description" content="[TOC] 云丁鹿客智能门锁的安全分析上 概述：app与门锁的ble通信、app端（下篇是门锁固件端） 如何分析 切入点：门锁可通过手机BLE开锁，故从app的开锁流程开始 方法：日志、流量、逆向   Challenge/Response模式 a：通知指令：app与门锁建立BLE连接后，当使用app开启门锁时，app会先下发一条通知指令，告知门锁准备进入开锁流程 b：Challenge：门锁向手机">
+
+<link rel="canonical" href="http://21guns.top/2021/05/21/iot/云丁鹿客智能门锁的安全分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>云丁鹿客智能门锁的安全分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/05/21/iot/云丁鹿客智能门锁的安全分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          云丁鹿客智能门锁的安全分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-21 09:23:44" itemprop="dateCreated datePublished" datetime="2021-05-21T09:23:44+08:00">2021-05-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:08:49" itemprop="dateModified" datetime="2022-02-21T15:08:49+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="云丁鹿客智能门锁的安全分析"><a href="#云丁鹿客智能门锁的安全分析" class="headerlink" title="云丁鹿客智能门锁的安全分析"></a>云丁鹿客智能门锁的安全分析</h1><h2 id="上"><a href="#上" class="headerlink" title="上"></a>上</h2><ul>
+<li>概述：app与门锁的ble通信、app端（下篇是门锁固件端）</li>
+<li>如何分析<ul>
+<li>切入点：门锁可通过手机BLE开锁，故从app的开锁流程开始</li>
+<li>方法：日志、流量、逆向</li>
+</ul>
+</li>
+<li>Challenge/Response模式<ul>
+<li>a：通知指令：app与门锁建立BLE连接后，当使用app开启门锁时，app会先下发一条通知指令，告知门锁准备进入开锁流程</li>
+<li>b：Challenge：门锁向手机发送一组数字，称为Challenge；</li>
+<li>c：Response：app对Challenge进行处理生成Response并发送给门锁，门锁验证Response正确时，就会开锁</li>
+<li>何处认证：多次开锁，a仅一个字节（序列号）不同，故a握手作用，认证在b和c</li>
+</ul>
+</li>
+<li>思路<ul>
+<li>门锁返回challenge、aes-ebc加密、异或固定数据</li>
+<li>ebc加密密钥BleKey：reset_token请求服务器、aes-cbc解密返回包中token-token即</li>
+<li>cbc解密密钥CryptSecret：crypt_cecret请求服务器、返回包中secret即</li>
+</ul>
+</li>
+<li>推测<ul>
+<li>a：每次app与门锁建立通信时，都会请求一个Bletoken-BleKey并下发给门锁</li>
+<li>b：当app与门锁建立通信时，如果没有Bletoken-BleKey，才会向服务器发送请求</li>
+<li>证伪a：手机重复开启门锁，日志和流量中都没有http请求，故本地保存了，不需下载</li>
+<li>证明b：清空app缓存，删除本地存储的BleKey，再开锁，出现http请求</li>
+</ul>
+</li>
+<li>app通信<ul>
+<li>app-服务器：aes-cbc解密 + reset_token返回包中token-token = ebc加密密钥</li>
+<li>app-服务器：crypt_cecret返回包中secret = cbc解密密钥</li>
+<li>app-服务器：base64解码 + reset_token返回包中buf-totalData = 门锁解密的BLeKey</li>
+<li>app-门锁：sendBleKeyCommandNewProtocol，base64+totalData，下发BleKey，ble通信可被监听）</li>
+<li>app-门锁：sendUnlockCommandNewProtocol，处理challenge后生成的response，开锁指令</li>
+</ul>
+</li>
+<li>门锁校验<ul>
+<li>app：发送通知，即将开锁</li>
+<li>门锁：发送challenge</li>
+<li>app：发送challenge加密后的response、加密密钥</li>
+<li>门锁：密钥解密response，对比明文与原始的challenge</li>
+</ul>
+</li>
+<li>开锁流程图<ul>
+<li>本地没有BleKey：app请求CryptSecret（密钥）和BleToken（密文）、aes-cbc解密BleToken-token、明文即BleKey</li>
+<li>本地有BleKey：aes-ebc加密challenge（BleKey为密钥）、密文异或固定数据=response、门锁对Response校验</li>
+</ul>
+</li>
+</ul>
+<h2 id="中"><a href="#中" class="headerlink" title="中"></a>中</h2><ul>
+<li>概述：固件保存在MCU内置flash存储器中、通过MCU的调试接口提取固件</li>
+<li>软件调试：<ul>
+<li>依赖Linux系统提供的软件调试接口</li>
+<li>gdbserver软件调试器（ida/gdb作为client）</li>
+</ul>
+</li>
+<li>硬件调试：<ul>
+<li>依赖MCU提供的硬件调试接口，SWD/JTAG</li>
+<li>需要相对应的硬件调试器，如JLink（支持SWD/JATG）、STLink（支持SWD）</li>
+</ul>
+</li>
+<li>MCU芯片手册，可找到<ul>
+<li>mcu的核心：ARM Cortex-M3，ida加载固件时会设置</li>
+<li>MCU提供的调试方式：何种调试接口，SWD/JTAG</li>
+<li>调试接口的引脚定义：如何将mcu与硬件调试器相连</li>
+<li>代码在内存中的位置：代码即狭义上固件、savebin提取固件会用到位置</li>
+</ul>
+</li>
+<li>硬件调试器：<ul>
+<li>连接PC与MCU，一端的USB口连PC，另一端连MCU</li>
+<li>连接MCU的接口有多种，如SWD/JTAG</li>
+<li>不同的调试接口，引脚定义也不同</li>
+<li>通常会提供相应的软件工具，比如JLink Commander命令行工具</li>
+</ul>
+</li>
+<li>读保护<ul>
+<li>原则上，通过硬件调试器连接MCU提供的硬件调试接口，可读取MCU内置flash中的数据，即获取固件</li>
+<li>芯片可开启读保护机制（Readout Protection）防止读取</li>
+</ul>
+</li>
+<li>连线<ul>
+<li>JLink的引脚定义，说的就是连mcu的哪一个，如Vtref即电源，就连接MCU的3.3V接口</li>
+<li>若接口不好连，可提前焊接排针</li>
+</ul>
+</li>
+<li>固件提取<ul>
+<li>状态检测，显示基本信息（信息可能不对，假货）</li>
+<li>connect：连接MCU接口</li>
+<li>?指令，弹框，选择芯片的厂商及型号</li>
+<li>s选择调试接口类型为SWD（默认JTAG）</li>
+<li>选择通信速率，默认即可</li>
+<li>显示内存信息，准备工作完成</li>
+<li>savebin + 固件名 + 开始地址 + 结束地址    </li>
+</ul>
+</li>
+<li>固件解析<ul>
+<li>同属Cortex-M系列，所以分析方法就相同，核心是啥？//here</li>
+<li>固件基址：代码在内存中的起始地址</li>
+<li>寻找Reset中断的中断服务程序，跳转之后按“c”键（原理看其它文章//here）</li>
+</ul>
+</li>
+<li>固件到底是啥？<ul>
+<li>binwalk+固件：得到文件系统</li>
+<li>vxworks固件：就是一个大文件</li>
+<li>本文固件：是内存中的代码</li>
+</ul>
+</li>
+<li>各种手册<ul>
+<li>reference-manuals，参考手册，目录6 DBG-Debug Interface，确认是SWD调试、调试引脚（参考手册有多份，在EFM32GG这份）</li>
+<li>data-sheets，数据表/产品规格，目录1. Feature List，确定核心为：ARM Cortex-M3</li>
+<li>data-sheets，数据表/产品规格目录3.3 Memory Map，确定flash（即代码即固件）在内存中的位置为0-0x100000，固件基址即0</li>
+</ul>
+</li>
+</ul>
+<h2 id="下"><a href="#下" class="headerlink" title="下"></a>下</h2><ul>
+<li>概要：swd动态调试、totaldata怎么到BleKey</li>
+<li>IDA载入固件<ul>
+<li>导航条：只有开始的一小部分被解析成代码了，其他绝大部分unexplored</li>
+<li>字符串：“FreeRTOS”</li>
+<li>推测：被解析的是bootloader，主程序可能使用了FreeRTOS系统</li>
+</ul>
+</li>
+<li>两种思路<ul>
+<li>直接“莽”：由bootloader开始分析，一直分析到BLE的处理流程</li>
+<li>“投机取巧”法：电路板上有SWD引脚，故可以通过SWD调试，定位关键位置</li>
+</ul>
+</li>
+<li>SEGGER JLink调试<ul>
+<li>JLink：不仅可提取固件，也可动态调试</li>
+<li>Ozone：SEGGER提供的图形界面工具，可展示多个subview</li>
+<li>创建新项目：选择芯片型号、调试接口类型、通信速率等</li>
+<li>也可选择openOCD配合JLink进行调试</li>
+</ul>
+</li>
+<li>定位关键位置<ul>
+<li>门锁与app的BLE通信，有AES加密保护，故从AES入手</li>
+<li>芯片手册：提供AES处理模块，位于0x400E0000~0x400E0400</li>
+<li>假设使用芯片的AES模块，而非自写的AES算法，那么必然访问这片内存</li>
+<li>设置内存读写断点，手机上点击开锁，找到AES的处理函数，即AESFunc</li>
+</ul>
+</li>
+<li>totalData<ul>
+<li>二进制数据、经过base64</li>
+<li>header：消息头、数据包序号、校验等</li>
+<li>body：多个数据块，其结构：1类型-2长度-len内容</li>
+</ul>
+</li>
+<li>AESEntry函数<ul>
+<li>AESFunc的封装，totalData生成BleKey的核心代码</li>
+<li>流程：totaldata、aes解密（需要根密钥）、异或、blekey</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ul>
+<li><a href="https://www.4hou.com/posts/RkKY" target="_blank" rel="noopener">https://www.4hou.com/posts/RkKY</a></li>
+<li><a href="https://www.4hou.com/posts/AW29" target="_blank" rel="noopener">https://www.4hou.com/posts/AW29</a></li>
+<li><a href="https://www.4hou.com/posts/n79W" target="_blank" rel="noopener">https://www.4hou.com/posts/n79W</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/05/21/iot/云丁鹿客智能门锁的安全分析/" title="云丁鹿客智能门锁的安全分析">http://21guns.top/2021/05/21/iot/云丁鹿客智能门锁的安全分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/智能门锁/" rel="tag"># 智能门锁</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/21/reverse/符号执行-基础知识/" rel="prev" title="符号执行的基础知识">
+      <i class="fa fa-chevron-left"></i> 符号执行的基础知识
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/05/22/iot/Linksys-WAG120N固件分析/" rel="next" title="Linksys-WAG120N固件分析">
+      Linksys-WAG120N固件分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#云丁鹿客智能门锁的安全分析"><span class="nav-number">1.</span> <span class="nav-text">云丁鹿客智能门锁的安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#上"><span class="nav-number">1.1.</span> <span class="nav-text">上</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#中"><span class="nav-number">1.2.</span> <span class="nav-text">中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下"><span class="nav-number">1.3.</span> <span class="nav-text">下</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] ida-ghidra使用记录ghidra00-tool.py12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868">
+<meta name="keywords" content="tool">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ida-ghidra使用记录">
+<meta property="og:url" content="http://21guns.top/2021/07/19/reverse/ida-ghidra使用记录/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] ida-ghidra使用记录ghidra00-tool.py12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:43:47.218Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ida-ghidra使用记录">
+<meta name="twitter:description" content="[toc] ida-ghidra使用记录ghidra00-tool.py12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868">
+
+<link rel="canonical" href="http://21guns.top/2021/07/19/reverse/ida-ghidra使用记录/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ida-ghidra使用记录 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/07/19/reverse/ida-ghidra使用记录/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ida-ghidra使用记录
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-19 14:41:33" itemprop="dateCreated datePublished" datetime="2021-07-19T14:41:33+08:00">2021-07-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:43:47" itemprop="dateModified" datetime="2022-02-21T15:43:47+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/软件安全-逆向/" itemprop="url" rel="index"><span itemprop="name">软件安全/逆向</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="ida-ghidra使用记录"><a href="#ida-ghidra使用记录" class="headerlink" title="ida-ghidra使用记录"></a>ida-ghidra使用记录</h1><h1 id="ghidra"><a href="#ghidra" class="headerlink" title="ghidra"></a>ghidra</h1><h2 id="00-tool-py"><a href="#00-tool-py" class="headerlink" title="00-tool.py"></a>00-tool.py</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># tool kit</span></span><br><span class="line"><span class="comment"># @author lxl</span></span><br><span class="line"><span class="comment"># @category my_python_script</span></span><br><span class="line"><span class="comment"># @keybinding</span></span><br><span class="line"><span class="comment"># @menupath</span></span><br><span class="line"><span class="comment"># @toolbar</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># TODO Add User Code Here</span></span><br><span class="line"></span><br><span class="line">from __main__ import *</span><br><span class="line">from ghidra.app.decompiler import DecompInterface</span><br><span class="line">from ghidra.program.model.pcode import PcodeOp</span><br><span class="line"></span><br><span class="line">def get_varnode_value(varnode):</span><br><span class="line">    <span class="keyword">if</span> varnode.isAddress() or varnode.isConstant():</span><br><span class="line">        <span class="built_in">return</span> varnode.getAddress()</span><br><span class="line">    <span class="keyword">elif</span> varnode.isUnique() or varnode.isAddrTied() or varnode.isRegister():</span><br><span class="line">        <span class="built_in">return</span> calc_pcode_op(varnode.getDef())</span><br><span class="line">    <span class="keyword">elif</span> varnode.isPersistant() or varnode.isUnaffected():</span><br><span class="line">        <span class="built_in">return</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">return</span></span><br><span class="line">def calc_pcode_op(p_code):</span><br><span class="line">    op_code = p_code.getOpcode()</span><br><span class="line">    <span class="comment"># PTRSUB</span></span><br><span class="line">    <span class="keyword">if</span> op_code == PcodeOp.PTRSUB:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: PTRSUB" % p_code)</span></span><br><span class="line">        value_1 = get_varnode_value(p_code.getInput(0))</span><br><span class="line">        value_2 = get_varnode_value(p_code.getInput(1))</span><br><span class="line">        <span class="keyword">if</span> isinstance(value_1, GenericAddress) and isinstance(value_2, GenericAddress):</span><br><span class="line">            <span class="built_in">return</span> value_1.offset + value_2.offset</span><br><span class="line"></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># print("value_1: &#123;&#125;".format(value_1))</span></span><br><span class="line">            <span class="comment"># print("value_2: &#123;&#125;".format(value_2))</span></span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line">    <span class="comment"># CAST</span></span><br><span class="line">    <span class="keyword">elif</span> op_code == PcodeOp.CAST:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: CAST" % p_code)</span></span><br><span class="line">        value_0 = get_varnode_value(p_code.getInput(0))</span><br><span class="line">        <span class="keyword">if</span> isinstance(value_0, GenericAddress):</span><br><span class="line">            <span class="built_in">return</span> value_0.offset</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line">    <span class="comment"># PTRADD</span></span><br><span class="line">    <span class="keyword">elif</span> op_code == PcodeOp.PTRADD:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: PTRADD" % p_code)</span></span><br><span class="line">        try:</span><br><span class="line">            value_0_point = get_varnode_value(p_code.getInput(0))</span><br><span class="line">            <span class="comment"># print("value_0_point: &#123;&#125;".format(value_0_point))</span></span><br><span class="line">            <span class="keyword">if</span> not isinstance(value_0_point, GenericAddress):</span><br><span class="line">                <span class="built_in">return</span></span><br><span class="line">            value_0 = toAddr(getInt(value_0_point))</span><br><span class="line">            <span class="comment"># print("value_0: &#123;&#125;".format(value_0))</span></span><br><span class="line">            <span class="comment"># print("type(value_0): &#123;&#125;".format(type(value_0)))</span></span><br><span class="line">            value_1 = get_varnode_value(p_code.getInput(1))</span><br><span class="line">            <span class="comment"># print("value_1: &#123;&#125;".format(value_1))</span></span><br><span class="line">            <span class="comment"># print("type(value_1): &#123;&#125;".format(type(value_1)))</span></span><br><span class="line">            <span class="keyword">if</span> not isinstance(value_1, GenericAddress):</span><br><span class="line">                <span class="comment"># print("value_1 is not GenericAddress!")</span></span><br><span class="line">                <span class="built_in">return</span></span><br><span class="line">            value_1 = get_signed_value(value_1.offset)</span><br><span class="line">            value_2 = get_varnode_value(p_code.getInput(2))</span><br><span class="line">            <span class="comment"># print("value_2: &#123;&#125;".format(value_2))</span></span><br><span class="line">            <span class="comment"># print("type(value_2): &#123;&#125;".format(type(value_2)))</span></span><br><span class="line">            <span class="keyword">if</span> not isinstance(value_2, GenericAddress):</span><br><span class="line">                <span class="built_in">return</span></span><br><span class="line">            output_value = value_0.add(value_1)</span><br><span class="line">            <span class="comment"># print("output_value: &#123;&#125;".format(output_value))</span></span><br><span class="line">            <span class="built_in">return</span> output_value.offset</span><br><span class="line"></span><br><span class="line">        except Exception as err:</span><br><span class="line">            <span class="comment"># print("Got something wrong with calc PcodeOp.PTRADD : &#123;&#125;".format(err))</span></span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line"></span><br><span class="line">        except:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">"Got something wrong with calc PcodeOp.PTRADD "</span>)</span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line">    <span class="comment"># INDIRECT</span></span><br><span class="line">    <span class="keyword">elif</span> op_code == PcodeOp.INDIRECT:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: INDIRECT" % p_code)</span></span><br><span class="line">        <span class="built_in">return</span> None</span><br><span class="line">    <span class="comment"># MULTIEQUAL</span></span><br><span class="line">    <span class="keyword">elif</span> op_code == PcodeOp.MULTIEQUAL:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: MULTIEQUAL" % p_code)</span></span><br><span class="line">        <span class="built_in">return</span> None</span><br><span class="line">    <span class="comment"># COPY</span></span><br><span class="line">    <span class="keyword">elif</span> op_code == PcodeOp.COPY:</span><br><span class="line">        <span class="comment"># print("p_code: %s, op_code: COPY" % p_code)</span></span><br><span class="line">        <span class="comment"># print("input_0: %s, output: %s" % (p_code.getInput(0), p_code.getOutput()))</span></span><br><span class="line">        value = get_varnode_value(p_code.getInput(0))</span><br><span class="line">        <span class="built_in">return</span> value</span><br><span class="line">class FuncParser(object):</span><br><span class="line">    def __init__(self, func):</span><br><span class="line">        self.func = func</span><br><span class="line">        self.pcode_dict = self.get_all_pcode()</span><br><span class="line"></span><br><span class="line">    def get_all_pcode(self):</span><br><span class="line">        dec_lib = DecompInterface()</span><br><span class="line">        dec_lib.openProgram(currentProgram)</span><br><span class="line">        dec_res = dec_lib.decompileFunction(self.func, 30, getMonitor())</span><br><span class="line">        high_func = dec_res.getHighFunction()</span><br><span class="line">        ops = high_func.getPcodeOps()</span><br><span class="line"></span><br><span class="line">        pcode_dict = &#123;&#125;</span><br><span class="line">        <span class="keyword">while</span> ops.hasNext():</span><br><span class="line">            p_code = ops.next()</span><br><span class="line">            op_code = p_code.getOpcode()</span><br><span class="line">            <span class="keyword">if</span> op_code not <span class="keyword">in</span> [PcodeOp.CALL, PcodeOp.CALLIND]:</span><br><span class="line">                <span class="built_in">continue</span></span><br><span class="line">            caller_addr = p_code.getInput(0).getPCAddress()</span><br><span class="line">            pcode_dict[caller_addr] = p_code</span><br><span class="line">        <span class="built_in">return</span> pcode_dict</span><br><span class="line"></span><br><span class="line">    def get_arg_list(self, caller_addr):</span><br><span class="line">        arg_list = []</span><br><span class="line">        p_code = self.pcode_dict[caller_addr]</span><br><span class="line">        args = p_code.getInputs()[1:]</span><br><span class="line">        <span class="keyword">for</span> arg <span class="keyword">in</span> args:</span><br><span class="line">            arg_list.append(arg)</span><br><span class="line">        <span class="built_in">return</span> arg_list</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def is_addr_in_cur_program(addr):</span><br><span class="line">    <span class="keyword">for</span> block <span class="keyword">in</span> currentProgram.memory.blocks:</span><br><span class="line">        <span class="keyword">if</span> block.getStart().offset &lt;= addr.offset &lt;= block.getEnd().offset:</span><br><span class="line">            <span class="built_in">return</span> True</span><br><span class="line">    <span class="built_in">return</span> False</span><br><span class="line"></span><br><span class="line">def get_arg_list(pcode_dict, caller_addr):</span><br><span class="line">    arg_list = []</span><br><span class="line">    p_code = pcode_dict[caller_addr]</span><br><span class="line">    args = p_code.getInputs()[1:]</span><br><span class="line">    <span class="keyword">for</span> arg <span class="keyword">in</span> args:</span><br><span class="line">        arg_list.append(arg)</span><br><span class="line">    <span class="built_in">return</span> arg_list</span><br><span class="line"></span><br><span class="line">def get_func_pcode(func):</span><br><span class="line">    dec_lib = DecompInterface()</span><br><span class="line">    dec_lib.openProgram(currentProgram)</span><br><span class="line">    dec_res = dec_lib.decompileFunction(func, 30, getMonitor())</span><br><span class="line">    high_func = dec_res.getHighFunction()</span><br><span class="line">    ops = high_func.getPcodeOps()</span><br><span class="line"></span><br><span class="line">    pcode_dict = &#123;&#125;</span><br><span class="line">    <span class="keyword">while</span> ops.hasNext():</span><br><span class="line">        p_code = ops.next()</span><br><span class="line">        op_code = p_code.getOpcode()</span><br><span class="line">        <span class="keyword">if</span> op_code not <span class="keyword">in</span> [PcodeOp.CALL, PcodeOp.CALLIND]:</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        caller_addr = p_code.getInput(0).getPCAddress()</span><br><span class="line">        pcode_dict[caller_addr] = p_code</span><br><span class="line">    <span class="built_in">return</span> pcode_dict</span><br><span class="line"></span><br><span class="line">def trace_varnode_value(varnode):</span><br><span class="line">    <span class="keyword">while</span> not varnode.isConstant():</span><br><span class="line">        pcode_op = varnode.getDef()</span><br><span class="line">        op_code = pcode_op.getOpcode()</span><br><span class="line">        <span class="keyword">if</span> pcode_op is None:</span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">elif</span> op_code <span class="keyword">in</span> [PcodeOp.CAST, PcodeOp.COPY]:</span><br><span class="line">            varnode = pcode_op.getInput(0)</span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">elif</span> op_code <span class="keyword">in</span> [PcodeOp.PTRSUB, PcodeOp.PTRADD]:</span><br><span class="line">            varnode = pcode_op.getInput(1)</span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">elif</span> op_code <span class="keyword">in</span> [PcodeOp.INT_MULT, PcodeOp.MULTIEQUAL]:</span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">return</span> None</span><br><span class="line">    <span class="built_in">return</span> varnode.getOffset()</span><br><span class="line"></span><br><span class="line">def get_string_by_addr(addr):</span><br><span class="line">    mem = currentProgram.getMemory()</span><br><span class="line">    core_name_str = <span class="string">""</span></span><br><span class="line">    <span class="keyword">while</span> True:</span><br><span class="line">        byte = mem.getByte(addr.add(len(core_name_str)))</span><br><span class="line">        <span class="keyword">if</span> byte == 0:</span><br><span class="line">            <span class="built_in">return</span> core_name_str</span><br><span class="line">        core_name_str += chr(byte)</span><br><span class="line"></span><br><span class="line">def get_arg_value(arg_list, arg_index):</span><br><span class="line">    arg = arg_list[arg_index - 1]</span><br><span class="line">    value = trace_varnode_value(arg)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># None</span></span><br><span class="line">    <span class="keyword">if</span> not value:</span><br><span class="line">        <span class="built_in">return</span> value</span><br><span class="line"></span><br><span class="line">    <span class="comment"># char* or int</span></span><br><span class="line">    arg_value = 0</span><br><span class="line">    arg_addr = toAddr(value)</span><br><span class="line">    <span class="keyword">if</span> is_addr_in_cur_program(arg_addr):</span><br><span class="line">        <span class="keyword">if</span> getDataAt(arg_addr):</span><br><span class="line">            arg_value = get_string_by_addr(arg_addr)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            arg_value = value</span><br><span class="line">    <span class="built_in">return</span> arg_value</span><br><span class="line"></span><br><span class="line">def get_caller_dict(target_func):</span><br><span class="line">    caller_dict = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    entry_point = target_func.getEntryPoint()</span><br><span class="line">    refs = getReferencesTo(entry_point)</span><br><span class="line">    <span class="keyword">for</span> ref <span class="keyword">in</span> refs:</span><br><span class="line">        <span class="comment">#</span></span><br><span class="line">        ref_type = ref.getReferenceType()</span><br><span class="line">        <span class="keyword">if</span> not ref_type.isCall():</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">#</span></span><br><span class="line">        caller_addr = ref.getFromAddress()</span><br><span class="line">        caller_func = getFunctionContaining(caller_addr)</span><br><span class="line">        <span class="comment"># if caller_func.name != "FUN_00406398"://here</span></span><br><span class="line">        <span class="comment">#     continue</span></span><br><span class="line"></span><br><span class="line">        pcode_dict = get_func_pcode(caller_func)</span><br><span class="line">        arg_list = get_arg_list(pcode_dict, caller_addr)</span><br><span class="line">        caller_dict[caller_addr] = &#123;</span><br><span class="line">            <span class="string">'caller_func'</span>: caller_func.name,</span><br><span class="line">            <span class="comment"># 'caller_func_addr': caller_func.getEntryPoint(),</span></span><br><span class="line">            <span class="string">'args'</span>: arg_list</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="built_in">return</span> caller_dict</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    pass</span><br></pre></td></tr></table></figure>
+<h2 id="01-rename-func-by-log-py"><a href="#01-rename-func-by-log-py" class="headerlink" title="01-rename_func_by_log.py"></a>01-rename_func_by_log.py</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># rename function name by log,</span></span><br><span class="line"><span class="comment"># tplink-archer-c5-v4-httpd.</span></span><br><span class="line"><span class="comment"># @author lxl</span></span><br><span class="line"><span class="comment"># @category my_script</span></span><br><span class="line"><span class="comment"># @keybinding</span></span><br><span class="line"><span class="comment"># @menupath</span></span><br><span class="line"><span class="comment"># @toolbar</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#TODO Add User Code Here</span></span><br><span class="line">from ghidra.program.model.symbol.SourceType import USER_DEFINED</span><br><span class="line">from tool import get_caller_dict, get_arg_value, get_logger</span><br><span class="line"></span><br><span class="line">debug = True</span><br><span class="line">logger = get_logger(__name__)</span><br><span class="line"><span class="keyword">if</span> debug:</span><br><span class="line">    logger.setLevel(10)</span><br><span class="line"></span><br><span class="line">def main():</span><br><span class="line">    <span class="comment"># 1 find func</span></span><br><span class="line">    func_name = <span class="string">"printf"</span></span><br><span class="line">    arg_idx = 2    <span class="comment"># begin from 1</span></span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    target_func = 0</span><br><span class="line">    fm = currentProgram.getFunctionManager()</span><br><span class="line">    funcs = fm.getFunctions(True)</span><br><span class="line">    <span class="keyword">for</span> func <span class="keyword">in</span> funcs:</span><br><span class="line">        <span class="keyword">if</span> func.getName() != func_name:</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        target_func = func</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"func: %s , addr: 0x%x , arg_idx: %d"</span> %(func_name, target_func.getEntryPoint().getOffset(), arg_idx))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2 get args</span></span><br><span class="line">    rename_func_dict = &#123;&#125;</span><br><span class="line">    caller_dict = get_caller_dict(target_func)</span><br><span class="line">    <span class="keyword">for</span> caller_addr, caller_info <span class="keyword">in</span> caller_dict.items():</span><br><span class="line">        old_name = caller_info[<span class="string">'caller_func'</span>]</span><br><span class="line">        <span class="keyword">if</span> not old_name.startswith(<span class="string">"FUN_"</span>):</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        arg_list = caller_info[<span class="string">'args'</span>]</span><br><span class="line">        <span class="keyword">if</span> len(arg_list) &lt; arg_idx:</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        new_name = get_arg_value(caller_info[<span class="string">'args'</span>], arg_idx)</span><br><span class="line">        <span class="keyword">if</span> new_name is None:</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line"></span><br><span class="line">        logger.debug(<span class="string">"old_name: %s , arg_list: %s"</span> %(old_name, str(arg_list)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment"># </span></span><br><span class="line">        rename_func_dict[old_name] = &#123;</span><br><span class="line">            <span class="string">"new_name"</span>: new_name,</span><br><span class="line">            <span class="string">"caller_addr"</span>: caller_addr</span><br><span class="line">        &#125;</span><br><span class="line">        logger.debug(<span class="string">"new_name: %s , caller_addr: 0x%x"</span> %(old_name, caller_addr.getOffset()))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3 rename</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"rename %d functions by %s"</span> % (len(rename_func_dict), func_name))</span><br><span class="line">    <span class="keyword">for</span> old_name, rename_info <span class="keyword">in</span> rename_func_dict.items():</span><br><span class="line">        new_name = rename_info[<span class="string">'new_name'</span>]</span><br><span class="line">        caller_addr = rename_info[<span class="string">'caller_addr'</span>]</span><br><span class="line">        <span class="comment"># getFunction(old_name).setName(new_name, USER_DEFINED)#here</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">"\t&#123;:#x&#125; in &#123;:20s&#125;  new_name: &#123;&#125;"</span>.format(caller_addr.getOffset(), old_name, new_name))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<h2 id="02-get-func-caller-py"><a href="#02-get-func-caller-py" class="headerlink" title="02-get_func_caller.py"></a>02-get_func_caller.py</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># get function caller using P-Code.</span></span><br><span class="line"><span class="comment"># tplink-archer-c5-v4-httpd.</span></span><br><span class="line"><span class="comment"># @author lxl</span></span><br><span class="line"><span class="comment"># @category my_python_script</span></span><br><span class="line"><span class="comment"># @keybinding</span></span><br><span class="line"><span class="comment"># @menupath</span></span><br><span class="line"><span class="comment"># @toolbar</span></span><br><span class="line"></span><br><span class="line">from tool import get_caller_dict, get_arg_value</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="comment"># 1 find func</span></span><br><span class="line">    <span class="comment"># target_func_name = askLong("input", "function name")</span></span><br><span class="line">    target_func_name = <span class="string">"cdbg_printf"</span></span><br><span class="line">    target_func = 0</span><br><span class="line">    fm = currentProgram.getFunctionManager()</span><br><span class="line">    funcs = fm.getFunctions(True)</span><br><span class="line">    <span class="keyword">for</span> func <span class="keyword">in</span> funcs:</span><br><span class="line">        <span class="keyword">if</span> func.getName() != target_func_name:</span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        target_func = func</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"\n1: find %s at 0x%s"</span> % (target_func_name, target_func.getEntryPoint()))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2 get args</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"2: get args"</span>)</span><br><span class="line">    caller_dict = get_caller_dict(target_func)</span><br><span class="line">    caller_index = 0</span><br><span class="line">    <span class="keyword">for</span> caller_addr, caller_info <span class="keyword">in</span> caller_dict.items():</span><br><span class="line">        args_str = <span class="string">""</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(len(caller_info[<span class="string">'args'</span>])):</span><br><span class="line">            arg_value = get_arg_value(caller_info[<span class="string">'args'</span>], i + 1)</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">type</span>(arg_value) == long:</span><br><span class="line">                arg_value = hex(arg_value)</span><br><span class="line">            <span class="keyword">elif</span> <span class="built_in">type</span>(arg_value) == str:</span><br><span class="line">                arg_value = repr(arg_value)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                arg_value = <span class="string">"Unknown"</span></span><br><span class="line">            args_str += <span class="string">"%s, "</span> % arg_value</span><br><span class="line"></span><br><span class="line">        <span class="comment"># only xxx</span></span><br><span class="line">        <span class="comment"># if "%s" not in args_str:</span></span><br><span class="line">        <span class="comment">#     continue</span></span><br><span class="line"></span><br><span class="line">        caller_index += 1</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">"\t&#123;:3d&#125;: &#123;:#x&#125; in &#123;:20s&#125;\t&#123;&#125;(&#123;&#125;)"</span>.format(caller_index, caller_addr.offset, caller_info[<span class="string">'caller_func'</span>], target_func_name, args_str.strip(<span class="string">", "</span>)))</span><br></pre></td></tr></table></figure>
+<h2 id="03-trace-func-java"><a href="#03-trace-func-java" class="headerlink" title="03-trace_func.java"></a>03-trace_func.java</h2><ul>
+<li>见文件</li>
+</ul>
+<h2 id="04-其它"><a href="#04-其它" class="headerlink" title="04-其它"></a>04-其它</h2><ul>
+<li>window-python，python命令行窗口，光标放在反编译窗口C语句上（必须放在C语句上）</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 反汇编</span></span><br><span class="line">0040bd74     jalr       t9=&gt;cdbg_printf                                  undefined cdbg_printf()</span><br><span class="line"><span class="comment"># 反编译</span></span><br><span class="line">cdbg_printf(8,<span class="string">"http_rpm_confburn"</span>,0xf6,<span class="string">"Detach big buffer error\n"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment"># shell</span></span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp<span class="comment"># 获取pcode</span></span><br><span class="line"> ---  CALL (ram, 0x4187a0, 8) , (const, 0x8, 4) , (unique, 0x1000001e, 4) , (const, 0xf6, 4) , (unique, 0x1000001a, 4)</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(2)<span class="comment"># getInput函数可以方便的获取P-Code的input参数</span></span><br><span class="line">(unique, 0x1000001e, 4)</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(2).getDef()<span class="comment"># 通过调用VarNode的getDef函数来对该VarNode的赋值流进行追踪</span></span><br><span class="line">(unique, 0x1000001e, 4) COPY (const, 0x41c564, 4)</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(2).PCAddress<span class="comment"># PCAddress表示当前pcode对应的反汇编中指令地址</span></span><br><span class="line">0040bd74</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(2).getPCAddress()<span class="comment"># PCAddress等价getPCAddress()，最好函数形式</span></span><br><span class="line">0040bd74</span><br></pre></td></tr></table></figure>
+<ul>
+<li>同一个函数内，可能会有多个log输出函数，故不好确定函数名</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">void FUN_0041573c(char **param_1)</span><br><span class="line">&#123;</span><br><span class="line">    cdbg_printf(8,<span class="string">"findDynDomainName"</span>,0x3fe,<span class="string">"Falied to get DYN_DNS_CFG_OBJ"</span>);</span><br><span class="line">		cdbg_printf(8,<span class="string">"findWanIp"</span>,uVar4,pcVar5);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>取字符串</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># "isValidIp"位于0041a0a0</span></span><br><span class="line">0041a09a     ds         <span class="string">"\r\r\r\r\r\risValidIp"</span></span><br><span class="line">cdbg_printf(8,<span class="string">"isValidIp"</span>,uVar2,<span class="string">"Error ocurrs in convertint the IPs to num format!"</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 跳过偏移则无结果</span></span><br><span class="line">&gt;&gt;&gt; getDataAt(toAddr(0x41a09a))<span class="comment"># 有结果</span></span><br><span class="line">ds <span class="string">"\r\r\r\r\r\risValidIp"</span></span><br><span class="line">&gt;&gt;&gt; getDataAt(toAddr(0x41a0a0))<span class="comment"># 空</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 因此取字符串时，多加一个or</span></span><br><span class="line"><span class="keyword">if</span> getDataAt(arg_addr) or chr(currentProgram.getMemory().getByte(arg_addr)):</span><br><span class="line">    arg_value = get_string_by_addr(arg_addr)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>输出的函数名/地址，两侧要有空格，才能点击跳转</li>
+<li>import tool：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># tool中需导入__main__</span></span><br><span class="line"><span class="comment"># from __main__ import *</span></span><br><span class="line">The Python module that Ghidra directly launches is always called __main__.  If we import</span><br><span class="line">everything from that module, this module will behave as <span class="keyword">if</span> Ghidra directly launched it.</span><br><span class="line"></span><br><span class="line"><span class="comment"># 否则报错</span></span><br><span class="line">NameError: global name <span class="string">'getReferencesTo'</span> is not defined</span><br><span class="line"></span><br><span class="line"><span class="comment"># 都放在一个主文件中不需要，只有在import tool时，tool中需要导入</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>地址与地址对象的转换：addr_obj = toAddr(addr), addr = addr_obj.offset</li>
+<li>获取pcode所在地址</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#         </span></span><br><span class="line">004a4860     jalr       t9=&gt;util_execSystem</span><br><span class="line">util_execSystem(<span class="string">"setRule"</span>,acStack568);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1</span></span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(0).PCAddress</span><br><span class="line">004a4860</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2（</span></span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getSeqnum().getTarget()</span><br><span class="line">004a4860</span><br></pre></td></tr></table></figure>
+<ul>
+<li>遍历函数内pcode时</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 二者同效果，monitor是啥？</span></span><br><span class="line"><span class="keyword">while</span> ops.hasNext() and ~monitor.isCancelled():</span><br><span class="line"><span class="keyword">while</span> ops.hasNext():</span><br></pre></td></tr></table></figure>
+<ul>
+<li>pcode获取，python代码与其它二者不同</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 地址004a4860</span></span><br><span class="line">004a4860     jalr       t9=&gt;util_execSystem</span><br><span class="line">util_execSystem(<span class="string">"setRule"</span>,acStack568);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 命令行</span></span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp</span><br><span class="line"> ---  CALL (ram, 0x4835d0, 8) , (unique, 0x10000085, 4) , (register, 0x14, 4)</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getSeqnum().getTarget()</span><br><span class="line">004a4860</span><br><span class="line"></span><br><span class="line"><span class="comment"># java代码</span></span><br><span class="line">Call @ 0x4a4860 [oal_fw6_delRule] to 0x4835d0 [util_execSystem] (3 pcodeops)</span><br><span class="line">	 ---  CALL (ram, 0x4835d0, 8) , (unique, 0x10000085, 4) , (register, 0x14, 4) </span><br><span class="line">	Parameter <span class="comment">#0 - (ram, 0x4835d0, 8) @ 0x4835d0</span></span><br><span class="line">	Parameter <span class="comment">#1 - (unique, 0x10000085, 4) @ 0x10000085</span></span><br><span class="line">	Parameter <span class="comment">#2 - (register, 0x14, 4) @ 0x14</span></span><br><span class="line">	</span><br><span class="line"><span class="comment"># python代码    </span></span><br><span class="line">Debug 3:  ---  CALLIND (register, 0x64, 4) , (register, 0x10, 4) , (register, 0x14, 4)</span><br><span class="line">Debug 4: 004a4860</span><br><span class="line"></span><br><span class="line"><span class="comment"># 原因：要对dec_lib进行设置，不可默认</span></span><br><span class="line">旧：dec_lib = DecompInterface()</span><br><span class="line">新：dec_lib = setup_decompiler(currentProgram)</span><br><span class="line">def setup_decompiler(program):</span><br><span class="line">    decomp_interface = DecompInterface()</span><br><span class="line">    options = DecompileOptions()</span><br><span class="line">    tool = state.getTool()</span><br><span class="line">    <span class="keyword">if</span> tool:</span><br><span class="line">        service = tool.getService(OptionsService)</span><br><span class="line">        <span class="keyword">if</span> service:</span><br><span class="line">            opt = service.getOptions(<span class="string">"Decompiler"</span>)</span><br><span class="line">            options.grabFromToolAndProgram(None, opt, program)</span><br><span class="line"></span><br><span class="line">    decomp_interface.setOptions(options)</span><br><span class="line">    decomp_interface.toggleCCode(True)</span><br><span class="line">    decomp_interface.toggleSyntaxTree(True)</span><br><span class="line">    decomp_interface.setSimplificationStyle(<span class="string">"decompile"</span>)</span><br><span class="line">    <span class="built_in">return</span> decomp_interface</span><br><span class="line"><span class="comment"># 新结果</span></span><br><span class="line">Debug 3:  ---  CALL (ram, 0x4835d0, 8) , (unique, 0x10000085, 4) , (register, 0x14, 4)</span><br><span class="line">Debug 4: 004a4860</span><br></pre></td></tr></table></figure>
+<ul>
+<li>导入<ul>
+<li>java：import ghidra.app.decompiler.DecompInterface;</li>
+<li>python：from ghidra.app.decompiler import DecompInterface</li>
+</ul>
+</li>
+<li>varnode：const</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(1).getDef().getInput(0)</span><br><span class="line">(const, 0x4c1460, 4)</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(1).getDef().getInput(0).isConstant()</span><br><span class="line">True</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(1).getDef().getInput(0).getAddress()<span class="comment"># 16进制</span></span><br><span class="line">const:004c1460</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(1).getDef().getInput(0).getOffset()<span class="comment"># 10进制</span></span><br><span class="line">4985952L</span><br><span class="line">&gt;&gt;&gt; currentLocation.token.pcodeOp.getInput(1).getDef().getInput(0).getDef()<span class="comment"># 常数，没法再向上追溯定义</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>todo<ul>
+<li>get_func_pcode只保存调用目标函数的（python版）</li>
+<li>怎么区分数值8与字符串地址//here</li>
+</ul>
+</li>
+</ul>
+<h1 id="ida"><a href="#ida" class="headerlink" title="ida"></a>ida</h1><h2 id="help"><a href="#help" class="headerlink" title="help"></a>help</h2><ul>
+<li>官网：<a href="https://hex-rays.com/products/ida/support/idadoc/162.shtml" target="_blank" rel="noopener">https://hex-rays.com/products/ida/support/idadoc/162.shtml</a></li>
+<li><p>文件：ida_dir/idc/idc.idc</p>
+<h2 id="create-function-py"><a href="#create-function-py" class="headerlink" title="create_function.py"></a>create_function.py</h2></li>
+<li><p>from：笔记12-Reverse Engineering VxWorks Firmware: WRT54Gv8</p>
+</li>
+<li>原理：找函数序言<ul>
+<li>遍历代码，查找函数序言来定位未标识的函数，如果找到一个，告诉IDA在那里创建一个函数</li>
+<li>MIPS比Intel要复杂一些，因为函数序言在MIPS中没有那么标准化</li>
+<li>在代码（从光标位置开始）中搜索与这些指令（函数序言）对应的字节序列，并指示IDA将它们转换为函数。</li>
+</ul>
+</li>
+<li><p>常见序言：见note-汇编指令-mips-函数序言</p>
+</li>
+<li><p>起始地址/停止地址</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 起始地址：光标位置开始</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 在反汇编中，包含字符串的数据部分似乎从0x802DDAC0开始，因此将其设为停止地址</span></span><br><span class="line">ROM:802DDAB4  <span class="comment"># End of function sub_802DDA64</span></span><br><span class="line">ROM:802DDAB4  <span class="comment"># ---------------------------------------------------------------------------</span></span><br><span class="line">ROM:802DDAB8                 .word 0</span><br><span class="line">ROM:802DDABC                 .word 0</span><br><span class="line">ROM:802DDAC0 aInvalidConfigu:.ascii <span class="string">"Invalid configuration. PCI_MAX_DEV &gt; 16, PCI mechanism #2\n"</span>&lt;0&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或者直接拉到最后，找最后的地址</span></span><br><span class="line">ROM:80383A5E                 .byte    0</span><br><span class="line">ROM:80383A5F                 .byte    0</span><br><span class="line">ROM:80383A5F</span><br><span class="line">ROM:80383A5F                  <span class="comment"># end</span></span><br></pre></td></tr></table></figure>
+<h2 id="结构体数组"><a href="#结构体数组" class="headerlink" title="结构体数组"></a>结构体数组</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 如何将一堆数据转为有意义的结构体数组：创建结构体、选择结构体、转为array</span></span><br><span class="line"><span class="comment"># 1 创建结构体</span></span><br><span class="line">00000000 struc_label     struc ; (sizeof=0xC, mappedto_50)</span><br><span class="line">00000000                                         ; XREF: .data:label_tab/r</span><br><span class="line">00000000 index           DCD ?                   ; XREF: sa_parseRcvCmd+150/r</span><br><span class="line">00000004 string          DCD ?                   ; XREF: sa_parseRcvCmd+80/r</span><br><span class="line">00000004                                         ; sa_parseRcvCmd+330/r ; offset (00000000)</span><br><span class="line">00000008 <span class="built_in">type</span>            DCD ?                   ; XREF: sa_parseRcvCmd+88/r</span><br><span class="line">00000008                                         ; sa_parseRcvCmd+338/r</span><br><span class="line">0000000C struc_label     ends</span><br><span class="line"><span class="comment"># 2 结构体数组开始处，即第一个结构体处，alt+q：choose a structure type</span></span><br><span class="line"><span class="comment"># 3 同样开始处，shift+*或右键array，输入array size（大小自己控制</span></span><br><span class="line"><span class="comment"># 4 数组大小自己控制，比如400后，后续一些数据明显不对，有203行错误，故修正为197行</span></span><br><span class="line"><span class="comment"># 5 修正后（注意，地址都变成了数组首地址</span></span><br><span class="line">.data:0007DA44 label_tab       struc_label &lt;0xFF00, aNewenable, 1&gt;</span><br><span class="line">.data:0007DA44                                         ; DATA XREF: sub_1156C+30↑o</span><br><span class="line">.data:0007DA44                                         ; sub_1156C+68↑o ...</span><br><span class="line">.data:0007DA44                 struc_label &lt;0xFF01, aNewconnectiont, 0x10&gt; ; <span class="string">"NewNTPServer1"</span> ...</span><br><span class="line">.data:0007DA44                 struc_label &lt;0xFF02, aNewisploginnam, 0x40&gt;</span><br><span class="line">.data:0007DA44                 struc_label &lt;0xFF03, aNewisppassword, 0x40&gt;</span><br><span class="line">.data:0007DA44                 struc_label &lt;0xFF04, aNewidletimer, 3&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 6 为何会显示这样？怎么显示字符串和函数名</span></span><br><span class="line">.data.rel.ro:004584C8 cgi_tbl:        my_struct1 &lt;0x444148, 0x422C40, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                                          <span class="comment"># DATA XREF: LOAD:00400FEC↑o</span></span><br><span class="line">.data.rel.ro:004584C8                                          <span class="comment"># init_global+268↑o ...</span></span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x43FE94, 0x4188E0, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x444154, 0x423DB8, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x444160, 0x423B80, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x44416C, 0x425120, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x44417C, 0x4270DC, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x444190, 0x424A24, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x4441A4, 0x429548, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x4441B8, 0x41983C, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x4441CC, 0x42A0FC, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x4441E4, 0x423438, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1 &lt;0x4441F0, 0x4231AC, 0x36B0, 0&gt;</span><br><span class="line">.data.rel.ro:004584C8                 my_struct1  &lt;0&gt;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/07/19/reverse/ida-ghidra使用记录/" title="ida-ghidra使用记录">http://21guns.top/2021/07/19/reverse/ida-ghidra使用记录/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/tool/" rel="tag"># tool</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/13/iot/D-Link两个认证绕过漏洞的分析/" rel="prev" title="D-Link两个认证绕过漏洞的分析">
+      <i class="fa fa-chevron-left"></i> D-Link两个认证绕过漏洞的分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/24/iot/NetGear-AC2400认证绕过漏洞分析/" rel="next" title="NetGear-AC2400认证绕过漏洞分析">
+      NetGear-AC2400认证绕过漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ida-ghidra使用记录"><span class="nav-number">1.</span> <span class="nav-text">ida-ghidra使用记录</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ghidra"><span class="nav-number">2.</span> <span class="nav-text">ghidra</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00-tool-py"><span class="nav-number">2.1.</span> <span class="nav-text">00-tool.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-rename-func-by-log-py"><span class="nav-number">2.2.</span> <span class="nav-text">01-rename_func_by_log.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-get-func-caller-py"><span class="nav-number">2.3.</span> <span class="nav-text">02-get_func_caller.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-trace-func-java"><span class="nav-number">2.4.</span> <span class="nav-text">03-trace_func.java</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-其它"><span class="nav-number">2.5.</span> <span class="nav-text">04-其它</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ida"><span class="nav-number">3.</span> <span class="nav-text">ida</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#help"><span class="nav-number">3.1.</span> <span class="nav-text">help</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#create-function-py"><span class="nav-number">3.2.</span> <span class="nav-text">create_function.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结构体数组"><span class="nav-number">3.3.</span> <span class="nav-text">结构体数组</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

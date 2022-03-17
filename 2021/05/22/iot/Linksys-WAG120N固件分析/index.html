@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] Linksys-WAG120N固件分析 固件：https://www.linksys.com/gb/support-article?articleNum=208638中的https://downloads.linksys.com/downloads/firmware/WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin  首先file，确保不是打包或压缩文件">
+<meta name="keywords" content="路由器,固件分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linksys-WAG120N固件分析">
+<meta property="og:url" content="http://21guns.top/2021/05/22/iot/Linksys-WAG120N固件分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] Linksys-WAG120N固件分析 固件：https://www.linksys.com/gb/support-article?articleNum=208638中的https://downloads.linksys.com/downloads/firmware/WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin  首先file，确保不是打包或压缩文件">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-22T01:40:32.760Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linksys-WAG120N固件分析">
+<meta name="twitter:description" content="[toc] Linksys-WAG120N固件分析 固件：https://www.linksys.com/gb/support-article?articleNum=208638中的https://downloads.linksys.com/downloads/firmware/WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin  首先file，确保不是打包或压缩文件">
+
+<link rel="canonical" href="http://21guns.top/2021/05/22/iot/Linksys-WAG120N固件分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Linksys-WAG120N固件分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/05/22/iot/Linksys-WAG120N固件分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linksys-WAG120N固件分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-22 14:41:33" itemprop="dateCreated datePublished" datetime="2021-05-22T14:41:33+08:00">2021-05-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-22 09:40:32" itemprop="dateModified" datetime="2022-02-22T09:40:32+08:00">2022-02-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="Linksys-WAG120N固件分析"><a href="#Linksys-WAG120N固件分析" class="headerlink" title="Linksys-WAG120N固件分析"></a>Linksys-WAG120N固件分析</h1><ul>
+<li><p>固件：<a href="https://www.linksys.com/gb/support-article?articleNum=208638中的https://downloads.linksys.com/downloads/firmware/WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin" target="_blank" rel="noopener">https://www.linksys.com/gb/support-article?articleNum=208638中的https://downloads.linksys.com/downloads/firmware/WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin</a></p>
+</li>
+<li><p>首先file，确保不是打包或压缩文件</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp$ file WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin </span><br><span class="line">WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin: data</span><br><span class="line"><span class="comment"># data数据，未识别出其他，故继续</span></span><br></pre></td></tr></table></figure>
+<h2 id="01-找敏感信息-uboot-kernel"><a href="#01-找敏感信息-uboot-kernel" class="headerlink" title="01-找敏感信息-uboot/kernel"></a>01-找敏感信息-uboot/kernel</h2><ul>
+<li>hexdump、strings找敏感字符串</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 只保留了有用的</span></span><br><span class="line"><span class="comment"># 出现u-boot和Linux内核信息，说明此固件确实运行在Linux上</span></span><br><span class="line"><span class="comment"># U-Boot是一个非常普遍的boot loader</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings -n 10 WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin</span><br><span class="line">U-Boot 1.1.5-2.0 (Jul 22 2009 - 14:05:28) <span class="comment"># U-Boot boot loader</span></span><br><span class="line">Can not <span class="built_in">read</span> from <span class="built_in">source</span> buffer</span><br><span class="line">Not enough buffer <span class="keyword">for</span> decompression</span><br><span class="line">u-boot image</span><br><span class="line">entry download..</span><br><span class="line">%02x:%02x:%02x:%02x:%02x:%02x</span><br><span class="line">getPIDfromFlash</span><br><span class="line"><span class="built_in">read</span> ok..!!</span><br><span class="line">erase all,keep data from 0x%x to 0x%x</span><br><span class="line">normal erase</span><br><span class="line">erase complete</span><br><span class="line">enter download.</span><br><span class="line">Download mode ...</span><br><span class="line">GET_VERSION_INFO!</span><br><span class="line">f_kernel_crc</span><br><span class="line">f_rootfs_crc</span><br><span class="line">f_firmware_crc</span><br><span class="line">f_rootfs_addr</span><br><span class="line">download: verify..</span><br><span class="line">MIPS Linux-2.4.31-Amazon_SE-3.6.]<span class="comment"># Linux kernel</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 并未发现有用的东西</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ hexdump -C WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin | less</span><br></pre></td></tr></table></figure>
+<ul>
+<li>binwalk</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 有两个uImage header（是u-boot所使用的头格式），后面都紧跟了LZMA压缩的数据</span></span><br><span class="line"><span class="comment"># 2 识别出了信息，如compression type、image name（type为lzma，与1对应</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ binwalk WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">9660          0x25BC          U-Boot version string, <span class="string">"U-Boot 1.1.5-2.0 (Jul 22 2009 - 14:05:28)"</span></span><br><span class="line">9708          0x25EC          CRC32 polynomial table, big endian</span><br><span class="line"><span class="comment"># 第一个uImage header</span></span><br><span class="line">11012         0x2B04          uImage header, header size: 64 bytes, header CRC: 0xF5170888, created: 2009-07-22 06:05:29, image size: 47540 bytes, Data Address: 0x80400000, Entry Point: 0x80400000, data CRC: 0x84EF8694, OS: Linux, CPU: MIPS, image <span class="built_in">type</span>: Firmware Image, compression <span class="built_in">type</span>: lzma, image name: <span class="string">"u-boot image"</span></span><br><span class="line"><span class="comment"># 跟了LZMA，偏移11076</span></span><br><span class="line">11076         0x2B44          LZMA compressed data, properties: 0x5D, dictionary size: 8388608 bytes, uncompressed size: 147212 bytes</span><br><span class="line">65434         0xFF9A          Sercomm firmware signature, version control: 1, download control: 256, hardware ID: <span class="string">"YQZ"</span>, hardware version: 0x0, firmware version: 0x6, starting code segment: 0x100, code size: 0x7300</span><br><span class="line">65497         0xFFD9          Sercomm firmware signature, version control: 0, download control: 0, hardware ID: <span class="string">""</span>, hardware version: 0x0, firmware version: 0x2700, starting code segment: 0x1A9C, code size: 0x3D0</span><br><span class="line">72028         0x1195C         Sercomm firmware signature, version control: 29184, download control: 24933, hardware ID: <span class="string">"d ok..!!"</span>, hardware version: 0x7266, firmware version: 0x2578, starting code segment: 0xA78, code size: 0x0</span><br><span class="line"><span class="comment"># 第二个uImage header</span></span><br><span class="line">196608        0x30000         uImage header, header size: 64 bytes, header CRC: 0x754608A, created: 2010-08-06 08:08:48, image size: 577064 bytes, Data Address: 0x80002000, Entry Point: 0x801B2040, data CRC: 0xE3AB62DD, OS: Linux, CPU: MIPS, image <span class="built_in">type</span>: OS Kernel Image, compression <span class="built_in">type</span>: lzma, image name: <span class="string">"MIPS Linux-2.4.31-Amazon_SE-3.6.]"</span></span><br><span class="line"><span class="comment"># 跟了LZMA，偏移196672</span></span><br><span class="line">196672        0x30040         LZMA compressed data, properties: 0x5D, dictionary size: 8388608 bytes, uncompressed size: 1986560 bytes</span><br><span class="line">851968        0xD0000         Squashfs filesystem, big endian, lzma compression, version 2.1, size: 2916178 bytes, 714 inodes, blocksize: 65536 bytes, created: 2010-08-06 08:11:16</span><br></pre></td></tr></table></figure>
+<h2 id="02-提取u-boot及kernel"><a href="#02-提取u-boot及kernel" class="headerlink" title="02-提取u-boot及kernel"></a>02-提取u-boot及kernel</h2><ul>
+<li>dd提取并lzma解压缩</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># lzma解压只认后缀为.lzma</span></span><br><span class="line"><span class="comment"># dd时不必担心要指定大小（即count参数），在lzma解压会忽略掉尾部垃圾数据（但linxu下实测失败</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin of=uboot.lzma bs=1 skip=11076</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin of=kernel.lzma bs=1 skip=196672</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ ls</span><br><span class="line">kernel.lzma  uboot.lzma  WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># lzma -d 等同于 unlzma</span></span><br><span class="line"><span class="comment"># linxu下实测失败</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ lzma -d uboot.lzma </span><br><span class="line">lzma: uboot.lzma: Compressed data is corrupt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 精确控制count（根据binwalk结果，lzma偏移是11076，紧挨着为65434</span></span><br><span class="line"><span class="comment"># expr进行数学运算，减号两边要空格</span></span><br><span class="line"><span class="comment"># 还是失败，看来不是垃圾数据的原因</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin of=uboot2.lzma bs=1 skip=11076 count=`expr 65434 - 11076`</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ lzma -d uboot2.lzma </span><br><span class="line">lzma: uboot2.lzma: Compressed data is corrupt</span><br><span class="line"></span><br><span class="line"><span class="comment"># mac及win下的7zip都可成功，故是lzma的问题</span></span><br><span class="line"><span class="comment"># 可见，不管lzma多大，最终解压出来都是144K，是不管垃圾数据的</span></span><br><span class="line">-rw-r--r--@  1 lxl  staff   144K  1  7 09:56 uboot</span><br><span class="line">-rw-r--r--@  1 lxl  staff   4.0M  1  6 17:20 uboot.lzma</span><br><span class="line">-rw-r--r--@  1 lxl  staff   144K  1  7 09:56 uboot2</span><br><span class="line">-rw-r--r--@  1 lxl  staff    53K  1  7 09:50 uboot2.lzma</span><br><span class="line"></span><br><span class="line"><span class="comment"># Linux下p7zip也失败</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ p7zip -d uboot.lzma </span><br><span class="line">/usr/bin/p7zip: uboot.lzma: unknown suffix</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ p7zip -d uboot2.lzma </span><br><span class="line">/usr/bin/p7zip: uboot2.lzma: unknown suffix</span><br><span class="line"></span><br><span class="line"><span class="comment"># 小结：lzma解压时确实会忽略尾部的垃圾数据（因为一般都是凭头部信息）、Linux下的lzma和p7zip都靠不住</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 最终得到解压缩后的uboot和kernel</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ ls</span><br><span class="line">kernel  uboot  WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin</span><br></pre></td></tr></table></figure>
+<ul>
+<li>strings，确保二者确实是U-Boot和Linux kernel镜像</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 确实是（缺少经验没看出来，就将此作为二者特征，以后就知道了）</span></span><br><span class="line"><span class="comment"># head 只看前20行</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings -n 20 uboot | head -20</span><br><span class="line">U-Boot 1.1.5-2.0 (Jul 22 2009 - 14:05:20)</span><br><span class="line"> relocate_code start</span><br><span class="line">detect reset button.</span><br><span class="line"> relocate_code finish.</span><br><span class="line">amazon_se_spi_init success!!</span><br><span class="line"><span class="comment">## Warning: gatewayip needed but not set</span></span><br><span class="line">ARP Retry count exceeded; starting again</span><br><span class="line">Bytes transferred = %ld (%lx hex)</span><br><span class="line"> ICMP Host Redirect to </span><br><span class="line">*** ERROR: `serverip<span class="string">' not set</span></span><br><span class="line"><span class="string">*** ERROR: `ipaddr'</span> not <span class="built_in">set</span></span><br><span class="line">*** ERROR: No ethernet found.</span><br><span class="line">*** ERROR: `ethaddr<span class="string">' not set</span></span><br><span class="line"><span class="string">*** ERROR: `eth%daddr'</span> not <span class="built_in">set</span></span><br><span class="line">TFTP error: First block is not block 1 (%ld)</span><br><span class="line">TFTP error: <span class="string">'%s'</span> (%d)</span><br><span class="line">Retry count exceeded; starting again</span><br><span class="line">%02lX%02lX%02lX%02lX.img</span><br><span class="line">*** Warning: no boot file name; using <span class="string">'%s'</span></span><br><span class="line">; our IP address is </span><br><span class="line"></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings -n 20 kernel | head -20</span><br><span class="line">Calibrating delay loop... </span><br><span class="line">Warning! BogoMIPS value are not stable!</span><br><span class="line">Kernel <span class="built_in">command</span> line: %s</span><br><span class="line">POSIX conformance testing by UNIFIX</span><br><span class="line">Warning: unable to open an initial console.</span><br><span class="line">No init found.  Try passing init= option to kernel.</span><br><span class="line">Linux version 2.4.31-Amazon_SE-3.6.10.4.patch.3-R0416V36_BSP_SPI_FLASH_A4 (root@localhost) (gcc version 3.3.6) <span class="comment">#2 Fri Aug 6 16:08:38 CST 2010</span></span><br><span class="line">VFS: Cannot open root device <span class="string">"%s"</span> or %s</span><br><span class="line">Please append a correct <span class="string">"root="</span> boot option</span><br><span class="line">VFS: Unable to mount root fs on %s</span><br><span class="line">VFS: Mounted root (%s filesystem)%s.</span><br><span class="line">%s/host%d/bus%d/target%d/lun%d</span><br><span class="line">%s/host%d/bus%d/target%d/lun%d/part%s</span><br><span class="line">%s/host%d/bus%d/target%d/lun%d/disc</span><br><span class="line">%s: unaligned epc - sending SIGBUS.</span><br><span class="line">Checking <span class="keyword">for</span> <span class="string">'wait'</span> instruction... </span><br><span class="line">2`&lt;6&gt;Unexpected CPU of NEC VR4100 series</span><br><span class="line">CPU revision is: %08x</span><br><span class="line">FPU revision is: %08x</span><br><span class="line">unexpected interrupt %d</span><br></pre></td></tr></table></figure>
+<h2 id="03-发现filesystem"><a href="#03-发现filesystem" class="headerlink" title="03-发现filesystem"></a>03-发现filesystem</h2><ul>
+<li>有了U-boot和Kernel镜像，下一步就需要发现提取出文件系统（尽管目前版本的binwalk足矣，还是手动搞一下</li>
+<li>strings看kernel，是否有文件系统的信息</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 此时就不必-n限制长度了</span></span><br><span class="line"><span class="comment"># 可见是 SQUASHFS</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings kernel | grep filesystem</span><br><span class="line">VFS: Mounted root (%s filesystem)%s.</span><br><span class="line">filesystems</span><br><span class="line">&lt;4&gt;SQUASHFS: Mounting a different endian SQUASHFS filesystem on %s</span><br><span class="line">&lt;3&gt;SQUASHFS error: Major/Minor mismatch, filesystem is (%d:%d), I support (%d: &lt;= %d)</span><br><span class="line">&lt;3&gt;%s %s: can<span class="string">'t create entry in proc filesystem!</span></span><br><span class="line"><span class="string">register_filesystem</span></span><br><span class="line"><span class="string">unregister_filesystem</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>查找SquashFs的signature</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SquashFS是很常见的嵌入式文件系统，binwalk有许多其signatures（Magic包含于signatures</span></span><br><span class="line"><span class="comment"># sqsh是标志SquashFS image的Magic，但也有其他变体情况，故binwalk也可能覆盖不全，也需手动找</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 文件系统要从整个bin固件中找，kernel中只是相关信息</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 固件中有许多section（如binwalk所示），节通常会有对齐，因此节与节之间一般会有00的填充字符</span></span><br><span class="line"><span class="comment"># 比如，sercomm节（binwalk也识别出来了）</span></span><br><span class="line"><span class="comment"># less可滚轮，或空格下翻，ctrl+b上翻</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ hexdump -C WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin | less</span><br><span class="line">0000e500  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">*</span><br><span class="line">0000ff90  00 00 00 00 00 00 00 00  00 ac 73 45 72 43 6f 4d  |..........sErCoM|</span><br><span class="line">0000ffa0  6d 01 00 00 01 59 51 5a  00 00 00 00 00 00 00 00  |m....YQZ........|</span><br><span class="line">0000ffb0  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">*</span><br><span class="line">0000ffd0  00 00 00 10 06 00 00 01  00 73 45 72 43 6f 4d 6d  |.........sErCoMm|</span><br><span class="line">0000ffe0  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">0000fff0  31 2e 30 31 00 00 00 00  00 00 00 00 00 00 00 00  |1.01............|</span><br><span class="line"></span><br><span class="line"><span class="comment"># hexdump时，如果遇到相同字符（如00填充字符），通常会用*来代替</span></span><br><span class="line"><span class="comment"># 文件系统一般会独立作为一个节存在，其前面的节可能有00填充</span></span><br><span class="line"><span class="comment"># 因此，hexdump中找*，其后面可能就是文件系统</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 上面的sercomm是一个敏感的节，但考虑到其太小，故不可能是文件系统，下面也是</span></span><br><span class="line">0001fde0  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|</span><br><span class="line">*</span><br><span class="line">0001fe40  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff 66 66  |..............ff|</span><br><span class="line">0001fe50  99 99 77 66 77 66 55 44  cc aa 88 66 cc aa 88 66  |..wfwfUD...f...f|</span><br><span class="line">0001fe60  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|</span><br><span class="line">*</span><br><span class="line">0001ff70  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line"></span><br><span class="line"><span class="comment"># 遇到sqlz字符串（less中 /\* 查找*号，要转义，n查找下一个</span></span><br><span class="line"><span class="comment"># 标准的SquashFs以'sqsh'开头，故sqlz可疑</span></span><br><span class="line"><span class="comment"># 大多数使用SquashFS的固件倾向于使用LZMA压缩，而不是标准的zlib压缩，这个就是</span></span><br><span class="line"><span class="comment"># 因此sqlz可能：sq-SquashFS、lz-LZma</span></span><br><span class="line">000bce70  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">*</span><br><span class="line">000cfff0  00 2c 80 00 00 00 00 00  00 00 00 00 00 00 00 00  |.,..............|</span><br><span class="line">000d0000  73 71 6c 7a 00 00 02 ca  00 2c 7f 52 00 2c 7f 4a  |sqlz.....,.R.,.J|</span><br><span class="line">000d0010  00 00 00 00 00 2c 55 5f  00 2c 69 13 00 02 00 01  |.....,U_.,i.....|</span><br></pre></td></tr></table></figure>
+<h2 id="04-提取filesystem"><a href="#04-提取filesystem" class="headerlink" title="04-提取filesystem"></a>04-提取filesystem</h2><ul>
+<li>dd提取文件系统</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Linux进制转换</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ <span class="built_in">printf</span> %d 0xd0000</span><br><span class="line">851968</span><br><span class="line"></span><br><span class="line"><span class="comment"># squashFs并非是固件的最后一个section，其最后如下</span></span><br><span class="line">00397f50  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">*</span><br><span class="line">003fffe0  fe 48 a7 be d5 84 f9 63  98 97 72 42 2b d4 5c 48  |.H.....c..rB+.\H|</span><br><span class="line">003ffff0  00 00 00 00 10 06 90 f7  65 52 63 4f 6d 4d 00 30  |........eRcOmM.0|</span><br><span class="line">00400000</span><br><span class="line"></span><br><span class="line"><span class="comment"># dd时，没指定count，还是一直到最后（难道解压suqashfs时也会忽略末尾垃圾数据？</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin of=squashfs bs=1 skip=851968</span><br></pre></td></tr></table></figure>
+<ul>
+<li>修改Magic，使file可识别</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 仍是data，未识别出来</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ file squashfs </span><br><span class="line">squashfs: data</span><br><span class="line"></span><br><span class="line"><span class="comment"># vi修改sqlz为sqsh，再次file，已经识别出来了</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ cp squashfs squashfs1</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ vi squashfs1</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ file squashfs squashfs1</span><br><span class="line">squashfs:  data</span><br><span class="line">squashfs1: Squashfs filesystem, big endian, version 2.1, 2916178 bytes, 714 inodes, blocksize: 65536 bytes, created: Fri Aug  6 08:11:16 2010</span><br></pre></td></tr></table></figure>
+<ul>
+<li>firmware-mod-kit中unsquashfs-lzma提取squashFs</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 由于lzma压缩以及v2.1老版本的原因，普通的squashFs提取工具并不能成功</span></span><br><span class="line"><span class="comment"># 借助于firmware-mod-kit，是一个工具集合，用到哪个就make哪个，比如这次src下的squashfs-2.1-r2</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 进入目录，make获得可执行文件unsquashfs-lzma</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ <span class="built_in">cd</span> firmware-mod-kit/src/squashfs-2.1-r2/</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/firmware-mod-kit/src/squashfs-2.1-r2$ ls</span><br><span class="line">Makefile  mksquashfs.c  mksquashfs.h  read_fs.c  read_fs.h  README  sort.c  squashfs_fs.h  unsquashfs.c</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/firmware-mod-kit/src/squashfs-2.1-r2$ make</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/firmware-mod-kit/src/squashfs-2.1-r2$ ls</span><br><span class="line">Makefile    mksquashfs.c  mksquashfs-lzma  read_fs.c  read_fs.o  sort.c  squashfs_fs.h  unsquashfs.c     unsquashfs.o</span><br><span class="line">mksquashfs  mksquashfs.h  mksquashfs.o     read_fs.h  README     sort.o  unsquashfs     unsquashfs-lzma</span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取squashFs（sqsh那个，而非sqlz那个</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ ./firmware-mod-kit/src/squashfs-2.1-r2/unsquashfs-lzma squashfs</span><br><span class="line">Can<span class="string">'t find a SQUASHFS superblock on squashfs</span></span><br><span class="line"><span class="string">lxl@ubuntu:~/Desktop/tmp$ ./firmware-mod-kit/src/squashfs-2.1-r2/unsquashfs-lzma squashfs1</span></span><br><span class="line"><span class="string">Reading a different endian SQUASHFS filesystem on squashfs1</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">created 532 files</span></span><br><span class="line"><span class="string">created 39 directories</span></span><br><span class="line"><span class="string">created 143 symlinks</span></span><br><span class="line"><span class="string">created 0 devices</span></span><br><span class="line"><span class="string">created 0 fifos</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># 提取成功</span></span><br><span class="line"><span class="string">lxl@ubuntu:~/Desktop/tmp$ ls squashfs-root/</span></span><br><span class="line"><span class="string">bin  dev  etc  firmware  lib  linuxrc  proc  sbin  tmp  usr  var  www  www.ar  www.eng</span></span><br></pre></td></tr></table></figure>
+<h2 id="05-其他"><a href="#05-其他" class="headerlink" title="05-其他"></a>05-其他</h2><ul>
+<li>已遇到的dd用法汇总</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment"># 已知要提取多少数据（跳过8549574，1个1个提取，提取8549574次</span></span><br><span class="line">dd <span class="keyword">if</span>=US_AC15V1.0BR_V15.03.1.16_multi_TD01.bin bs=1 count=8549574 skip=ç of=image</span><br><span class="line">		<span class="comment"># if 参数设置输入的文件，</span></span><br><span class="line">		<span class="comment"># bs 是输入输出块的大小，</span></span><br><span class="line">		<span class="comment"># count 是输入输出块的个数(抽取的总字节数可以理解为 bs * count)，</span></span><br><span class="line">		<span class="comment"># skip 是从文件头开始的偏移量，</span></span><br><span class="line">		<span class="comment"># of 指定输出字节的保存位置，这些数据在 binwalk 中都能找到。</span></span><br><span class="line">		</span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># 不知道要提取多少（跳过1个1264484大小的块，不限制count，一直到最后</span></span><br><span class="line"><span class="comment"># 可见skip也是针对bs的</span></span><br><span class="line">dd bs=1264484 skip=1 <span class="keyword">if</span>=mw150rv5-cn-up.bin of=filesystem.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="comment"># 不知道要提取多少（跳过11076，1个1个提取，不限制count，一直到最后</span></span><br><span class="line">dd <span class="keyword">if</span>=WAG120N-EU-ANNEXB-ETSI-1.00.16code.bin of=uboot.lzma bs=1 skip=11076</span><br></pre></td></tr></table></figure>
+<ul>
+<li>squash文件系统</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Although binwalk has several SquashFS signatures, it is not uncommon to find variations of the ‘sqsh’ magic string (<span class="built_in">which</span> indicates the beginning of a SquashFS image), so what we may be looking <span class="keyword">for</span> here is a non-standard SquashFS signature inside the firmware file.</span><br><span class="line"></span><br><span class="line"><span class="comment"># SquashFS是很常见的嵌入式文件系统，binwalk有许多其signatures（Magic包含于signatures</span></span><br><span class="line"><span class="comment"># sqsh是标志SquashFS image的Magic，但也有其他变体情况，故binwalk也可能覆盖不全，也需手动找</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>linux 文件大小的单位显示</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认是字节形式</span></span><br><span class="line"><span class="comment"># --block-size=k/m/g 指定</span></span><br><span class="line"><span class="comment"># ll --block-size=m</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>参考：<a href="http://www.devttys0.com/2011/05/reverse-engineering-firmware-linksys-wag120n/" target="_blank" rel="noopener">http://www.devttys0.com/2011/05/reverse-engineering-firmware-linksys-wag120n/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/05/22/iot/Linksys-WAG120N固件分析/" title="Linksys-WAG120N固件分析">http://21guns.top/2021/05/22/iot/Linksys-WAG120N固件分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/固件分析/" rel="tag"># 固件分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/21/iot/云丁鹿客智能门锁的安全分析/" rel="prev" title="云丁鹿客智能门锁的安全分析">
+      <i class="fa fa-chevron-left"></i> 云丁鹿客智能门锁的安全分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/05/23/iot/果加智能门锁的安全分析/" rel="next" title="果加智能门锁的安全分析">
+      果加智能门锁的安全分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Linksys-WAG120N固件分析"><span class="nav-number">1.</span> <span class="nav-text">Linksys-WAG120N固件分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#01-找敏感信息-uboot-kernel"><span class="nav-number">1.1.</span> <span class="nav-text">01-找敏感信息-uboot/kernel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-提取u-boot及kernel"><span class="nav-number">1.2.</span> <span class="nav-text">02-提取u-boot及kernel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-发现filesystem"><span class="nav-number">1.3.</span> <span class="nav-text">03-发现filesystem</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-提取filesystem"><span class="nav-number">1.4.</span> <span class="nav-text">04-提取filesystem</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#05-其他"><span class="nav-number">1.5.</span> <span class="nav-text">05-其他</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

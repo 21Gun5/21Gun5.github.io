@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] iot设备固件解密及分析提取binwalk123456# 文件太多，直接-e或-Me耗时太多# 先不加参数看偏移，再-o指定偏移来提取$ binwalk R7800-V1.0.2.82.img2228352       0x220080        Squashfs filesystem, little endian, version 4.0, compression:xz, siz">
+<meta name="keywords" content="固件解密">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iot设备固件解密及分析">
+<meta property="og:url" content="http://21guns.top/2021/02/12/iot/iot设备固件解密及分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] iot设备固件解密及分析提取binwalk123456# 文件太多，直接-e或-Me耗时太多# 先不加参数看偏移，再-o指定偏移来提取$ binwalk R7800-V1.0.2.82.img2228352       0x220080        Squashfs filesystem, little endian, version 4.0, compression:xz, siz">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:07:16.124Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iot设备固件解密及分析">
+<meta name="twitter:description" content="[toc] iot设备固件解密及分析提取binwalk123456# 文件太多，直接-e或-Me耗时太多# 先不加参数看偏移，再-o指定偏移来提取$ binwalk R7800-V1.0.2.82.img2228352       0x220080        Squashfs filesystem, little endian, version 4.0, compression:xz, siz">
+
+<link rel="canonical" href="http://21guns.top/2021/02/12/iot/iot设备固件解密及分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>iot设备固件解密及分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/02/12/iot/iot设备固件解密及分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          iot设备固件解密及分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-12 14:41:33" itemprop="dateCreated datePublished" datetime="2021-02-12T14:41:33+08:00">2021-02-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:07:16" itemprop="dateModified" datetime="2022-02-21T16:07:16+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="iot设备固件解密及分析"><a href="#iot设备固件解密及分析" class="headerlink" title="iot设备固件解密及分析"></a>iot设备固件解密及分析</h1><h1 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h1><h2 id="binwalk"><a href="#binwalk" class="headerlink" title="binwalk"></a>binwalk</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 文件太多，直接-e或-Me耗时太多</span></span><br><span class="line"><span class="comment"># 先不加参数看偏移，再-o指定偏移来提取</span></span><br><span class="line">$ binwalk R7800-V1.0.2.82.img</span><br><span class="line">2228352       0x220080        Squashfs filesystem, little endian, version 4.0, compression:xz, size: 28795562 bytes, 3892 inodes, blocksize: 262144 bytes, created: 2021-02-05 11:54:07</span><br><span class="line"></span><br><span class="line">$ binwalk -o 0x220080 -e R7800-V1.0.2.82.img</span><br></pre></td></tr></table></figure>
+<h1 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h1><h2 id="00"><a href="#00" class="headerlink" title="00"></a>00</h2><ul>
+<li>jffs2</li>
+</ul>
+<p><a href="https://github.com/sviehb/jefferson" target="_blank" rel="noopener">https://github.com/sviehb/jefferson</a></p>
+<ul>
+<li>ubi</li>
+</ul>
+<p><a href="https://github.com/jrspruitt/ubi_reader" target="_blank" rel="noopener">https://github.com/jrspruitt/ubi_reader</a></p>
+<h2 id="01-mercury-vxworks-unowfs"><a href="#01-mercury-vxworks-unowfs" class="headerlink" title="01-mercury-vxworks-unowfs"></a>01-mercury-vxworks-unowfs</h2><ul>
+<li><a href="http://www.devttys0.com/2011/06/mystery-file-system/" target="_blank" rel="noopener">http://www.devttys0.com/2011/06/mystery-file-system/</a></li>
+<li><a href="http://www.devttys0.com/wp-content/uploads/2011/06/unowfs.c" target="_blank" rel="noopener">http://www.devttys0.com/wp-content/uploads/2011/06/unowfs.c</a></li>
+<li>unowfs.c<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Utility to extract files from OWFS file system images.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * $ gcc -Wall unowfs.c -o unowfs</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Craig Heffner, 20 June 2011</span></span><br><span class="line"><span class="comment"> * http://www.devttys0.com</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;arpa/inet.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAGIC <span class="meta-string">"owowowowowowowowowowowowowowowow"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAGIC_SIZE 32</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> FILE_NAME_MAX_SIZE 40</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DEFAULT_DEST_DIR <span class="meta-string">"owfs-root"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DIRECTORY_TRAVERSAL <span class="meta-string">"../"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> FILE_PREFIX <span class="meta-string">"./"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> FILE_PREFIX_SIZE 2</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> FILE_PATH_SIZE 43</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* OWFS structures */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(1)</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">owfs_header</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">char</span> magic[MAGIC_SIZE];</span><br><span class="line">	<span class="keyword">uint32_t</span> version;</span><br><span class="line">	<span class="keyword">uint32_t</span> num_entries;</span><br><span class="line">	<span class="keyword">uint32_t</span> unknown;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">owfs_entry</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">char</span> name[FILE_NAME_MAX_SIZE];</span><br><span class="line">	<span class="keyword">uint32_t</span> size;</span><br><span class="line">	<span class="keyword">uint32_t</span> offset;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack()</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Function declarations */</span></span><br><span class="line"><span class="function"><span class="keyword">char</span> *<span class="title">file_read</span><span class="params">(<span class="keyword">char</span> *file, <span class="keyword">size_t</span> *fsize)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">file_write</span><span class="params">(<span class="keyword">char</span> *file, <span class="keyword">char</span> *data, <span class="keyword">size_t</span> size)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">unowfs</span><span class="params">(<span class="keyword">char</span> *data, <span class="keyword">size_t</span> size)</span></span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> file_count = <span class="number">0</span>, retval = EXIT_FAILURE;</span><br><span class="line">	<span class="keyword">char</span> *file = <span class="literal">NULL</span>, *dir = <span class="literal">NULL</span>, *owbuf = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="keyword">size_t</span> file_size = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(argc &lt; <span class="number">2</span> || argv[<span class="number">1</span>][<span class="number">0</span>] == <span class="string">'-'</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"\nUsage: %s &lt;owfs image&gt; [destination directory]\n\n"</span>, argv[<span class="number">0</span>]);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	file = argv[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(argc == <span class="number">3</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		dir = argv[<span class="number">2</span>];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		dir = DEFAULT_DEST_DIR;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	owbuf = file_read(file, &amp;file_size);</span><br><span class="line">	<span class="keyword">if</span>(!owbuf)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(mkdir(dir, (S_IRWXU | S_IRWXG | S_IRWXO)) &lt; <span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		perror(dir);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(chdir(dir) &lt; <span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		perror(dir);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	file_count = unowfs(owbuf, file_size);</span><br><span class="line">	<span class="keyword">if</span>(file_count &gt; <span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"\nExtracted %d files to ./%s/\n"</span>, file_count, dir);</span><br><span class="line">		retval = EXIT_SUCCESS;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">end:</span><br><span class="line">	<span class="keyword">if</span>(owbuf) <span class="built_in">free</span>(owbuf);</span><br><span class="line">	<span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Parse and extract files from OWFS image */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">unowfs</span><span class="params">(<span class="keyword">char</span> *data, <span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> count = <span class="number">0</span>, i = <span class="number">0</span>, offset = <span class="number">0</span>;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">owfs_header</span> *<span class="title">header</span> = <span class="title">NULL</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">owfs_entry</span> * <span class="title">entry</span> = <span class="title">NULL</span>;</span></span><br><span class="line">	<span class="keyword">char</span> file_name[FILE_PATH_SIZE] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Validate image size */</span></span><br><span class="line">	<span class="keyword">if</span>(size &lt; <span class="keyword">sizeof</span>(struct owfs_header))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Invalid image: size too small\n"</span>);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	header = (struct owfs_header *) data;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Validate magic signature */</span></span><br><span class="line">	<span class="keyword">if</span>(<span class="built_in">memcmp</span>(header-&gt;magic, MAGIC, MAGIC_SIZE) != <span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Invalid image: bad magic signature\n"</span>);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">/* Values are in big endian format */</span></span><br><span class="line">	header-&gt;version = htonl(header-&gt;version);</span><br><span class="line">	header-&gt;num_entries = htonl(header-&gt;num_entries);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Extracting %d files from OWFS version %d image...\n\n"</span>, header-&gt;num_entries, header-&gt;version);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Loop through all file entries and write file data to disk */</span></span><br><span class="line">	<span class="keyword">for</span>(i=<span class="number">0</span>,offset=<span class="keyword">sizeof</span>(struct owfs_header); (i &lt; header-&gt;num_entries &amp;&amp; offset &lt; size); i++,offset+=<span class="keyword">sizeof</span>(struct owfs_entry))</span><br><span class="line">	&#123;</span><br><span class="line">		entry = (struct owfs_entry *) (data + offset);</span><br><span class="line"></span><br><span class="line">		entry-&gt;size = htonl(entry-&gt;size);	</span><br><span class="line">		entry-&gt;offset = htonl(entry-&gt;offset);</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* Make sure specially crafted file names don't write outside of the destination directory */</span></span><br><span class="line">		<span class="keyword">if</span>(<span class="built_in">strstr</span>(entry-&gt;name, DIRECTORY_TRAVERSAL))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Refusing to extract potentially malicious file: %s\n"</span>, entry-&gt;name);</span><br><span class="line">			<span class="keyword">continue</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* Prepend './' to the file name to ensure it get written to a relative path */</span></span><br><span class="line">		<span class="built_in">memset</span>((<span class="keyword">char</span> *) &amp;file_name, <span class="number">0</span>, FILE_PATH_SIZE);</span><br><span class="line">		<span class="built_in">strncpy</span>((<span class="keyword">char</span> *) &amp;file_name, FILE_PREFIX, FILE_PREFIX_SIZE);</span><br><span class="line">		<span class="built_in">strncat</span>((<span class="keyword">char</span> *) &amp;file_name, entry-&gt;name, (FILE_PATH_SIZE - FILE_PREFIX_SIZE));</span><br><span class="line"></span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"%s [%d]\n"</span>, entry-&gt;name, entry-&gt;size);</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* Write data to disk */</span></span><br><span class="line">		<span class="keyword">if</span>(file_write((<span class="keyword">char</span> *) &amp;file_name, (data + entry-&gt;offset), entry-&gt;size))</span><br><span class="line">		&#123;</span><br><span class="line">			count++;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"Failed to write data to disk for file %s\n"</span>, entry-&gt;name);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">end:</span><br><span class="line">	<span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Read in file contents */</span></span><br><span class="line"><span class="function"><span class="keyword">char</span> *<span class="title">file_read</span><span class="params">(<span class="keyword">char</span> *file, <span class="keyword">size_t</span> *fsize)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> fd = <span class="number">0</span>;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">stat</span> _<span class="title">fstat</span> = &#123;</span> <span class="number">0</span> &#125;;</span><br><span class="line">        <span class="keyword">char</span> *buffer = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(stat(file,&amp;_fstat) == <span class="number">-1</span>)</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="keyword">goto</span> end;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(_fstat.st_size == <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="keyword">goto</span> end;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        fd = open(file,O_RDONLY);</span><br><span class="line">        <span class="keyword">if</span>(!fd)</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="keyword">goto</span> end;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        buffer = <span class="built_in">malloc</span>(_fstat.st_size);</span><br><span class="line">        <span class="keyword">if</span>(!buffer)</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="keyword">goto</span> end;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">memset</span>(buffer,<span class="number">0</span>,_fstat.st_size);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(read(fd,buffer,_fstat.st_size) != _fstat.st_size)</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="keyword">if</span>(buffer) <span class="built_in">free</span>(buffer);</span><br><span class="line">                buffer = <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">                *fsize = _fstat.st_size;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">end:</span><br><span class="line">        <span class="keyword">if</span>(fd) close(fd);</span><br><span class="line">        <span class="keyword">return</span> buffer;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Write data to disk */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">file_write</span><span class="params">(<span class="keyword">char</span> *file, <span class="keyword">char</span> *data, <span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	FILE *fp = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="keyword">int</span> retval = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	fp = fopen(file, <span class="string">"w"</span>);</span><br><span class="line">	<span class="keyword">if</span>(!fp)</span><br><span class="line">	&#123;</span><br><span class="line">		perror(file);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(fwrite(data, <span class="number">1</span>, size, fp) != size)</span><br><span class="line">	&#123;</span><br><span class="line">		perror(file);</span><br><span class="line">		<span class="keyword">goto</span> end;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	retval = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">end:</span><br><span class="line">	<span class="keyword">if</span>(fp) fclose(fp);</span><br><span class="line">	<span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="02-uImage"><a href="#02-uImage" class="headerlink" title="02-uImage"></a>02-uImage</h2><ul>
+<li><a href="https://www.pentestpartners.com/security-blog/using-hexdump-analysis-for-firmware-extraction-a-how-to/" target="_blank" rel="noopener">https://www.pentestpartners.com/security-blog/using-hexdump-analysis-for-firmware-extraction-a-how-to/</a></li>
+<li>随便Google即可<a href="https://gist.github.com/adamvr/1079762" target="_blank" rel="noopener">https://gist.github.com/adamvr/1079762</a></li>
+<li>extract_uimage.sh<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Copyright (C) 2010 Matthias Buecher (http://www.maddes.net/)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This program is free software; you can redistribute it and/or modify</span></span><br><span class="line"><span class="comment"># it under the terms of the GNU General Public License as published by</span></span><br><span class="line"><span class="comment"># the Free Software Foundation; either version 2 of the License, or</span></span><br><span class="line"><span class="comment"># (at your option) any later version.</span></span><br><span class="line"><span class="comment"># http://www.gnu.org/licenses/gpl-2.0.txt</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This program is distributed in the hope that it will be useful,</span></span><br><span class="line"><span class="comment"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span></span><br><span class="line"><span class="comment"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></span><br><span class="line"><span class="comment"># GNU General Public License for more details.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># You should have received a copy of the GNU General Public License</span></span><br><span class="line"><span class="comment"># along with this program; if not, write to the Free Software</span></span><br><span class="line"><span class="comment"># Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"></span><br><span class="line">UIMAGE=<span class="variable">$1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># check for uImage magic word</span></span><br><span class="line"><span class="comment"># http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot.git;a=blob;f=include/image.h</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'Checking for uImage magic word...'</span></span><br><span class="line">MAGIC=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;UIMAGE&#125;</span>"</span> ibs=4 count=1 | hexdump -v -e <span class="string">'1/1 "%02X"'</span>`</span><br><span class="line">[ <span class="string">'27051956'</span> != <span class="string">"<span class="variable">$&#123;MAGIC&#125;</span>"</span> ]  &amp;&amp; &#123; <span class="built_in">echo</span> <span class="string">'Not an uImage.'</span> ; <span class="built_in">exit</span> 1 ; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># extract data from uImage</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'uImage recognized.'</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'Extracting data...'</span></span><br><span class="line">DATAFILE=<span class="string">'uImage.data'</span></span><br><span class="line">dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;UIMAGE&#125;</span>"</span> of=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=64 skip=1</span><br><span class="line"></span><br><span class="line"><span class="comment"># check for ARM mach type ( xx 1C A0 E3 xx 10 81 E3 )</span></span><br><span class="line"><span class="comment"># http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e600</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'Checking for ARM mach-type...'</span></span><br><span class="line">MAGIC=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=1 skip=1 count=3 | hexdump -v -e <span class="string">'1/1 "%02X"'</span>`</span><br><span class="line">[ <span class="string">'1CA0E3'</span> = <span class="string">"<span class="variable">$&#123;MAGIC&#125;</span>"</span> ] &amp;&amp; &#123;</span><br><span class="line">	MAGIC=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=1 skip=5 count=3 | hexdump -v -e <span class="string">'1/1 "%02X"'</span>`</span><br><span class="line">	[ <span class="string">'1081E3'</span> = <span class="string">"<span class="variable">$&#123;MAGIC&#125;</span>"</span> ] &amp;&amp; &#123;</span><br><span class="line">		<span class="built_in">echo</span> <span class="string">'ARM mach-type header recognized.'</span></span><br><span class="line">		<span class="built_in">echo</span> <span class="string">'Extracting mach-type header...'</span></span><br><span class="line">		dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> of=<span class="string">"uImage.mach-type"</span> ibs=8 count=1</span><br><span class="line"><span class="comment">#</span></span><br><span class="line">		ARCH=`hexdump -v -e <span class="string">'1/1 "%02X "'</span> uImage.mach-type`</span><br><span class="line">		<span class="built_in">echo</span> <span class="string">"The mach-type is: <span class="variable">$&#123;ARCH&#125;</span>"</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">		<span class="built_in">echo</span> <span class="string">'Stripping mach-type header...'</span></span><br><span class="line">		TMPFILE=<span class="string">'uImage.tmp'</span></span><br><span class="line">		dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> of=<span class="string">"<span class="variable">$&#123;TMPFILE&#125;</span>"</span> ibs=8 skip=1</span><br><span class="line">		rm -f <span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span></span><br><span class="line">		mv <span class="string">"<span class="variable">$&#123;TMPFILE&#125;</span>"</span> <span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># check for zImage, otherwise assume Image</span></span><br><span class="line"><span class="comment"># http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309</span></span><br><span class="line">TMPFILE=<span class="string">'Image'</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'Checking for zImage...'</span></span><br><span class="line">MAGIC=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=4 skip=9 count=1 | hexdump -v -e <span class="string">'1/1 "%02X"'</span>`</span><br><span class="line">[ <span class="string">'18286F01'</span> = <span class="string">"<span class="variable">$&#123;MAGIC&#125;</span>"</span> ] &amp;&amp; &#123;</span><br><span class="line">	START=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=4 skip=10 count=1 | hexdump -v -e <span class="string">'1/4 "%08X"'</span>`</span><br><span class="line">	END=`dd <span class="keyword">if</span>=<span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> ibs=4 skip=11 count=1 | hexdump -v -e <span class="string">'1/4 "%08X"'</span>`</span><br><span class="line"><span class="comment">#</span></span><br><span class="line">	SIZE=$(( 0x<span class="variable">$&#123;END&#125;</span> - 0x<span class="variable">$&#123;START&#125;</span> ))</span><br><span class="line"><span class="comment">#</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">"zImage recognized with start 0x<span class="variable">$&#123;START&#125;</span>, end 0x<span class="variable">$&#123;END&#125;</span> and size <span class="variable">$&#123;SIZE&#125;</span>."</span></span><br><span class="line">	TMPFILE=<span class="string">'zImage'</span></span><br><span class="line">&#125;</span><br><span class="line">mv <span class="string">"<span class="variable">$&#123;DATAFILE&#125;</span>"</span> <span class="string">"<span class="variable">$&#123;TMPFILE&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ToDo: extract Image from zImage</span></span><br><span class="line"><span class="comment"># http://openinkpot.org/wiki/Documentation/ZImageFormat</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"&gt;&gt;&gt; <span class="variable">$&#123;UIMAGE&#125;</span> extracted to <span class="variable">$&#123;TMPFILE&#125;</span>"</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="03-zyxel-zld-fsextract"><a href="#03-zyxel-zld-fsextract" class="headerlink" title="03-zyxel-zld_fsextract"></a>03-zyxel-zld_fsextract</h2><ul>
+<li>只有2个可执行文件：unzip.mips、zld_fsextract.i386</li>
+<li>readme.txt<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">./zld_fsextract.i386 438ABAQ0C0.bin ./unzip.mips -f compress.img -D compress.img</span><br><span class="line"></span><br><span class="line">1 Ubuntu下失败：因为默认用qemu-mips执行unzip.mips</span><br><span class="line"></span><br><span class="line">2 但实际上：$ file unzip.mips </span><br><span class="line">unzip.mips: ELF 32-bit MSB executable, MIPS, N32 MIPS64 rel2 version 1 (SYSV), statically linked, stripped</span><br><span class="line"></span><br><span class="line">3 故需要用：qemu-mipsn32 unzip.mips</span><br><span class="line"></span><br><span class="line">4 但上述./zld_fsextract.i386命令中，无法将qemu-mipsn32 unzip.mips作为一个命令，加双引号也不行</span><br><span class="line"></span><br><span class="line">5 kali下可以（xw的，用的最新qemu</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="04-dlink"><a href="#04-dlink" class="headerlink" title="04-dlink"></a>04-dlink</h2><ul>
+<li><a href="https://0x434b.dev/breaking-the-d-link-dir3060-firmware-encryption-static-analysis-part-2/" target="_blank" rel="noopener">https://0x434b.dev/breaking-the-d-link-dir3060-firmware-encryption-static-analysis-part-2/</a></li>
+<li><a href="https://github.com/0xricksanchez/dlink-decrypt" target="_blank" rel="noopener">https://github.com/0xricksanchez/dlink-decrypt</a></li>
+<li>dlink-dec.py</li>
+<li>用法:python3 dlink-dec.py -i DIR882A1_FW130B06.bin -o out -m dec，详细见见README.md</li>
+<li>适用于： DIR3060、DIR882、<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">import</span> pathlib</span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> contextlib <span class="keyword">import</span> suppress</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line">CIPHERTEXT_OFF = <span class="number">0x6DC</span></span><br><span class="line">SHA512_DEC_FW_W_KEY_OFF = <span class="number">0x1C</span></span><br><span class="line">SHA512_DEC_FW = <span class="number">0x5C</span></span><br><span class="line">SHA512_ENC_FW = <span class="number">0x9C</span></span><br><span class="line">IVEC_OFF = <span class="number">0xC</span></span><br><span class="line">DATA_LEN_DEC_FW_OFF = <span class="number">0x4</span></span><br><span class="line">DATALEN_DEC_FW_NO_PADDING_OFF = <span class="number">0x8</span></span><br><span class="line">IVEC_LEN = <span class="number">0x10</span></span><br><span class="line">DATA_LEN = <span class="number">0x4</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DcryptLink</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, inp, outp, mode)</span>:</span></span><br><span class="line">        self.inp = inp</span><br><span class="line">        self.outp = outp</span><br><span class="line">        self.key = <span class="keyword">None</span></span><br><span class="line">        self.data_len_dec_fw_no_padding = <span class="keyword">None</span></span><br><span class="line">        self.data_len_dec_fw = <span class="keyword">None</span></span><br><span class="line">        self.ivec = <span class="keyword">None</span></span><br><span class="line">        self.mode = mode</span><br><span class="line">        self.__setup__()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setup__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.set_key()</span><br><span class="line">        self.set_datalen_variables()</span><br><span class="line">        self.set_ivec()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> self.mode == <span class="string">"dec"</span>:</span><br><span class="line">            self.decrypt()</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.encrypt()</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_expected_sha512_from_fd_at_offset</span><span class="params">(file, offset, size=<span class="number">0x40</span>)</span>:</span></span><br><span class="line">        <span class="keyword">with</span> open(file, <span class="string">"rb"</span>) <span class="keyword">as</span> enc_fw:</span><br><span class="line">            enc_fw.seek(offset)</span><br><span class="line">            <span class="keyword">return</span> binascii.hexlify(enc_fw.read(size)).decode()</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calc_sha512_from_fd_at_offset_of_len</span><span class="params">(file, offset_payload, len_payload, key=None)</span>:</span></span><br><span class="line">        <span class="keyword">with</span> open(file, <span class="string">"rb"</span>) <span class="keyword">as</span> enc_fw:</span><br><span class="line">            enc_fw.seek(offset_payload)</span><br><span class="line">            data = enc_fw.read(len_payload)</span><br><span class="line">            <span class="keyword">if</span> key:</span><br><span class="line">                data = data + key</span><br><span class="line">        <span class="keyword">return</span> hashlib.sha512(data).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">verify</span><span class="params">(calculated, expected)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> expected != calculated:</span><br><span class="line">            print(<span class="string">"\t[!] Failed!"</span>)</span><br><span class="line">            <span class="keyword">raise</span> ValueError</span><br><span class="line">        print(<span class="string">"\t[+] OK!"</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">decrypt_aes128_cbc</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">with</span> open(self.inp, <span class="string">"rb"</span>) <span class="keyword">as</span> enc_fw:</span><br><span class="line">            enc_fw.seek(CIPHERTEXT_OFF)</span><br><span class="line">            ciphertext = enc_fw.read(self.data_len_dec_fw_no_padding)</span><br><span class="line">        cipher = AES.new(self.key, AES.MODE_CBC, self.ivec)</span><br><span class="line">        plaintext = cipher.decrypt(ciphertext)</span><br><span class="line">        pathlib.Path(self.outp).open(<span class="string">"wb"</span>).write(plaintext)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">verify_magic_bytes</span><span class="params">(self)</span>:</span></span><br><span class="line">        expected = <span class="string">b"SHRS"</span></span><br><span class="line">        actual = pathlib.Path(self.inp).open(<span class="string">"rb"</span>).read(<span class="number">4</span>)</span><br><span class="line">        print(<span class="string">"[*] Checking magic bytes..."</span>)</span><br><span class="line">        self.verify(actual, expected)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">set_datalen_variables</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">with</span> open(self.inp, <span class="string">"rb"</span>) <span class="keyword">as</span> enc_fw:</span><br><span class="line">            enc_fw.seek(DATA_LEN_DEC_FW_OFF)</span><br><span class="line">            self.data_len_dec_fw = int.from_bytes(enc_fw.read(DATA_LEN), byteorder=<span class="string">"big"</span>, signed=<span class="keyword">False</span>)</span><br><span class="line">            enc_fw.seek(DATALEN_DEC_FW_NO_PADDING_OFF)</span><br><span class="line">            self.data_len_dec_fw_no_padding = int.from_bytes(enc_fw.read(DATA_LEN), byteorder=<span class="string">"big"</span>, signed=<span class="keyword">False</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">set_ivec</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">with</span> open(self.inp, <span class="string">"rb"</span>) <span class="keyword">as</span> enc_fw:</span><br><span class="line">            enc_fw.seek(IVEC_OFF)</span><br><span class="line">            self.ivec = enc_fw.read(IVEC_LEN)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">set_key</span><span class="params">(self)</span>:</span></span><br><span class="line">        in_file = bytes.fromhex(<span class="string">"C8D32F409CACB347C8D26FDCB9090B3C"</span>)</span><br><span class="line">        user_key = bytes.fromhex(<span class="string">"358790034519F8C8235DB6492839A73F"</span>)</span><br><span class="line">        ivec = bytes.fromhex(<span class="string">"98C9D8F0133D0695E2A709C8B69682D4"</span>)</span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Calculating key..."</span>)</span><br><span class="line"></span><br><span class="line">        self.key = AES.new(user_key, AES.MODE_CBC, ivec).decrypt(in_file)</span><br><span class="line">        self.verify(self.key, bytes.fromhex(<span class="string">"C05FBF1936C99429CE2A0781F08D6AD8"</span>))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">decrypt</span><span class="params">(self)</span>:</span></span><br><span class="line"></span><br><span class="line">        self.verify_magic_bytes()</span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Verifying SHA512 message digest of encrypted payload..."</span>)</span><br><span class="line">        md = self.calc_sha512_from_fd_at_offset_of_len(self.inp, CIPHERTEXT_OFF, self.data_len_dec_fw_no_padding)</span><br><span class="line">        expected_md = self.get_expected_sha512_from_fd_at_offset(self.inp, SHA512_ENC_FW)</span><br><span class="line">        self.verify(md, expected_md)</span><br><span class="line"></span><br><span class="line">        self.decrypt_aes128_cbc()</span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Verifying SHA512 message digests of decrypted payload..."</span>)</span><br><span class="line">        md = self.calc_sha512_from_fd_at_offset_of_len(self.outp, <span class="number">0</span>, self.data_len_dec_fw)</span><br><span class="line">        expected_md = self.get_expected_sha512_from_fd_at_offset(self.inp, SHA512_DEC_FW)</span><br><span class="line">        self.verify(md, expected_md)</span><br><span class="line"></span><br><span class="line">        md = self.calc_sha512_from_fd_at_offset_of_len(self.outp, <span class="number">0</span>, self.data_len_dec_fw, key=self.key)</span><br><span class="line">        expected_md = self.get_expected_sha512_from_fd_at_offset(self.inp, SHA512_DEC_FW_W_KEY_OFF)</span><br><span class="line">        self.verify(md, expected_md)</span><br><span class="line"></span><br><span class="line">        print(<span class="string">f'[+] Successfully decrypted "<span class="subst">&#123;pathlib.Path(self.inp).name&#125;</span>"!'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">encrypt</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="comment"># self.ivec can also be set to os.urandom(16) and encryption still works for arbitrary binaries.</span></span><br><span class="line">        <span class="comment"># 67..46 was chosen to handle original D-Link firmware files</span></span><br><span class="line">        self.ivec = bytes.fromhex(<span class="string">"67C6697351FF4AEC29CDBAABF2FBE346"</span>)</span><br><span class="line"></span><br><span class="line">        data = pathlib.Path(self.inp).read_bytes()</span><br><span class="line">        self.data_len_dec_fw_no_padding = len(data)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self.data_len_dec_fw_no_padding % <span class="number">16</span> != <span class="number">0</span>:</span><br><span class="line">            data += data + <span class="string">b"\x00"</span> * (<span class="number">16</span> - self.data_len_dec_fw_no_padding % <span class="number">16</span>)</span><br><span class="line">            self.data_len_dec_fw = len(data)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.data_len_dec_fw = self.data_len_dec_fw_no_padding</span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Calculating cipher..."</span>)</span><br><span class="line">        ciphert = AES.new(self.key, AES.MODE_CBC, self.ivec).encrypt(data)</span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Building essential security header..."</span>)</span><br><span class="line">        sec_header = <span class="string">b"SHRS"</span></span><br><span class="line">        sec_header += struct.pack(<span class="string">"&gt;I"</span>, self.data_len_dec_fw_no_padding)</span><br><span class="line">        sec_header += struct.pack(<span class="string">"&gt;I"</span>, self.data_len_dec_fw)</span><br><span class="line">        sec_header += self.ivec</span><br><span class="line">        sec_header += bytes.fromhex(</span><br><span class="line">            self.calc_sha512_from_fd_at_offset_of_len(self.inp, <span class="number">0</span>, self.data_len_dec_fw_no_padding, key=self.key)</span><br><span class="line">        )</span><br><span class="line">        sec_header += bytes.fromhex(self.calc_sha512_from_fd_at_offset_of_len(self.inp, <span class="number">0</span>, self.data_len_dec_fw_no_padding))</span><br><span class="line">        sec_header += bytes.fromhex(hashlib.sha512(ciphert).hexdigest())</span><br><span class="line">        sec_header += <span class="string">b"\x00"</span> * <span class="number">512</span></span><br><span class="line">        sec_header += os.urandom(<span class="number">512</span>)  <span class="comment"># fake signature1, and</span></span><br><span class="line">        sec_header += os.urandom(<span class="number">512</span>)  <span class="comment"># fake signature2 as they're not needed for decryption..</span></span><br><span class="line"></span><br><span class="line">        print(<span class="string">"[*] Writing encrypted firmware to file..."</span>)</span><br><span class="line">        pathlib.Path(self.outp).write_bytes(sec_header + ciphert)</span><br><span class="line">        print(<span class="string">"\t[+] Done!"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    arg_parser = argparse.ArgumentParser(</span><br><span class="line">        description=<span class="string">"D-Link SHRS decyption tool"</span>, formatter_class=argparse.ArgumentDefaultsHelpFormatter</span><br><span class="line">    )</span><br><span class="line">    arg_parser.add_argument(<span class="string">"-i"</span>, <span class="string">"--inp"</span>, type=str, help=<span class="string">"Path to the encrypted D-Link firmware image"</span>, required=<span class="keyword">True</span>)</span><br><span class="line">    arg_parser.add_argument(<span class="string">"-o"</span>, <span class="string">"--out"</span>, type=str, help=<span class="string">"Path to the decrypted firmware image"</span>, required=<span class="keyword">True</span>)</span><br><span class="line">    arg_parser.add_argument(</span><br><span class="line">        <span class="string">"-m"</span>, <span class="string">"--mode"</span>, type=str, default=<span class="string">"dec"</span>, choices=[<span class="string">"dec"</span>, <span class="string">"enc"</span>], help=<span class="string">"Choose whether to encrypt or decrypt"</span>,</span><br><span class="line">    )</span><br><span class="line">    cli_args = arg_parser.parse_args()</span><br><span class="line"></span><br><span class="line">    dlink = DcryptLink(cli_args.inp, cli_args.out, cli_args.mode)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        dlink.run()</span><br><span class="line">    <span class="keyword">except</span> ValueError:</span><br><span class="line">        <span class="keyword">with</span> suppress(FileNotFoundError):</span><br><span class="line">            pathlib.Path(dlink.outp).unlink()</span><br><span class="line">        print(<span class="string">"[!] Failed!"</span>)</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="05-ubi"><a href="#05-ubi" class="headerlink" title="05-ubi"></a>05-ubi</h2><ul>
+<li>ubi提取方法</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- ubi是文件系统，可以直接mount（未实践</span><br><span class="line">- ubidump：https://github.com/nlitsme/ubidump（实测失败</span><br><span class="line">- ubi_reader：https://github.com/jrspruitt/ubi_reader（实测成功</span><br></pre></td></tr></table></figure>
+<ul>
+<li>ubi_reader成功<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 提取镜像</span></span><br><span class="line">ubireader_extract_images RBR750-V3.2.15.25_1.3.15-signed.chk</span><br><span class="line"></span><br><span class="line"><span class="comment"># 产生ubifs-root目录，最终提取到三个镜像</span></span><br><span class="line">-rw-r--r-- 1 lxl lxl  5586944 Oct 12 14:18 img-1542134531_vol-kernel.ubifs</span><br><span class="line">-rw-r--r-- 1 lxl lxl        0 Oct 12 14:19 img-1542134531_vol-rootfs_data.ubifs</span><br><span class="line">-rw-r--r-- 1 lxl lxl 38219776 Oct 12 14:19 img-1542134531_vol-ubi_rootfs.ubifs</span><br><span class="line"></span><br><span class="line"><span class="comment"># file查看</span></span><br><span class="line">img-1542134531_vol-kernel.ubifs:      data</span><br><span class="line">img-1542134531_vol-rootfs_data.ubifs: empty</span><br><span class="line">img-1542134531_vol-ubi_rootfs.ubifs:  Squashfs filesystem, little endian, version 4.0, 38197684 bytes, 4437 inodes, blocksize: 262144 bytes, created: Wed May  6 11:35:42 2020</span><br><span class="line"><span class="comment"># 提取</span></span><br><span class="line">binwalk -Me或者直接unsquashfs img-1542134531_vol-ubi_rootfs.ubifs即可</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="06-lua"><a href="#06-lua" class="headerlink" title="06-lua"></a>06-lua</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># unluac失败</span></span><br><span class="line"> ~/.Trash/unluac  <span class="built_in">cd</span> ~/Documents/Tools/unluac</span><br><span class="line"> ~/Documents/Tools/unluac  ls</span><br><span class="line">README.md     authors.txt   build.sh      documentation license.txt   src           <span class="built_in">test</span></span><br><span class="line"> ~/Documents/Tools/unluac  ./build.sh</span><br><span class="line"> ~/Documents/Tools/unluac  ls</span><br><span class="line">README.md     authors.txt   bin           build         build.sh      documentation license.txt   src           <span class="built_in">test</span></span><br><span class="line"> ~/Documents/Tools/unluac  <span class="built_in">cd</span> bin</span><br><span class="line"> ~/Documents/Tools/unluac/bin  ls</span><br><span class="line">unluac.jar</span><br><span class="line"> ~/Documents/Tools/unluac/bin  java -jar unluac.jar /Users/lxl/Desktop/tp-c5400/fs_1/usr/lib/lua/luci/controller/login.lua &gt; login1.lua</span><br><span class="line">Exception <span class="keyword">in</span> thread <span class="string">"main"</span> java.lang.IllegalStateException: The input chunk reports an invalid code <span class="keyword">for</span> lua number integrality: 4</span><br><span class="line">	at unluac.parse.LHeaderType.parse_number_integrality(LHeaderType.java:127)</span><br><span class="line">	at unluac.parse.LHeaderType51.parse_main(LHeaderType.java:196)</span><br><span class="line">	at unluac.parse.LHeaderType.parse(LHeaderType.java:45)</span><br><span class="line">	at unluac.parse.BHeader.&lt;init&gt;(BHeader.java:66)</span><br><span class="line">	at unluac.Main.file_to_function(Main.java:71)</span><br><span class="line">	at unluac.Main.main(Main.java:42)</span><br><span class="line"> ✘ ~/Documents/Tools/unluac/bin </span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"><span class="comment"># luadec失败</span></span><br><span class="line"><span class="comment"># openwrt不同于默认的lua 字节码</span></span><br><span class="line">lxl@localhost  ~/Documents/Tools  git <span class="built_in">clone</span> https://github.com/viruscamp/luadec</span><br><span class="line"></span><br><span class="line">lxl@localhost  ~/Documents/Tools  <span class="built_in">cd</span> luadec</span><br><span class="line"></span><br><span class="line">lxl@localhost  ~/Documents/Tools/luadec   master  git submodule update --init lua-5.1</span><br><span class="line"></span><br><span class="line">lxl@ubuntu:/mnt/hgfs$ <span class="built_in">cd</span> luadec/lua-5.1/</span><br><span class="line"></span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec/lua-5.1$ sudo apt install libreadline-dev</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec/lua-5.1$ make linux</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec/lua-5.1$ <span class="built_in">cd</span> ../luadec</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec/luadec$ make LUAVER=5.1</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec$ <span class="built_in">cd</span> luadec/</span><br><span class="line">lxl@ubuntu:/mnt/hgfs/luadec/luadec$ ./luadec </span><br><span class="line"></span><br><span class="line">./luadec /mnt/hgfs/mac/tp-c5400/fs_1/usr/lib/lua/luci/controller/login.lua </span><br><span class="line">./luadec: /mnt/hgfs/mac/tp-c5400/fs_1/usr/lib/lua/luci/controller/login.lua: bad code <span class="keyword">in</span> precompiled chunk</span><br><span class="line"></span><br><span class="line"><span class="comment"># luadec-tplink 成功,但没符号</span></span><br><span class="line"> lxl@localhost  ~/Documents/Tools/luadec-tplink-master/OSX-Compiled  ./luadec ~/Desktop/tp-c5400/fs_1/usr/lib/lua/luci/controller/login.lua</span><br></pre></td></tr></table></figure>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="加载基址"><a href="#加载基址" class="headerlink" title="加载基址"></a>加载基址</h2><h3 id="rbasefind"><a href="#rbasefind" class="headerlink" title="rbasefind"></a>rbasefind</h3><p><a href="https://github.com/sgayou/rbasefind" target="_blank" rel="noopener">https://github.com/sgayou/rbasefind</a><br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译:</span></span><br><span class="line">https://szpzs.oschina.io/2019/10/29/executable-program-in-rust/</span><br><span class="line"><span class="comment"># 1</span></span><br><span class="line">brew install rust</span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="built_in">cd</span> rbasefind-master</span><br><span class="line">cargo build --release</span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line">ls target/release/rbasefind</span><br></pre></td></tr></table></figure></p>
+<h3 id="ppc-rebase"><a href="#ppc-rebase" class="headerlink" title="ppc_rebase"></a>ppc_rebase</h3><ul>
+<li>usage：python2 ppc_rebase.py firmware.bin</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/02/12/iot/iot设备固件解密及分析/" title="iot设备固件解密及分析">http://21guns.top/2021/02/12/iot/iot设备固件解密及分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/固件解密/" rel="tag"># 固件解密</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/08/iot/嵌入式设备web服务器-mini_httpd/" rel="prev" title="嵌入式设备web服务器-mini_httpd">
+      <i class="fa fa-chevron-left"></i> 嵌入式设备web服务器-mini_httpd
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/15/iot/小豚摄像头的安全分析/" rel="next" title="小豚摄像头的安全分析">
+      小豚摄像头的安全分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#iot设备固件解密及分析"><span class="nav-number">1.</span> <span class="nav-text">iot设备固件解密及分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#提取"><span class="nav-number">2.</span> <span class="nav-text">提取</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#binwalk"><span class="nav-number">2.1.</span> <span class="nav-text">binwalk</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解密"><span class="nav-number">3.</span> <span class="nav-text">解密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00"><span class="nav-number">3.1.</span> <span class="nav-text">00</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-mercury-vxworks-unowfs"><span class="nav-number">3.2.</span> <span class="nav-text">01-mercury-vxworks-unowfs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-uImage"><span class="nav-number">3.3.</span> <span class="nav-text">02-uImage</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-zyxel-zld-fsextract"><span class="nav-number">3.4.</span> <span class="nav-text">03-zyxel-zld_fsextract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-dlink"><span class="nav-number">3.5.</span> <span class="nav-text">04-dlink</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#05-ubi"><span class="nav-number">3.6.</span> <span class="nav-text">05-ubi</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#06-lua"><span class="nav-number">3.7.</span> <span class="nav-text">06-lua</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-number">4.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#加载基址"><span class="nav-number">4.1.</span> <span class="nav-text">加载基址</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rbasefind"><span class="nav-number">4.1.1.</span> <span class="nav-text">rbasefind</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ppc-rebase"><span class="nav-number">4.1.2.</span> <span class="nav-text">ppc_rebase</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

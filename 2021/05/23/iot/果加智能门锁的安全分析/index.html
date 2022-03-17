@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] 果加智能门锁的安全分析上 概要：抓包获取固件、MCU手册、固件解析（指令集、加载基址、解析位置） 设备-中转-云端的通信方式 设备-BLE协议-手机app-云端（手机无线通信，无需交换机） 设备-433MHz无线-设备网关-交换机-云端（设备网关一般是有线，故有交换机） 留意其它方式   固件 传统意义：驱动硬件的软件程序 IoT设备中：包含了RTOS(实时操作系统)和应用软件，提供了">
+<meta name="keywords" content="智能门锁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="果加智能门锁的安全分析">
+<meta property="og:url" content="http://21guns.top/2021/05/23/iot/果加智能门锁的安全分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] 果加智能门锁的安全分析上 概要：抓包获取固件、MCU手册、固件解析（指令集、加载基址、解析位置） 设备-中转-云端的通信方式 设备-BLE协议-手机app-云端（手机无线通信，无需交换机） 设备-433MHz无线-设备网关-交换机-云端（设备网关一般是有线，故有交换机） 留意其它方式   固件 传统意义：驱动硬件的软件程序 IoT设备中：包含了RTOS(实时操作系统)和应用软件，提供了">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:10:18.482Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="果加智能门锁的安全分析">
+<meta name="twitter:description" content="[TOC] 果加智能门锁的安全分析上 概要：抓包获取固件、MCU手册、固件解析（指令集、加载基址、解析位置） 设备-中转-云端的通信方式 设备-BLE协议-手机app-云端（手机无线通信，无需交换机） 设备-433MHz无线-设备网关-交换机-云端（设备网关一般是有线，故有交换机） 留意其它方式   固件 传统意义：驱动硬件的软件程序 IoT设备中：包含了RTOS(实时操作系统)和应用软件，提供了">
+
+<link rel="canonical" href="http://21guns.top/2021/05/23/iot/果加智能门锁的安全分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>果加智能门锁的安全分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/05/23/iot/果加智能门锁的安全分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          果加智能门锁的安全分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-23 09:23:44" itemprop="dateCreated datePublished" datetime="2021-05-23T09:23:44+08:00">2021-05-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:10:18" itemprop="dateModified" datetime="2022-02-21T15:10:18+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="果加智能门锁的安全分析"><a href="#果加智能门锁的安全分析" class="headerlink" title="果加智能门锁的安全分析"></a>果加智能门锁的安全分析</h1><h2 id="上"><a href="#上" class="headerlink" title="上"></a>上</h2><ul>
+<li>概要：抓包获取固件、MCU手册、固件解析（指令集、加载基址、解析位置）</li>
+<li>设备-中转-云端的通信方式<ul>
+<li>设备-BLE协议-手机app-云端（手机无线通信，无需交换机）</li>
+<li>设备-433MHz无线-设备网关-交换机-云端（设备网关一般是有线，故有交换机）</li>
+<li>留意其它方式</li>
+</ul>
+</li>
+<li>固件<ul>
+<li>传统意义：驱动硬件的软件程序</li>
+<li>IoT设备中：包含了RTOS(实时操作系统)和应用软件，提供了从底层驱动（操作系统）到高层应用（应用软件）的所有功能</li>
+<li>固件一般要包含一个RTOS，设备上电后就会启动RTOS（比如Linux系统就启动kernel内核）</li>
+<li>目前遇到两种情况：Linux系统则Linux kernel+文件系统中程序、Vxwork等系统则一个单一可执行文件</li>
+</ul>
+</li>
+<li>固件获取<ul>
+<li>手机中转：设备-手机app-云端，设备更新一定会访问云端，而手机app作为中转，故fiddler抓包手机</li>
+<li>网关中转：设备-网关-交换机-云端，对交换机做端口监控（步骤未知//here）</li>
+</ul>
+</li>
+<li>fiddler抓包手机<ul>
+<li>fiddler设置两处：解密https通信（固件更新可能会https）、允许其它设备连接代理（而非只有运行fiddler的pc）</li>
+<li>手机设置两处：设置根证书（解密https用）、将fiddler作为代理转发数据（即设备-手机-fiddler-云端）</li>
+</ul>
+</li>
+<li>逆向对象<ul>
+<li>Linux：包含Linux文件系统，文件系统中的各个程序将是分析重点</li>
+<li>FreeRTOS/Vxworks：固件是一段编译好的包含代码和数据的可执行文件，单一的单片机程序</li>
+</ul>
+</li>
+<li>自动/人工识别<ul>
+<li>若是Linux文件系统中的程序，可自动识别：ELF等格式、处理器型号</li>
+<li>若固件是单一的可执行程序：与设备硬件相关，不同MCU会使用不同的指令集、文件系统等，需人工识别</li>
+</ul>
+</li>
+<li>binwalk<ul>
+<li>情况1：识别出U-Boot引导程序、Squashfs文件系统、lzma等压缩数据、其它（最普遍的情况，直接-Me提取）</li>
+<li>情况2：无法辨别固件，即没有任何输出，固件可能：可执行文件（需直接逆向固件）、加密过的（先解密再提取）</li>
+</ul>
+</li>
+<li>指令集<ul>
+<li>型号：根据MCU上刻印的芯片型号-STM32L071，找到对应的手册</li>
+<li>datasheet：目录introductory，使用了Arm Cortex-M0+内核</li>
+<li><a href="http://www.arm.com" target="_blank" rel="noopener">www.arm.com</a> ：查询该内核采用Armv6-M架构，即Armv6-M指令集</li>
+<li>设置IDA：processor options、edit arm architecture option、选择Armv6-M</li>
+</ul>
+</li>
+<li>加载基址<ul>
+<li>固件程序没有重定位表等结构，若加载地址错误，就会出现不能解析的跳转和全局变量</li>
+<li><strong><em>通常MCU都会有一块固定的存储区域用于存储代码，这个区域的起始地址就是固件的加载地址</em></strong></li>
+<li>References Manual：目录Memory organization，找内存映射图，固件位于CODE的Flash System Memory区域</li>
+<li>设置IDA：ROM start address、Loading address</li>
+</ul>
+</li>
+<li>解析位置<ul>
+<li>指定指令集、加载地址还不够，还需指定解析位置</li>
+<li>programming manual：目录vector table，找中断向量表：位置（固件起始）、结构（第二项是reset）</li>
+<li>设备上电之后执行的代码，即Reset复位中断（reset事件对应reset函数）</li>
+<li>reset位于第二项即偏移0x4，跳转到此，按’c’将此处解析为代码</li>
+</ul>
+</li>
+<li>手册<ul>
+<li>Datasheet即产品规格：目录memory mapping，找内存映射图（提示到reference manual ）、目录introductory，找采取的内核</li>
+<li>References Manual即参考手册：目录Memory organization，找内存映射图</li>
+<li>Programming Mannual即编程手册：目录vector table，找中断向量表的位置及结构</li>
+</ul>
+</li>
+<li>芯片-内核-架构-指令集<ul>
+<li>芯片采用Arm Cortex-M0+内核</li>
+<li>Arm Cortex-M0+内核采用Armv6-M架构</li>
+<li>Armv6-M架构即对应Armv6-M指令集</li>
+</ul>
+</li>
+</ul>
+<h2 id="中"><a href="#中" class="headerlink" title="中"></a>中</h2><ul>
+<li>概要：通过app中常量定位固件中代码、门锁固件分析</li>
+<li><p>固件分析</p>
+<ul>
+<li>分析难度大：代码多、没有调试信息、没有可参考的字符串</li>
+<li>以BLE通信为突破口，找到关键代码</li>
+<li>法1：通过BLE通信的帧格式：在代码中定位格式中常量，通过常量找到BLE通信数据的解析函数</li>
+<li>法2：通过硬件电路：找到MCU与BLE芯片的通信引脚，查看文档确定该引脚映射的内存地址，找到BLE发送/接收函数</li>
+</ul>
+</li>
+<li><p>app分析：获取常量</p>
+<ul>
+<li>思路：门锁与app进行通信，先分析app找到常量，再利用常量去固件中定位</li>
+<li>java层：通过日志字符串，定位到libBleCmd.so库文件</li>
+<li>Native层：zip解压apk获取so文件、导出函数中发现Tea算法相关的加/解密函数、Tea算法会用到常量、找到2个常量0xCE6D-0x58BF</li>
+</ul>
+</li>
+<li><p>固件分析：通过常量定位</p>
+<ul>
+<li>设置架构为Armv6-M，有些指令无法反汇编，改用Armv7-M后成功，原因未知。</li>
+<li>alt + t搜索常量，再对比libBleCmd.so-Decrypt，确定固件中Encrypt/Decrypt函数</li>
+</ul>
+</li>
+<li><p>sub_800B528调用Decrypt</p>
+<ul>
+<li>0xBABEC0DE常量：app日志中，0xBABEC0DE为BLE消息开头</li>
+<li>Decrypt的3参数：密文、长度、解密密钥</li>
+<li>解密密钥：动态生成的，放于变量中（内存中），进一步找到密钥生成代码</li>
+<li>小结：ble消息预处理，即消息头检验、crc校验、是否可解密</li>
+</ul>
+</li>
+<li>代码进一步分析<ul>
+<li>sub_800EB20调用sub_800B528：根据其返回值设置内存（即变量赋值）、密文及长度的内存</li>
+<li>sub_80000C8调用sub_800EB20：见下篇</li>
+</ul>
+</li>
+<li>小结：<ul>
+<li>app分析：日志分析、先定位到java再native、so中找到加解密函数、tea算法中常量</li>
+<li>门锁固件分析：常量定位到加解密函数、分析出密文-长度-密钥的内存、不断交叉引用加强程序理解</li>
+</ul>
+</li>
+<li>其它<ul>
+<li>Armv6-M是Armv7-M的子集，v6程序可直接移植到v7-M架构上</li>
+<li>反编译工具，JEB相比于Jadx，更方便</li>
+<li>java/native层：Java程序中，可以使用由其他编程语言实现的函数，即原生（Native）函数</li>
+</ul>
+</li>
+</ul>
+<h2 id="下"><a href="#下" class="headerlink" title="下"></a>下</h2><ul>
+<li><p>概要：固件代码分析、重刷固件、语音提示函数、测试模式、后门密码</p>
+</li>
+<li><p>sub_80000C8即main</p>
+<ul>
+<li>最复杂的函数，梳理代码框架，是个while死循环，只有入口没有出口</li>
+<li>系统复位中断之后执行的第二个函数</li>
+<li>综上：最复杂+死循环+第二个 = main</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>相关概念</p>
+<ul>
+<li>复位中断会执行两个函数：init、main</li>
+<li>单片机：main一般是死循环，不可执行完毕后退出。上电之后，MCU就开始运行程序，直到断电</li>
+<li>运行于操作系统之上的程序：如ls，完成功能后就退出</li>
+</ul>
+</li>
+<li><p>main</p>
+<ul>
+<li>一般流程（个人经验）：消息预处理、BLE指令解析、完成逻辑功能</li>
+<li>调用sub_800EB20：返回0表预处理成功，即消息头校验、crc校验、数据解密</li>
+<li>两个标志位：1-是否收到ble指令</li>
+<li>调用sub_800F9EC：switch-case语句处理各种ble指令、结合日志推断变量含义</li>
+</ul>
+</li>
+<li><p>case 0xE004</p>
+<ul>
+<li>ble指令类型：开锁，即门锁如何处理开锁指令</li>
+<li>sub_80125C8：日期转时间戳，不在区间时调用sub_800D40C（暂未知功能），即密码过期不可开锁</li>
+</ul>
+</li>
+<li><p>sub_800D40C语音提示函数</p>
+<ul>
+<li>调用位置很多、参数为常量、main进入while前调用</li>
+<li>反复修改并刷入固件（main-while那个），发现提示音不同</li>
+<li>小结：语音提示函数、参数即语音内容、类似日志输出可帮助理解代码、整理出语音表</li>
+</ul>
+</li>
+<li><p>固件重刷</p>
+<ul>
+<li>修改：16进制编辑器</li>
+<li>刷入：固件更新时作劫持，Fiddler-AutoResponder，新固件替换原固件</li>
+</ul>
+</li>
+<li><p>语音“进入测试模式”</p>
+<ul>
+<li>如何触发语音，即如何进入测试模式？</li>
+<li>判断某函数返回值，其参数为字符串（即门锁键盘可输入的值），应该类似strcmp</li>
+<li>输入此字符串，门锁果然提示说“进入测试模式”</li>
+</ul>
+</li>
+<li><p>后门密码：测试模式下，2个数字加#号，可开锁</p>
+</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ul>
+<li><a href="https://www.4hou.com/posts/53nR" target="_blank" rel="noopener">https://www.4hou.com/posts/53nR</a></li>
+<li><a href="https://www.4hou.com/posts/62o9" target="_blank" rel="noopener">https://www.4hou.com/posts/62o9</a></li>
+<li><a href="https://www.4hou.com/posts/7O8A" target="_blank" rel="noopener">https://www.4hou.com/posts/7O8A</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/05/23/iot/果加智能门锁的安全分析/" title="果加智能门锁的安全分析">http://21guns.top/2021/05/23/iot/果加智能门锁的安全分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/智能门锁/" rel="tag"># 智能门锁</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/22/iot/Linksys-WAG120N固件分析/" rel="prev" title="Linksys-WAG120N固件分析">
+      <i class="fa fa-chevron-left"></i> Linksys-WAG120N固件分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/05/23/iot/ZyXEL-NSA310固件分析/" rel="next" title="ZyXEL-NSA310固件分析">
+      ZyXEL-NSA310固件分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#果加智能门锁的安全分析"><span class="nav-number">1.</span> <span class="nav-text">果加智能门锁的安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#上"><span class="nav-number">1.1.</span> <span class="nav-text">上</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#中"><span class="nav-number">1.2.</span> <span class="nav-text">中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下"><span class="nav-number">1.3.</span> <span class="nav-text">下</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

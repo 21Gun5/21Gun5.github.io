@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] IDAPython-VxWorks固件解析00-准备12345The WRT54G series infamously switched from Linux to VxWorks with the release of the WRT54Gv5. Because VxWorks is a proprietary RTOS, it is a less familiar environm">
+<meta name="keywords" content="固件分析,vxworks">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IDAPython-VxWorks固件解析">
+<meta property="og:url" content="http://21guns.top/2021/07/03/iot/IDAPython-VxWorks固件解析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] IDAPython-VxWorks固件解析00-准备12345The WRT54G series infamously switched from Linux to VxWorks with the release of the WRT54Gv5. Because VxWorks is a proprietary RTOS, it is a less familiar environm">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071031.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071029.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071030.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071027.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071026.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071033.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-71030.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071032.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071028.jpg">
+<meta property="og:updated_time" content="2022-03-04T08:24:57.301Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IDAPython-VxWorks固件解析">
+<meta name="twitter:description" content="[toc] IDAPython-VxWorks固件解析00-准备12345The WRT54G series infamously switched from Linux to VxWorks with the release of the WRT54Gv5. Because VxWorks is a proprietary RTOS, it is a less familiar environm">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071031.jpg">
+
+<link rel="canonical" href="http://21guns.top/2021/07/03/iot/IDAPython-VxWorks固件解析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IDAPython-VxWorks固件解析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/07/03/iot/IDAPython-VxWorks固件解析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IDAPython-VxWorks固件解析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-03 14:41:33" itemprop="dateCreated datePublished" datetime="2021-07-03T14:41:33+08:00">2021-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-04 16:24:57" itemprop="dateModified" datetime="2022-03-04T16:24:57+08:00">2022-03-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="IDAPython-VxWorks固件解析"><a href="#IDAPython-VxWorks固件解析" class="headerlink" title="IDAPython-VxWorks固件解析"></a>IDAPython-VxWorks固件解析</h1><h2 id="00-准备"><a href="#00-准备" class="headerlink" title="00-准备"></a>00-准备</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">The WRT54G series infamously switched from Linux to VxWorks with the release of the WRT54Gv5. Because VxWorks is a proprietary RTOS, it is a less familiar environment than a Linux based system. Even once you identify the different sections of the firmware image, there usually isn’t a standard file system full of standard ELF executables that can be automatically analyzed by a disassembler.</span><br><span class="line"></span><br><span class="line"><span class="comment"># WRT54G从v5起，从Linux转为VxWorks</span></span><br><span class="line"><span class="comment"># vw是一个实时操作系统，不同于Linux，更加陌生</span></span><br><span class="line"><span class="comment"># 即使从固件中分辨出了不同的section，也很难获取到通用的文件系统（如squashFs）</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>固件：<a href="https://www.linksys.com/gb/support-article?articleNum=208638" target="_blank" rel="noopener">https://www.linksys.com/gb/support-article?articleNum=208638</a> 中的 <a href="https://downloads.linksys.com/downloads/firmware/FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin" target="_blank" rel="noopener">https://downloads.linksys.com/downloads/firmware/FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin</a></p>
+</li>
+<li><p>一般步骤</p>
+<ol>
+<li>从firmware中发现并提取出可执行代码</li>
+<li>识别可执行代码的加载地址</li>
+<li>指定加载地址，ida中打开</li>
+<li>手动或脚本方式，增强ida的自动分析</li>
+</ol>
+</li>
+<li><p>通过JTAG或者串口的debug信息可以替代1/2，但要有实机，在此纯分析firmware</p>
+</li>
+</ul>
+<h2 id="01-固件组成"><a href="#01-固件组成" class="headerlink" title="01-固件组成"></a>01-固件组成</h2><ul>
+<li>binwalk</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 仅留涉及到的</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ binwalk -v  FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin</span><br><span class="line"><span class="comment"># -v仅仅多了如下，没啥用</span></span><br><span class="line">Scan Time:     2021-01-07 15:52:34</span><br><span class="line">Target File:   /home/lxl/Desktop/tmp/FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin</span><br><span class="line">MD5 Checksum:  74317a70160f80fa5df01de0e479a39c</span><br><span class="line">Signatures:    344</span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">0             0x0             BIN-Header, board ID: 5VGW, hardware version: 4702, firmware version: 1.128.128, build date: 2009-10-05</span><br><span class="line"><span class="comment"># ELF</span></span><br><span class="line">512           0x200           ELF, 32-bit LSB MIPS-II executable, MIPS, version 1 (SYSV)</span><br><span class="line"><span class="comment"># LZMA</span></span><br><span class="line">103664        0x194F0         LZMA compressed data, properties: 0x6C, dictionary size: 8388608 bytes, uncompressed size: 3680864 bytes</span><br><span class="line"><span class="comment"># gzip后的web文件</span></span><br><span class="line">1185153       0x121581        gzip compressed data, has original file name: <span class="string">"apply.htm"</span>, from NTFS filesystem (NT), last modified: 2009-09-04 07:45:58</span><br></pre></td></tr></table></figure>
+<h3 id="1-web文件"><a href="#1-web文件" class="headerlink" title="1-web文件"></a>1-web文件</h3><ul>
+<li>web文件的提取类似于之前的OW，<a href="http://www.devttys0.com/2011/06/mystery-file-system/，非本文重点" target="_blank" rel="noopener">http://www.devttys0.com/2011/06/mystery-file-system/，非本文重点</a></li>
+</ul>
+<h3 id="2-lama-data-主程序"><a href="#2-lama-data-主程序" class="headerlink" title="2-lama_data/主程序"></a>2-lama_data/主程序</h3><ul>
+<li>dd提取lzma，7zip解压</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 大小转换（大约值，只保留商，足矣了</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ expr 3680864 / 1024 / 1024</span><br><span class="line">3</span><br><span class="line"><span class="comment"># lzma的uncompressed size: 3680864 bytes，大约3M，合理的大小，若太大（如几百M），则认为识别错了</span></span><br><span class="line">103664        0x194F0         LZMA compressed data, properties: 0x6C, dictionary size: 8388608 bytes, uncompressed size: 3680864 bytes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 不用count，lzma解压时尾部的垃圾数据会忽略</span></span><br><span class="line"><span class="comment"># 要么就count=`expr 1173205 - 103664`，精确控制大小（但没必要</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin of=lzma_data.lzma bs=1 skip=103664</span><br><span class="line"></span><br><span class="line"><span class="comment"># Linux下的p7zip和lzma都不靠谱（二者还需要特定的后缀）</span></span><br><span class="line"><span class="comment"># 直接win下的7zip即可解压，会提示“有效数据外包含额外数据”，但结果不影响</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>strings或hexdump找敏感字符串</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings lzma_data &gt; 1.txt</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ subl 1.txt</span><br><span class="line"><span class="variable">$MODEL_NAME</span>=WRT54G<span class="comment"># 型号</span></span><br><span class="line"><span class="variable">$OEM_NAME</span>=LINKSYS<span class="comment"># 厂商</span></span><br><span class="line">Content-Length: XXXXXXXX</span><br><span class="line">HTTP/1.1 307 Temporary Redirect<span class="comment"># HTTP</span></span><br><span class="line">Content-Type: text/html</span><br><span class="line">Location: https://%s%s/HNAP1/<span class="comment"># HNAP</span></span><br></pre></td></tr></table></figure>
+<h3 id="3-kernel文件"><a href="#3-kernel文件" class="headerlink" title="3-kernel文件"></a>3-kernel文件</h3><ul>
+<li>提取ELF可执行代码</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># firmware中的二进制数据中，可能会有可执行代码，要想分析，需要知道其CPU架构（指令集）及大小端等信息</span></span><br><span class="line"><span class="comment"># 有个ELF：mips、小端</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ binwalk FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin | head</span><br><span class="line">512           0x200           ELF, 32-bit LSB MIPS-II executable, MIPS, version 1 (SYSV)</span><br><span class="line"></span><br><span class="line"><span class="comment"># dd提取并file</span></span><br><span class="line"><span class="comment"># 未指定count，file也能看出来，故其依据的是头部信息，尾巴跟着啥无所谓</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ dd <span class="keyword">if</span>=FW_WRT54Gv8_8.00.8.001_US_20091005,0.bin of=elf bs=1 skip=512</span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ file elf </span><br><span class="line">elf: ELF 32-bit LSB executable, MIPS, MIPS-II version 1 (SYSV), statically linked, not stripped</span><br></pre></td></tr></table></figure>
+<ul>
+<li>鉴别ELF是啥？内核文件</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># strings + head</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ strings -n 10 elf | head</span><br><span class="line">VxWorks5.4.2 <span class="comment"># vxworks</span></span><br><span class="line">Oct  5 2009, 15:15:53</span><br><span class="line">memPartFree</span><br><span class="line">bug <span class="keyword">in</span> vfprintf: bad base</span><br><span class="line">WIND version 2.5<span class="comment"># wind river</span></span><br><span class="line">workQPanic: Kernel work queue overflow.<span class="comment"># kernel</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 综上，mips、小端、字符串信息</span></span><br><span class="line"><span class="comment"># 此elf可能为VxWorks的kernel文件</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>ida加载kernel</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 选择mips little endian：能加载成功，还识别出了612个函数，所以dd时没指定count，尾部的数据是真的不影响</span></span><br><span class="line"><span class="comment"># Because this image has an ELF header, IDA's auto analysis does a very good job of identifying functions and resolving symbols for us. （所以如果没有头，是不是就没啥自动分析，如笔记13中的36ac，没有头，所以一打开啥也没有</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 自动分析后，第一个subroutine为startInflate（inflate-膨胀，依据名字，解压等操作？</span></span><br><span class="line"><span class="comment"># 0x80001000 给 v0、a1，调用完decompressImage后，jalr到v0</span></span><br><span class="line"><span class="comment"># 故0x80001000处存放了解压后的代码，decompressImage后，接管pc</span></span><br><span class="line"></span><br><span class="line">.text:80500460  <span class="comment"># =============== S U B R O U T I N E =======================================</span></span><br><span class="line">.text:80500460                 .globl startInflate</span><br><span class="line">.text:80500460 startInflate:</span><br><span class="line">.text:80500464                 li      <span class="variable">$v0</span>, 0x80001000</span><br><span class="line">.text:8050046C                 li      <span class="variable">$a1</span>, 0x80001000</span><br><span class="line">.text:80500474                 li      <span class="variable">$a0</span>, _binArrayStart</span><br><span class="line">.text:8050048C                 jal     decompressImage</span><br><span class="line">.text:805004A0                 jalr    <span class="variable">$v0</span></span><br><span class="line">.text:805004B0  <span class="comment"># End of function startInflate</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># _binArrayStart是decompressImage的参数，待解压文件的开头？</span></span><br><span class="line">.data:80519270 _binArrayStart: .byte 0x6C  <span class="comment"># l          # DATA XREF: startInflate+14↑o</span></span><br><span class="line">.data:80519271                 .byte    0</span><br><span class="line">.data:80519272                 .byte    0</span><br><span class="line">.data:80519273                 .byte 0x80</span><br><span class="line">.data:80519274                 .byte    0</span><br><span class="line">.data:80519275                 .byte 0x60  <span class="comment"># `</span></span><br><span class="line">.data:80519276                 .byte 0x2A  <span class="comment"># *</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 之前提取的、未解压的lzma数据，恰好匹配</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp$ hexdump -C lzma_data.lzma | head</span><br><span class="line">00000000  6c 00 00 80 00 60 2a 38  00 00 00 00 00 00 11 00  |l....`*8........|</span><br><span class="line">00000010  2c 20 00 df 1e 01 d7 44  6b 43 41 4d a8 aa 91 9c  |, .....DkCAM....|</span><br><span class="line"></span><br><span class="line"><span class="comment"># decompressImage里调用了LzmaDecode</span></span><br><span class="line">.text:80500058                 .globl decompressImage</span><br><span class="line">.text:80500058 decompressImage:                         <span class="comment"># CODE XREF: startInflate+2C↓p</span></span><br><span class="line">.text:805001F8                 jal     LzmaDecode</span><br><span class="line">.text:80500224  <span class="comment"># End of function decompressImage</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 综上，代码做了：lzma_data.lzma传入decompressImage，解压后放在0x80001000</span></span><br><span class="line"><span class="comment"># 可人工代替：dd提取出lzma_data.lzma、7zip解压得到原始的lzma_data（其内包含可执行代码）、ida中打开并指定加载地址为0x80001000</span></span><br></pre></td></tr></table></figure>
+<h2 id="02-ida加载主程序"><a href="#02-ida加载主程序" class="headerlink" title="02-ida加载主程序"></a>02-ida加载主程序</h2><ul>
+<li>ida加载lzma_data</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 加载器只有最原始的：binary file</span></span><br><span class="line"><span class="comment"># processor选择mipsl（依据kernel文件，即elf</span></span><br><span class="line"><span class="comment"># 选中manual load，出现disassembly memory organization（或者不选，加载后就会默认打开</span></span><br><span class="line"><span class="comment"># 内存布局中：input file的loading address指定0x80001000、loading size默认就是文件大小、file offset默认0即可</span></span><br><span class="line"><span class="comment"># 选择创建rom section，address和size同input file（作用未知，但ram和rom必须选一个</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 刚打开，啥也没有，第一个字节处，快捷键c将byte转化为code，随后ida会自动分析</span></span><br><span class="line"><span class="comment"># 识别出了5769个函数，字符串识别也没问题</span></span><br><span class="line">ROM:80001000  <span class="comment"># Segment type: Pure code</span></span><br><span class="line">ROM:80001000                 .text <span class="comment"># ROM</span></span><br><span class="line"><span class="comment"># 首行代码，跳过随后的数据</span></span><br><span class="line">ROM:80001000                 b       loc_8000108C</span><br><span class="line"><span class="comment"># 这一块是数据，需要自己转</span></span><br><span class="line">ROM:80001004                 nop</span><br><span class="line">ROM:80001004  <span class="comment"># ---------------------------------------------------------------------------</span></span><br><span class="line">ROM:80001008                 .byte    0</span><br><span class="line">ROM:80001009                 .byte    0</span><br><span class="line">ROM:8000100A                 .byte    0</span><br><span class="line">ROM:8000100B                 .byte    0</span><br><span class="line">ROM:8000100C                 .byte    0</span><br><span class="line">ROM:8000100D                 .byte    0</span><br><span class="line">ROM:8000100E                 .byte    0</span><br><span class="line">ROM:8000100F                 .byte    0</span><br><span class="line">ROM:80001010                 .byte 0x4E  <span class="comment"># N</span></span><br><span class="line">ROM:80001011                 .byte 0x4F  <span class="comment"># O</span></span><br><span class="line">ROM:80001012                 .byte 0x52  <span class="comment"># R</span></span><br><span class="line">......</span><br><span class="line"><span class="comment"># 其他位置代码也出来了</span></span><br><span class="line">ROM:8000108C  <span class="comment"># ---------------------------------------------------------------------------</span></span><br><span class="line">ROM:8000108C</span><br><span class="line">ROM:8000108C loc_8000108C:                            <span class="comment"># CODE XREF: ROM:80001000↑j</span></span><br><span class="line">ROM:8000108C                 li      <span class="variable">$gp</span>, 0x8038BA50</span><br></pre></td></tr></table></figure>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071031.jpg" alt="image-20210108105021281"></p>
+<ul>
+<li>ida脚本加强其自动分析</li>
+</ul>
+<h2 id="03-ida脚本辅助"><a href="#03-ida脚本辅助" class="headerlink" title="03-ida脚本辅助"></a>03-ida脚本辅助</h2><p><a href="http://www.devttys0.com/wp-content/uploads/2011/07/ida_scripts.zip" target="_blank" rel="noopener">http://www.devttys0.com/wp-content/uploads/2011/07/ida_scripts.zip</a></p>
+<h3 id="1-create-function-py"><a href="#1-create-function-py" class="headerlink" title="1-create_function.py"></a>1-create_function.py</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 遍历代码，查找函数序言来定位未标识的函数，如果找到一个，告诉IDA在那里创建一个函数</span></span><br><span class="line"><span class="comment"># MIPS比Intel要复杂一些，因为函数序言在MIPS中没有那么标准化</span></span><br><span class="line"><span class="comment"># addui指令用于操作函数开头的堆栈寄存器（$sp），如</span></span><br><span class="line">ROM:802DAE08 sub_802DAE08:                            <span class="comment"># CODE XREF: sub_802C81E0+64↑p</span></span><br><span class="line">ROM:802DAE08                 addiu   <span class="variable">$sp</span>, -0x68</span><br><span class="line"></span><br><span class="line"><span class="comment"># 也有许多特殊的：addiu前有lw</span></span><br><span class="line">ROM:80002254 sub_80002254:                            <span class="comment"># CODE XREF: sub_800022D8:loc_80002320↓p</span></span><br><span class="line">ROM:80002254                 lw      <span class="variable">$v0</span>, dword_8034F218</span><br><span class="line">ROM:8000225C                 addiu   <span class="variable">$sp</span>, -0x18</span><br><span class="line"></span><br><span class="line"><span class="comment"># create_functions.py的IDAPython脚本将在代码（从光标位置开始）中搜索与这些指令对应的字节序列，并指示IDA将它们转换为函数。</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 在反汇编中，包含字符串的数据部分似乎从0x802DDAC0开始，因此将其设为停止地址</span></span><br><span class="line">ROM:802DDAB4  <span class="comment"># End of function sub_802DDA64</span></span><br><span class="line">ROM:802DDAB4  <span class="comment"># ---------------------------------------------------------------------------</span></span><br><span class="line">ROM:802DDAB8                 .word 0</span><br><span class="line">ROM:802DDABC                 .word 0</span><br><span class="line">ROM:802DDAC0 aInvalidConfigu:.ascii <span class="string">"Invalid configuration. PCI_MAX_DEV &gt; 16, PCI mechanism #2\n"</span>&lt;0&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或者直接拉到最后，找最后的地址</span></span><br><span class="line">ROM:80383A5E                 .byte    0</span><br><span class="line">ROM:80383A5F                 .byte    0</span><br><span class="line">ROM:80383A5F</span><br><span class="line">ROM:80383A5F                  <span class="comment"># end</span></span><br></pre></td></tr></table></figure>
+<p>运行脚本前</p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071029.jpg" alt="image-20210108160141284"></p>
+<p>运行后，效果可观</p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071030.jpg" alt="image-20210108160344144"></p>
+<h3 id="2-create-code-py"><a href="#2-create-code-py" class="headerlink" title="2-create_code.py"></a>2-create_code.py</h3><p>仍有许多二进制没有被解析（颜色也对应）</p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071027.jpg" alt="image-20210108160934209"></p>
+<p>这些部分被code周围是代码（从导航带中可见，蓝色中有些许棕色），手动c一下（或者p直接转为函数）便可将其转为代码</p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071026.jpg" alt="image-20210108163928354"></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 这些代码都以“jr $ra”结尾（mips的return指令），并且看起来并没有被其他函数引用（比如jmp），因此可推断：是函数的本体</span></span><br><span class="line"><span class="comment"># create_code.py脚本：遍历数据，将未被引用的bytes转换为function</span></span><br><span class="line"><span class="comment"># （同之前的create_function有何区别？后者是unreferenced的，那前者是被引用的？被引用的就有addiu和lw指令？之间有啥联系？）</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 效果可观：函数增加了、蓝色代码中的unexplored没有了、导航带右边unexplored出现了许多instruction</span></span><br></pre></td></tr></table></figure>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071033.jpg" alt="image-20210108164927529"></p>
+<h3 id="3-create-ascii-py"><a href="#3-create-ascii-py" class="headerlink" title="3-create_ascii.py"></a>3-create_ascii.py</h3><ol>
+<li><p>处理好代码后，仍有一些ASCII字节数组未被IDA转换为字符串，可手动a将其转换，或脚本处理</p>
+</li>
+<li><p>运行前</p>
+<p> <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-71030.jpg" alt="image-20210108165720911"></p>
+<p> <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071032.jpg" alt="image-20210111115337259"></p>
+<p> 可见，无论字符串是什么形式（bytes or ascii），strings中都能识别</p>
+</li>
+<li><p>运行后，有的成功有的失败</p>
+<p> <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2021-01-11-071028.jpg" alt="image-20210111114350275"></p>
+</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Looking <span class="keyword">for</span> possible strings starting at: 0x80001000</span><br><span class="line">Created 7500 new ASCII strings</span><br><span class="line"><span class="comment"># 还是7500个，看来没改变这个，只是在形式上讲单个byte转为了ascii字符串</span></span><br><span class="line"><span class="comment"># 失败的是因为在之前转换代码时，范围选择了从开始到结束，将字符串的00转为了代码</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 是否有必要精确转换代码/数据的范围？</span></span><br><span class="line"><span class="comment"># 没必要，如上，转换代码时选择了全部范围，尽管在转数据时有个别的失败，也无伤大雅</span></span><br><span class="line"><span class="comment"># 如果真要精确范围，代价太大，因为一个二进制文件可能代码和数据是混在一起的，不是前面代码后面数据，如果要范围，成本太大</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 这个create_ascii有啥意义呢？？感觉作用不大</span></span><br></pre></td></tr></table></figure>
+<h2 id="04-逆向过程"><a href="#04-逆向过程" class="headerlink" title="04-逆向过程"></a>04-逆向过程</h2><h3 id="1-识别基本函数"><a href="#1-识别基本函数" class="headerlink" title="1-识别基本函数"></a>1-识别基本函数</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 反汇编代码：</span></span><br><span class="line"><span class="comment"># # lui指令：把一个16位的立即数填入到寄存器的高16位，低16位补零</span></span><br><span class="line"><span class="comment"># 故lui     $a0, 1时a0=65525</span></span><br><span class="line">ROM:80003154                 addiu   <span class="variable">$sp</span>, -0x30</span><br><span class="line">ROM:80003158                 sw      <span class="variable">$s3</span>, 0x18+var_sC(<span class="variable">$sp</span>)</span><br><span class="line">ROM:8000315C                 move    <span class="variable">$s3</span>, <span class="variable">$a0</span></span><br><span class="line">ROM:80003160                 lui     <span class="variable">$a0</span>, 1<span class="comment">#65536</span></span><br><span class="line">ROM:80003164                 sw      <span class="variable">$s1</span>, 0x18+var_s4(<span class="variable">$sp</span>)</span><br><span class="line">ROM:80003168                 move    <span class="variable">$s1</span>, <span class="variable">$a1</span></span><br><span class="line">ROM:8000316C                 sw      <span class="variable">$s2</span>, 0x18+var_s8(<span class="variable">$sp</span>)</span><br><span class="line">ROM:80003170                 move    <span class="variable">$s2</span>, <span class="variable">$a2</span></span><br><span class="line">ROM:80003174                 sw      <span class="variable">$ra</span>, 0x18+var_s10(<span class="variable">$sp</span>)</span><br><span class="line">ROM:80003178                 jal     sub_802A7F90</span><br><span class="line">ROM:8000317C                 sw      <span class="variable">$s0</span>, 0x18+var_s0(<span class="variable">$sp</span>)</span><br><span class="line">ROM:80003180                 move    <span class="variable">$s0</span>, <span class="variable">$v0</span></span><br><span class="line">ROM:80003184                 bnez    <span class="variable">$s0</span>, loc_800031A4</span><br><span class="line">ROM:80003188                 lui     <span class="variable">$v0</span>, 0xBFC4</span><br><span class="line">ROM:8000318C                 li      <span class="variable">$a0</span>, aCanTAllocateDB  <span class="comment"># "Can't allocate %d bytes of memory\n"</span></span><br><span class="line">ROM:80003194                 jal     sub_802A06E8</span><br><span class="line">ROM:80003198                 lui     <span class="variable">$a1</span>, 1<span class="comment"># 65536</span></span><br><span class="line">ROM:8000319C                 j       loc_80003298</span><br><span class="line">ROM:800031A0                 li      <span class="variable">$v0</span>, 0xFFFFFFFF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 伪C</span></span><br><span class="line"><span class="keyword">if</span>(!sub_802A7F90(65536))</span><br><span class="line">&#123;</span><br><span class="line">   sub_802A06E8(<span class="string">"Can't allocate %d bytes of memory\n"</span>, 65536);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 故猜测：sub_802A7F90为malloc，sub_802A06E8为printf</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>参考：<a href="http://www.devttys0.com/2011/07/reverse-engineering-vxworks-firmware-wrt54gv8/" target="_blank" rel="noopener">http://www.devttys0.com/2011/07/reverse-engineering-vxworks-firmware-wrt54gv8/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/07/03/iot/IDAPython-VxWorks固件解析/" title="IDAPython-VxWorks固件解析">http://21guns.top/2021/07/03/iot/IDAPython-VxWorks固件解析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/固件分析/" rel="tag"># 固件分析</a>
+              <a href="/tags/vxworks/" rel="tag"># vxworks</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/" rel="prev" title="Netgear R8300认证前RCE的漏洞分析及利用">
+      <i class="fa fa-chevron-left"></i> Netgear R8300认证前RCE的漏洞分析及利用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/11/iot/路由器pwn实践/" rel="next" title="路由器pwn实践">
+      路由器pwn实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IDAPython-VxWorks固件解析"><span class="nav-number">1.</span> <span class="nav-text">IDAPython-VxWorks固件解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#00-准备"><span class="nav-number">1.1.</span> <span class="nav-text">00-准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#01-固件组成"><span class="nav-number">1.2.</span> <span class="nav-text">01-固件组成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-web文件"><span class="nav-number">1.2.1.</span> <span class="nav-text">1-web文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-lama-data-主程序"><span class="nav-number">1.2.2.</span> <span class="nav-text">2-lama_data/主程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-kernel文件"><span class="nav-number">1.2.3.</span> <span class="nav-text">3-kernel文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-ida加载主程序"><span class="nav-number">1.3.</span> <span class="nav-text">02-ida加载主程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-ida脚本辅助"><span class="nav-number">1.4.</span> <span class="nav-text">03-ida脚本辅助</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-create-function-py"><span class="nav-number">1.4.1.</span> <span class="nav-text">1-create_function.py</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-create-code-py"><span class="nav-number">1.4.2.</span> <span class="nav-text">2-create_code.py</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-create-ascii-py"><span class="nav-number">1.4.3.</span> <span class="nav-text">3-create_ascii.py</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-逆向过程"><span class="nav-number">1.5.</span> <span class="nav-text">04-逆向过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-识别基本函数"><span class="nav-number">1.5.1.</span> <span class="nav-text">1-识别基本函数</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

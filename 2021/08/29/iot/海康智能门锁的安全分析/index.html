@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] 海康智能门锁的安全分析1 概要：flash中提取固件、软排线中找到UART  设备  对门锁配套的网关进行分析（最新版已取消外置网关） 门锁和网关已经是配对状态，无需额外操作 门锁app对服务端有证书校验，故不可直接抓包   网关与服务器通信（监控交换机端口来抓包）  上电后，与litedev.ys7.com通信，获取另一个ip-101 随后与101通信，前者通信终止 与101的通信加">
+<meta name="keywords" content="智能门锁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="海康智能门锁的安全分析">
+<meta property="og:url" content="http://21guns.top/2021/08/29/iot/海康智能门锁的安全分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] 海康智能门锁的安全分析1 概要：flash中提取固件、软排线中找到UART  设备  对门锁配套的网关进行分析（最新版已取消外置网关） 门锁和网关已经是配对状态，无需额外操作 门锁app对服务端有证书校验，故不可直接抓包   网关与服务器通信（监控交换机端口来抓包）  上电后，与litedev.ys7.com通信，获取另一个ip-101 随后与101通信，前者通信终止 与101的通信加">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:09:35.130Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="海康智能门锁的安全分析">
+<meta name="twitter:description" content="[TOC] 海康智能门锁的安全分析1 概要：flash中提取固件、软排线中找到UART  设备  对门锁配套的网关进行分析（最新版已取消外置网关） 门锁和网关已经是配对状态，无需额外操作 门锁app对服务端有证书校验，故不可直接抓包   网关与服务器通信（监控交换机端口来抓包）  上电后，与litedev.ys7.com通信，获取另一个ip-101 随后与101通信，前者通信终止 与101的通信加">
+
+<link rel="canonical" href="http://21guns.top/2021/08/29/iot/海康智能门锁的安全分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>海康智能门锁的安全分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/08/29/iot/海康智能门锁的安全分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          海康智能门锁的安全分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-29 09:23:44" itemprop="dateCreated datePublished" datetime="2021-08-29T09:23:44+08:00">2021-08-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:09:35" itemprop="dateModified" datetime="2022-02-21T15:09:35+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="海康智能门锁的安全分析"><a href="#海康智能门锁的安全分析" class="headerlink" title="海康智能门锁的安全分析"></a>海康智能门锁的安全分析</h1><h2 id="1"><a href="#1" class="headerlink" title="1"></a>1</h2><ul>
+<li><p>概要：flash中提取固件、软排线中找到UART</p>
+</li>
+<li><p>设备</p>
+<ul>
+<li>对门锁配套的网关进行分析（最新版已取消外置网关）</li>
+<li>门锁和网关已经是配对状态，无需额外操作</li>
+<li>门锁app对服务端有证书校验，故不可直接抓包</li>
+</ul>
+</li>
+<li><p>网关与服务器通信（监控交换机端口来抓包）</p>
+<ul>
+<li>上电后，与litedev.ys7.com通信，获取另一个ip-101</li>
+<li>随后与101通信，前者通信终止</li>
+<li>与101的通信加密，无太多可见明文</li>
+</ul>
+</li>
+<li><p>拆设备找固件所在芯片</p>
+<ul>
+<li>中间的MCU：MEDIATEK MT7688AN，联发科，手册中是SPI flash，即没有内置Flash，而是SPI通信的外置Flash（若有内置flash则固件就从mcu中提取？）</li>
+<li>MCU上方：Winbond W9751G6KB芯片，DDR2 SDRAM，断电丢数据，固件不可能在里面</li>
+<li>MCU下方有两个：PCM5100A（音频相关）、GD25Q127CSIG（128M的Flash，固件文件位于此）</li>
+</ul>
+</li>
+<li><p>读取Flash</p>
+<ul>
+<li>取下芯片放在编程器上：热风枪/电烙铁 + 镊子（烧录夹可以不取下）</li>
+<li>配套软件来配置：Flash品牌和型号、大小（自动识别或手动选择）</li>
+<li>读出Flash：将读出的数据保存为文件</li>
+</ul>
+</li>
+<li><p>binwalk提取</p>
+<ul>
+<li>包含一个嵌入式Linux系统，网关的功能一定由某个程序完成</li>
+<li>共5个文件系统：2个squashfs、2个cpio（LZMA解压而得）、1个jffs2</li>
+<li>jffs2：保存门锁及网关信息，如id</li>
+<li>2个cpio：恢复出厂设置的备份文件系统、当前正使用的文件系统</li>
+<li>2个squashfs：全部是mp3文件、网关的主程序（分析目标）</li>
+</ul>
+</li>
+<li><p>UART</p>
+<ul>
+<li>一般MCU都会提供UART引脚，手册中可见该芯片提供两个：UART0和UART1</li>
+<li>UART引脚在左侧的软排线接口，并非单独的，通过万用表找到rx和tx</li>
+</ul>
+</li>
+<li><p>其它</p>
+<ul>
+<li>固件获取：app抓包失败、官网下载失败，只好硬件方式（从Flash中提取）</li>
+<li>GD官网查询Flash详细参数，<a href="https://www.gigadevice.com/zh-hans/flash-memory/gd25q127c/" target="_blank" rel="noopener">https://www.gigadevice.com/zh-hans/flash-memory/gd25q127c/</a></li>
+<li>疑问：如果没有外置flash，而mcu有内置flash，则固件在mcu中？</li>
+<li>读取flash：取下/不取下两种方式</li>
+</ul>
+</li>
+</ul>
+<h2 id="2"><a href="#2" class="headerlink" title="2"></a>2</h2><ul>
+<li><p>概要：连接并登录串口、固件重打包/烧录、获取持久化后门</p>
+</li>
+<li><p>连接串口</p>
+<ul>
+<li>20pin的软排线：一端连接设备，另一端连接转接板（0.5mm转2.54mm）</li>
+<li>usb转ttl模块：连接pc和转接板，只关注5个引脚中的RXD/TXD/GND</li>
+<li>PC：设备管理器-端口中出现COM-xxx，Xshell作为串口工具</li>
+<li>xshell：可输出日志，也可输入尝试登录</li>
+</ul>
+</li>
+<li><p>持久化后门</p>
+<ul>
+<li>串口登录：找到/etc/shadow，获取帐号密码（彩虹表）</li>
+<li>telnetd：每次设备重启后，都需要进入shell并重新启动，麻烦</li>
+<li>自启动脚本：squashfs中initrun.sh</li>
+<li>步骤：文件系统重打包、文件系统放回固件、固件刷回flash</li>
+</ul>
+</li>
+<li><p>文件系统重打包</p>
+<ul>
+<li>需重新打包squashfs，mksquashfs需要正确的参数、程序版本，</li>
+<li>参考官方SDK：image.mk中发现打包命令</li>
+<li>mksquashfs4：-comp xz指定压缩格式（binwalk也可见是xz）</li>
+</ul>
+</li>
+<li><p>文件系统放回至固件</p>
+<ul>
+<li>直接16进制编辑，新的覆盖旧的，偏移0x7000000</li>
+<li>注意：填充字节，保证另一个squashfs的偏移不变</li>
+</ul>
+</li>
+<li><p>固件烧录：同提取类似，将Flash取下，通过编程器及配套软件，将新固件烧录至Flash</p>
+</li>
+<li>其它<ul>
+<li>usb转ttl模块：转换MCU-ttl、usb-RS232二者的逻辑电平</li>
+<li>给网关准备一个带开关的插座，便于反复重启，来回插拔容易导致问题</li>
+<li>软排线触点可能有点虚接，硬件连接不稳定，最好软件连接，如telnet</li>
+<li>有的设备只能识别特定版本的mksquashfs打包出来的固件</li>
+</ul>
+</li>
+</ul>
+<h2 id="3"><a href="#3" class="headerlink" title="3"></a>3</h2><ul>
+<li>概要：程序patch、日志分析、动态调试</li>
+<li>其它<ul>
+<li>ps+排除法，确定主程序/dav/davinci</li>
+<li>MQTT：构建于TCP/IP协议之上、轻量级通信协议、用于iot中设备与云端的通信</li>
+</ul>
+</li>
+<li>watchdog<ul>
+<li>davinci启动后，初始化一个线程，不断向watchdog进行写操作</li>
+<li>若watchdog没收到数据，就以为davinci死掉，设备就会重启</li>
+<li>绕过：patch掉此线程，写脚本FeedWatchdog.sh，死循环echo&gt;watchdog，一直喂狗防重启</li>
+</ul>
+</li>
+<li><p>程序patch/上传/启动</p>
+<ul>
+<li>patch：日志修复、喂狗线程</li>
+<li>上传：硬件法-固件烧录、软件法-tftp</li>
+<li>启动：运行FeedWatchdog.sh喂狗、终止旧davinci并删除pidfile（互斥体用于控制davinci仅运行一次）、启动新程序</li>
+</ul>
+</li>
+<li><p>日志分析</p>
+<ul>
+<li>有运行日志，但输出不全，patch程序，跳过对日志严重程度的判断</li>
+<li>日志文件输出到文件（devlog目录），而非命令行</li>
+<li>字符串”litedev.ys7.com”：网关上电后第一个访问的地址，ip-115</li>
+<li>字符串”mqtt connect succ”：与MQTT服务器通信，ip-101</li>
+<li>字符串“lbs_connect”：搜索文件系统，是libmicrokernel.so中的函数</li>
+</ul>
+</li>
+<li><p>设备的工作流程</p>
+<ul>
+<li>结合：日志内容、抓包结果</li>
+<li>先与litedev.ys7.com通信，获取MQTT服务器的地址</li>
+<li>再与MQTT服务器通信，实现设备的逻辑功能</li>
+</ul>
+</li>
+<li><p>调试工具</p>
+<ul>
+<li>gdb/gdbserver，适用于嵌入式Linux</li>
+<li>可gdb进行本地调试，但其体积过大，嵌入式系统资源有限，故通过gdbserver进行远程调试</li>
+</ul>
+</li>
+<li><p>获取gdbserver</p>
+<ul>
+<li>官方提供，但无法使用</li>
+<li>直接找已编译好的，如rapid7-github</li>
+</ul>
+</li>
+<li><p>调试步骤</p>
+<ul>
+<li>gdbserver启动davinci（附加进程方式会错过通信）</li>
+<li>gdb-multiarch作为远程调试器（IDA提供图形界面，但会有莫名错误）</li>
+<li>运行gdb-multiarch：set architecture、file读取符号文件、break设置断点、target连接gdbserver、continue执行程序</li>
+</ul>
+</li>
+</ul>
+<h2 id="4"><a href="#4" class="headerlink" title="4"></a>4</h2><ul>
+<li><p>概要：设备密钥体系（3个密钥）、认证方式及密钥生成</p>
+</li>
+<li><p>网关通信的3个密钥</p>
+<ul>
+<li>share key：网关与litedev服务器共有的密钥，设备序列号等常量MD5运算得到，每个设备独有的</li>
+<li>master key：网关与litedev服务器经过密钥协商而来，用于加密传输session key</li>
+<li>session key：网关与MQTT服务器通信时的加密密钥，由litedev服务器直接下发</li>
+</ul>
+</li>
+<li><p>密钥的级别/生存周期</p>
+<ul>
+<li>share key：与设备绑定且固定不变的，一旦获取就可完成所有的认证过程</li>
+<li>master key：app绑定网关时，密钥协商生成的，绑定一次就更新一次</li>
+<li>session key：运行davinci则更新，即重启设备就更新</li>
+</ul>
+</li>
+<li><p>数据格式共5部分</p>
+<ul>
+<li>common：固定的3字节</li>
+<li>dev_subserial/dev_subserial_len：设备序列号及长度</li>
+<li>random_1：1字节随机数，每次密钥协商时都不同，网关将其上传至litedev服务器</li>
+<li>digital_sign：32字节，由于random_1不同而不同，故每次通信都33字节不同</li>
+</ul>
+</li>
+<li><p>4个随机数</p>
+<ul>
+<li>网关和服务器共同步了4个随机数，send_authentication_i/ii/iii/iv四个函数</li>
+<li>保存于lbs_affair结构体中，1/3网关生成发送服务器、2/4由服务器生成发给网关</li>
+</ul>
+</li>
+<li><p>master key生成</p>
+<ul>
+<li>generate_masterkey函数</li>
+<li>4个随机数 + share key，sha512函数 </li>
+</ul>
+</li>
+<li><p>session key生成：</p>
+<ul>
+<li>aes cbc算法、master key为密钥</li>
+<li>获取session key后，后续通信就用session key而非master</li>
+</ul>
+</li>
+<li><p>share key生成</p>
+<ul>
+<li>generate_sharekey函数</li>
+<li>dev_subserial + dev_verification_code + 固定的盐，多次MD5而得</li>
+<li>dev_verification_code：设备的认证码，设备背面的标签上</li>
+<li>盐：<a href="http://www.88075998.com，中间是联系电话" target="_blank" rel="noopener">www.88075998.com，中间是联系电话</a></li>
+</ul>
+</li>
+<li>其它<ul>
+<li>为了触发密钥协商，先删除当前master-key，即dev_masterkey文件</li>
+<li>对比发送数据（本次gdb调试的与上次wireshark抓包的），不同部分就是密钥协商的关键</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p> 参考：</p>
+<ul>
+<li><a href="https://www.4hou.com/posts/DPxy" target="_blank" rel="noopener">https://www.4hou.com/posts/DPxy</a></li>
+<li><a href="https://www.4hou.com/posts/EGyY" target="_blank" rel="noopener">https://www.4hou.com/posts/EGyY</a></li>
+<li><a href="https://www.4hou.com/posts/GgAL" target="_blank" rel="noopener">https://www.4hou.com/posts/GgAL</a></li>
+<li><a href="https://www.4hou.com/posts/KmGM" target="_blank" rel="noopener">https://www.4hou.com/posts/KmGM</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/08/29/iot/海康智能门锁的安全分析/" title="海康智能门锁的安全分析">http://21guns.top/2021/08/29/iot/海康智能门锁的安全分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/智能门锁/" rel="tag"># 智能门锁</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/27/iot/补丁对比技术实践-netgear/" rel="prev" title="补丁对比技术实践-netgear">
+      <i class="fa fa-chevron-left"></i> 补丁对比技术实践-netgear
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/09/19/iot/流量劫持漏洞-修改dns/" rel="next" title="流量劫持漏洞-修改dns">
+      流量劫持漏洞-修改dns <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#海康智能门锁的安全分析"><span class="nav-number">1.</span> <span class="nav-text">海康智能门锁的安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1"><span class="nav-number">1.1.</span> <span class="nav-text">1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2"><span class="nav-number">1.2.</span> <span class="nav-text">2</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3"><span class="nav-number">1.3.</span> <span class="nav-text">3</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4"><span class="nav-number">1.4.</span> <span class="nav-text">4</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

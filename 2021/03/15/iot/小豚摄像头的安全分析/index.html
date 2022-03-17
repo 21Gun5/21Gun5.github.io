@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] 小豚摄像头的安全分析上 PS：ppt见小米 aiot安全峰会，打开Iot设备分析的第一扇门.pdf 概要：通过uart获取shell，获取到shell很重要，能ps看状态、gdb调试，通过uart或telnet  外部分析  抓包通信过程，前期coap协议配网，后期云端作为中转并加密通信 扫描端口   硬件分析 找cpu/soc、flash 依据型号找芯片手册、开发sdk，官网或淘宝">
+<meta name="keywords" content="摄像头">
+<meta property="og:type" content="article">
+<meta property="og:title" content="小豚摄像头的安全分析">
+<meta property="og:url" content="http://21guns.top/2021/03/15/iot/小豚摄像头的安全分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[TOC] 小豚摄像头的安全分析上 PS：ppt见小米 aiot安全峰会，打开Iot设备分析的第一扇门.pdf 概要：通过uart获取shell，获取到shell很重要，能ps看状态、gdb调试，通过uart或telnet  外部分析  抓包通信过程，前期coap协议配网，后期云端作为中转并加密通信 扫描端口   硬件分析 找cpu/soc、flash 依据型号找芯片手册、开发sdk，官网或淘宝">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-02-21T07:07:53.809Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="小豚摄像头的安全分析">
+<meta name="twitter:description" content="[TOC] 小豚摄像头的安全分析上 PS：ppt见小米 aiot安全峰会，打开Iot设备分析的第一扇门.pdf 概要：通过uart获取shell，获取到shell很重要，能ps看状态、gdb调试，通过uart或telnet  外部分析  抓包通信过程，前期coap协议配网，后期云端作为中转并加密通信 扫描端口   硬件分析 找cpu/soc、flash 依据型号找芯片手册、开发sdk，官网或淘宝">
+
+<link rel="canonical" href="http://21guns.top/2021/03/15/iot/小豚摄像头的安全分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>小豚摄像头的安全分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/03/15/iot/小豚摄像头的安全分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          小豚摄像头的安全分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-15 09:23:44" itemprop="dateCreated datePublished" datetime="2021-03-15T09:23:44+08:00">2021-03-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 15:07:53" itemprop="dateModified" datetime="2022-02-21T15:07:53+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="小豚摄像头的安全分析"><a href="#小豚摄像头的安全分析" class="headerlink" title="小豚摄像头的安全分析"></a>小豚摄像头的安全分析</h1><h2 id="上"><a href="#上" class="headerlink" title="上"></a>上</h2><ul>
+<li>PS：ppt见小米 aiot安全峰会，打开Iot设备分析的第一扇门.pdf</li>
+<li><p>概要：通过uart获取shell，获取到shell很重要，能ps看状态、gdb调试，通过uart或telnet</p>
+</li>
+<li><p>外部分析</p>
+<ul>
+<li>抓包通信过程，前期coap协议配网，后期云端作为中转并加密通信</li>
+<li>扫描端口</li>
+</ul>
+</li>
+<li>硬件分析<ul>
+<li>找cpu/soc、flash</li>
+<li>依据型号找芯片手册、开发sdk，官网或淘宝</li>
+<li>提取固件，flash+编程器，结合sdk进行固件分析</li>
+</ul>
+</li>
+<li><p>串口分析，获取shell</p>
+<ul>
+<li>光有硬件层面上uart连接还不行，还需软件层面支持</li>
+<li>支持1，kernel的引导参数：修改bootargs的console从null到ttyxxx</li>
+<li>支持2，文件系统的启动脚本，可理解为那个rcS文件：将引脚从gpio功能改为uart功能</li>
+</ul>
+</li>
+<li><p>soc（个人感性认识，不严谨）    </p>
+<ul>
+<li>可理解为cpu，网上：CPU = 运算器 + 控制器，现在几乎没有纯粹的CPU了，都是SoC</li>
+<li>可理解为整块板子，文中：几个过孔即为SoC的UART接口</li>
+<li>mcu可理解为cpu，即图中红框大芯片</li>
+</ul>
+</li>
+<li>保护机制<ul>
+<li>uboot对自身部分有保护，对其它部分并没有</li>
+<li>但是其它部分有自己的，如crc校验，虽然不如前者的secure boot功能</li>
+</ul>
+</li>
+<li>摄像头与云端TLS加密通信，摄像头对云端的TLS证书有校验，无法用简单的中间人攻击拿到通信内容</li>
+</ul>
+<h2 id="下"><a href="#下" class="headerlink" title="下"></a>下</h2><ul>
+<li>概要：突破tls加密通信，实现中间人攻击，获取通信流量</li>
+<li>配置sdk开发环境<ul>
+<li>包含交叉编译环境及源码</li>
+<li>编译busubox（支持telnet和tfpt）、gdbserver</li>
+</ul>
+</li>
+<li>启用telnet<ul>
+<li>若不支持，可重新编译busybox，修改config文件</li>
+<li>启动脚本中挂载devpts设备文件，否则telnetd在建立第一个telnet连接后就会崩溃？（why？）</li>
+<li>启动脚本中设置开机自启</li>
+</ul>
+</li>
+<li>获取shell<ul>
+<li>硬件即urat法获取shell不方便，最好telnet、反向shell等软件法</li>
+<li>uart和telnet都固件重打包刷回flash，整个反向shell来作为预备，以免二者都失效而反复折腾硬件</li>
+<li>本文的反向shell代码思路简单，可收藏待用（因为是新程序，故本地qemu测试后再上传）</li>
+</ul>
+</li>
+<li>程序分析<ul>
+<li>获取shell后，ps找关键进程</li>
+<li>静态分析：patch程序，使其打印日志</li>
+<li>动态调试：编译gdbserver</li>
+<li>通信内容分析：通过中间人攻击获取未加密流量</li>
+</ul>
+</li>
+<li>中间人攻击<ul>
+<li>tld加密通信，并验证tls证书，不可中间人</li>
+<li>将tls证书修改为自己的，就可进行中间人攻击，获取二者的通信内容</li>
+</ul>
+</li>
+<li>其它<ul>
+<li>Linux启动脚本不一定非是rcS，本文为big_run.sh和small_run.sh</li>
+<li>打补丁脚本、中间人攻击脚本，都并未给出</li>
+<li>tls是协议层面上的加密，程序中的加密是应用层面上的</li>
+<li>缺少证书相关知识，为何修改tls证书就可中间人</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ul>
+<li><a href="https://www.4hou.com/posts/XqYl" target="_blank" rel="noopener">https://www.4hou.com/posts/XqYl</a></li>
+<li><a href="https://www.4hou.com/posts/22GP" target="_blank" rel="noopener">https://www.4hou.com/posts/22GP</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/03/15/iot/小豚摄像头的安全分析/" title="小豚摄像头的安全分析">http://21guns.top/2021/03/15/iot/小豚摄像头的安全分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/摄像头/" rel="tag"># 摄像头</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/12/iot/iot设备固件解密及分析/" rel="prev" title="iot设备固件解密及分析">
+      <i class="fa fa-chevron-left"></i> iot设备固件解密及分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/17/iot/嵌入式设备web服务器-goahead/" rel="next" title="嵌入式设备web服务器-goahead">
+      嵌入式设备web服务器-goahead <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#小豚摄像头的安全分析"><span class="nav-number">1.</span> <span class="nav-text">小豚摄像头的安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#上"><span class="nav-number">1.1.</span> <span class="nav-text">上</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下"><span class="nav-number">1.2.</span> <span class="nav-text">下</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

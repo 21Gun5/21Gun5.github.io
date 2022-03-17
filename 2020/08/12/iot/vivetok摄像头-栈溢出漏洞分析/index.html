@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] vivetok摄像头-栈溢出漏洞分析 1 第一次看   解压后，固件后缀是.flash.pkg，果然与路由器的.bin不一样  binwalk提取后的文件结构也不同，/_31.extracted/_rootfs.img.extracted/squashfs-root  find发现有两个httpd：./etc/init.d/httpd、./usr/sbin/httpd，看usr下的（前">
+<meta name="keywords" content="路由器,漏洞分析,栈溢出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vivetok摄像头-栈溢出漏洞分析">
+<meta property="og:url" content="http://21guns.top/2020/08/12/iot/vivetok摄像头-栈溢出漏洞分析/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] vivetok摄像头-栈溢出漏洞分析 1 第一次看   解压后，固件后缀是.flash.pkg，果然与路由器的.bin不一样  binwalk提取后的文件结构也不同，/_31.extracted/_rootfs.img.extracted/squashfs-root  find发现有两个httpd：./etc/init.d/httpd、./usr/sbin/httpd，看usr下的（前">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-26-134224.png">
+<meta property="og:updated_time" content="2022-02-21T09:48:51.778Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="vivetok摄像头-栈溢出漏洞分析">
+<meta name="twitter:description" content="[toc] vivetok摄像头-栈溢出漏洞分析 1 第一次看   解压后，固件后缀是.flash.pkg，果然与路由器的.bin不一样  binwalk提取后的文件结构也不同，/_31.extracted/_rootfs.img.extracted/squashfs-root  find发现有两个httpd：./etc/init.d/httpd、./usr/sbin/httpd，看usr下的（前">
+<meta name="twitter:image" content="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-26-134224.png">
+
+<link rel="canonical" href="http://21guns.top/2020/08/12/iot/vivetok摄像头-栈溢出漏洞分析/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>vivetok摄像头-栈溢出漏洞分析 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2020/08/12/iot/vivetok摄像头-栈溢出漏洞分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          vivetok摄像头-栈溢出漏洞分析
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-12 09:23:44" itemprop="dateCreated datePublished" datetime="2020-08-12T09:23:44+08:00">2020-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 17:48:51" itemprop="dateModified" datetime="2022-02-21T17:48:51+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h2 id="vivetok摄像头-栈溢出漏洞分析"><a href="#vivetok摄像头-栈溢出漏洞分析" class="headerlink" title="vivetok摄像头-栈溢出漏洞分析"></a>vivetok摄像头-栈溢出漏洞分析</h2><blockquote>
+<p>1 第一次看</p>
+</blockquote>
+<ul>
+<li><p>解压后，固件后缀是.flash.pkg，果然与路由器的.bin不一样</p>
+</li>
+<li><p>binwalk提取后的文件结构也不同，/_31.extracted/_rootfs.img.extracted/squashfs-root</p>
+</li>
+<li><p>find发现有两个httpd：./etc/init.d/httpd、./usr/sbin/httpd，看usr下的（前者好像跟启动有关</p>
+</li>
+<li><p>方便qemu虚拟机启动，将相关命令封装成shell脚本run.sh</p>
+</li>
+<li><p>tar + scp 将文件系统传送至qemu虚拟机</p>
+</li>
+<li><p>运行httpd前：mount -o bind /dev ./squashfs-root/dev/、mount -t proc /proc/ ./squashfs-root/proc/、chroot squashfs-root sh</p>
+</li>
+<li><p>第一次出错：Could not open boa.conf for reading</p>
+<ol>
+<li>要找文件：/etc/conf.d/boa/boa.conf（/是squashfs-root</li>
+<li>ll etc/conf.d：/etc/conf.d -&gt; ../mnt/flash/etc/conf.d（..是针对conf.d的，故要上一层目录</li>
+<li>替换后，故要找：/mnt/flash/etc/conf.d/boa/boa.conf（但是目录下没有压根没有/conf.d/boa/boa.conf</li>
+<li>binwalk提取后的根目录find：<code>/_31.extracted/defconf/_CC8160.tar.bz2.extracted/_0.extracted/etc/conf.d/boa/boa.conf</code></li>
+<li>因此：将上面的4中的/conf.d/boa/boa.conf，拷贝至/mnt/flash即可（直接拷整个conf.d目录</li>
+<li>（慢慢理，别乱、重新tar+scp传一份、重新运行</li>
+</ol>
+</li>
+<li><p>qemu中rm -rf竟然没权限，明明是root啊，不知原因（可能是chroot后的缘故</p>
+</li>
+<li><p>scp失败，ssh-keygen -R 10.10.10.2后也不行，重启arm虚拟机</p>
+</li>
+<li><p>第二次出错：gethostbyname:: Network is unreachable</p>
+<ul>
+<li>应该是qemu虚拟机和固件的系统的<code>host name</code>不一样，导致无法获取。</li>
+<li>Linux 操作系统的 hostname 是一个 kernel 变量，可以通过 hostname 命令来查看本机的 hostname。将二者的<code>/etc/hosts</code>改成一样就可以了。</li>
+<li>hostname得到：debian-armhf，将固件中的etc/hosts由：127.0.0.1 Network-Camera localhost改为127.0.0.1 debian-armhf localhost</li>
+</ul>
+</li>
+<li><p>解决出错问题的思路</p>
+<ul>
+<li>IDA中patch程序，重新保存（复现ac15路由器时</li>
+<li>本复现中两次解决错误</li>
+</ul>
+</li>
+<li><p>httpd -h，可以看到httpd运行的参数。使用<code>httpd -l 32768</code>参数显示最多的调试信息。（-l debug_level、最大是32768：Transfer messaging</p>
+</li>
+<li><p>修复两次错误后，httpd可运行成功，ctrl+c后再运行，就提示：unable to bind: Address already in use（上次结束后，地址或者端口没被释放？重启arm虚拟机解决</p>
+</li>
+<li><p>poc：echo -en “POST /cgi-bin/admin/upgrade.cgi HTTP/1.0nContent-Length:AAAAAAAAAAAAAAAAAAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIXXXXnrnrn”  | nc -v 10.10.10.2 80</p>
+</li>
+<li><p>可以看到服务端已经崩溃：caught SIGSEGV, dumping core in /tmp（尽管此时我没-l 32768</p>
+</li>
+<li><p>根据字符串找漏洞点时：Content-Length与CONTENT_LENGTH还是不同的，与Content-Length: 也是不同的</p>
+</li>
+<li><p>漏洞成因：将漏洞点所在函数rename为：aaa_Vuln<br>  进入python命令行，chr(n)将ascii转为字符<br>  <img src="https://note-1252764528.cos.ap-chengdu.myqcloud.com/2020-05-26-134224.png" alt="image-20200514102115791"></p>
+</li>
+<li><p>看strncpy接受数据的空间即dest，</p>
+<ul>
+<li>反汇编窗口中计算得到：ADD     R0, SP, #0x50+dest、-00000038 dest，所以dest=r0=sp+0x50-0x38=sp+0x18</li>
+<li>反编译窗口中直接得到：char dest[4]; // [sp+18h] [bp-38h]</li>
+</ul>
+</li>
+<li><p>aaa_Vuln中函数序言：STMFD   SP!, {R4-R11,LR}，<a href="https://blog.csdn.net/weiwei_xiaoyu/article/details/20563479" target="_blank" rel="noopener">https://blog.csdn.net/weiwei_xiaoyu/article/details/20563479</a></p>
+</li>
+<li><p>用sp定位LR：</p>
+<ul>
+<li>STMFD   SP!, {R4-R11,LR}：LR = sp+4*8（LR在地址高处，其次11、10</li>
+<li>SUB     SP, SP, #0x2C：sp = sp-0x2c</li>
+<li>所以：LR= sp+0x2c+4*8</li>
+</ul>
+</li>
+<li><p>计算偏移</p>
+<ul>
+<li>dest = sp+0x18</li>
+<li>LR= sp+0x2c+4*8</li>
+<li>偏移 = LR-dest = 0x2c+4*8 -0x18 = 0x34</li>
+</ul>
+</li>
+<li><p>checksec本身是pwngdb中的工具，可在gdb中调试该程序时执行，也可直接在命令行checksec+程序路径</p>
+</li>
+<li><p>查看Linux下PIE开启情况：cat /proc/sys/kernel/randomize_va_space</p>
+<ul>
+<li>0 - 表示关闭进程地址空间随机化。</li>
+<li>1 - 表示将mmap的基址，stack和vdso页面随机化。</li>
+<li>2 - 表示在1的基础上增加栈（heap）的随机化。</li>
+</ul>
+</li>
+<li><p>方便测试，直接将PIE关闭，echo 0 &gt; /proc/sys/kernel/randomize_va_space（qemu-arm虚拟机中</p>
+</li>
+<li><p>Linux系统与程序的PIE：前者决定后者，如果Linux中改为0，即使checksec后发现程序支持PIE，也是无效的</p>
+</li>
+<li><p>ssh连接qemu-arm虚拟机，在ssh命令行下ps找进程号、运行gdbserver，因为arm虚拟机已经chroot到squashfs-root，好多命令都没了</p>
+</li>
+<li><p>远程调试</p>
+<ul>
+<li>qemu-arm：httpd</li>
+<li>连接qemu-arm的ssh：ps -aux ｜grep httpd、./gdbserver-7.7.1-armhf-eabi5-v1-sysv :1234 –attach 3564（+x添加执行权限、注意gdb与冒号间要有一空格、1234是开启的监听端口、3564是httpd的进程号</li>
+<li>Ubuntu：gdb-multiarch usr/sbin/httpd、target remote 10.10.10.2:1234</li>
+</ul>
+</li>
+<li><p>最终exp：</p>
+<ul>
+<li>倒数第2、6行的反斜杠被网页吃掉了</li>
+<li>IP地址、libc基地址要修改</li>
+<li>（system和gadget地址，如果是同一个libc，exp中和自己机器上的，一般会一样，但不绝对</li>
+<li>find ./ -name “libc.so.0”，找一个libc，果然找到，lib/libc.so.0，按经验一般都会加载这个的</li>
+<li>readelf -s lib/libc.so.0 |grep system，找到system地址00047ab0（相对地址</li>
+<li>通过ROPgadget找（并未实际测试，如何找rop有待学习</li>
+<li>不知哪里有问题，exp复现失败，写exp非现在重点，了解大致思路即可，故未深究</li>
+</ul>
+</li>
+<li><p>gdb打开远程调试时，会断在刚开始的地方，</p>
+<ul>
+<li>此时好多动态库还没有加载（比如vmmpa时就没看到libc.so.0），</li>
+<li>但是Continue起来后，又没法输入指令，如何解决？</li>
+<li>IDA中实现找到溢出点所在那个函数（反正进入main之后的就行），continue前提前下断，运行起来后就会断下，此时再vmmap即可（本例子中实测失败</li>
+</ul>
+</li>
+<li><p>本文中gdbserver与看雪的不同：<a href="https://bbs.pediy.com/thread-258148.htm" target="_blank" rel="noopener">https://bbs.pediy.com/thread-258148.htm</a></p>
+</li>
+<li><p>试一下IDA远程调试，但需要做本地端口转发</p>
+<ul>
+<li>qemu-arm：httpd</li>
+<li>连接qemu-arm的ssh：ps -aux ｜grep httpd、./gdbserver-7.7.1-armhf-eabi5-v1-sysv :1234 –attach 3564</li>
+<li>macos：ssh <a href="mailto:lxl@192.168.156.222" target="_blank" rel="noopener">lxl@192.168.156.222</a> -L :8000:10.10.10.2:1234</li>
+<li>mac中IDA：连接127.0.0.1:8000即可</li>
+<li>（运行exp，同GDB中一样，都发生异常</li>
+</ul>
+</li>
+<li><p>远程调试：IAD不能看动态库的加载，gdb用vmmap可以</p>
+</li>
+<li><p>bindiff</p>
+<ul>
+<li>安装：<a href="https://www.zynamics.com/bindiff/manual/，" target="_blank" rel="noopener">https://www.zynamics.com/bindiff/manual/，</a></li>
+<li>不能直接打开二进制程序，需要ida打开再退出生成的idb文件</li>
+<li>选择好两个idb文件后，diff后还报错</li>
+<li>IDA中打开其中一个文件，再点diff，显示正在处理，也一直没处理完，垃圾</li>
+<li>（从ida中插件打开bindiff，提示缺少binexport</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>2 （第二次看）</p>
+</blockquote>
+<ul>
+<li>漏洞成因：找到Content-Length字段，strstr找到”:”和”\n”，提取出中间的值，再strncpy拷贝至局部变量，值应该是数字但是可放字符串，且用户可控</li>
+<li><p>固件：</p>
+<ul>
+<li>社工客服法：<a href="https://xz.aliyun.com/t/5054" target="_blank" rel="noopener">https://xz.aliyun.com/t/5054</a></li>
+<li><a href="ftp://ftp.vivotek.com/Firmware/CC8160/CC8160-VVTK-0100d.flash.pkg、fae-fae" target="_blank" rel="noopener">ftp://ftp.vivotek.com/Firmware/CC8160/CC8160-VVTK-0100d.flash.pkg、fae-fae</a></li>
+<li>本例8160而非8130</li>
+</ul>
+</li>
+<li><p>疑问</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">可以看到是gethostbyname，应该是qemu虚拟机和固件的系统的host name不一样，导致无法获取。Linux 操作系统的 hostname 是一个 kernel 变量，可以通过 hostname 命令来查看本机的 hostname。将二者的/etc/hosts改成一样就可以了</span><br></pre></td></tr></table></figure>
+<ul>
+<li>漏洞点路径（boa）：main、loop、process_requests、read_header</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://www.anquanke.com/post/id/185336" target="_blank" rel="noopener">https://www.anquanke.com/post/id/185336</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2020/08/12/iot/vivetok摄像头-栈溢出漏洞分析/" title="vivetok摄像头-栈溢出漏洞分析">http://21guns.top/2020/08/12/iot/vivetok摄像头-栈溢出漏洞分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/路由器/" rel="tag"># 路由器</a>
+              <a href="/tags/漏洞分析/" rel="tag"># 漏洞分析</a>
+              <a href="/tags/栈溢出/" rel="tag"># 栈溢出</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/02/iot/MikroTik溢出即CVE-2018-7445漏洞分析/" rel="prev" title="MikroTik溢出即CVE-2018-7445漏洞分析">
+      <i class="fa fa-chevron-left"></i> MikroTik溢出即CVE-2018-7445漏洞分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/21/iot/IOT设备固件提取方法/" rel="next" title="IOT设备固件提取方法">
+      IOT设备固件提取方法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#vivetok摄像头-栈溢出漏洞分析"><span class="nav-number">1.</span> <span class="nav-text">vivetok摄像头-栈溢出漏洞分析</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

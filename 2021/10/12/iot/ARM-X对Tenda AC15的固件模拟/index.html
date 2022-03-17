@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.8.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"21guns.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[toc] ARM-X对Tenda AC15的固件模拟 固件：http://down.tendacn.com/uploadfile/AC15/US_AC15V1.0BR_V15.03.05.18_multi_TD01.zip binwalk -Me 提取  12345678910111213141516171819202122lxl@ubuntu:~/Desktop/tmp/17-armx/_US">
+<meta name="keywords" content="IOT安全,固件模拟">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ARM-X对Tenda AC15的固件模拟">
+<meta property="og:url" content="http://21guns.top/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/index.html">
+<meta property="og:site_name" content="have a nice day">
+<meta property="og:description" content="[toc] ARM-X对Tenda AC15的固件模拟 固件：http://down.tendacn.com/uploadfile/AC15/US_AC15V1.0BR_V15.03.05.18_multi_TD01.zip binwalk -Me 提取  12345678910111213141516171819202122lxl@ubuntu:~/Desktop/tmp/17-armx/_US">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://21guns.top/Users/lxl/Library/Application%20Support/typora-user-images/image-20210205172956654.png">
+<meta property="og:image" content="http://21guns.top/Users/lxl/Library/Application%20Support/typora-user-images/image-20210205173147354.png">
+<meta property="og:updated_time" content="2022-02-21T08:16:10.843Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ARM-X对Tenda AC15的固件模拟">
+<meta name="twitter:description" content="[toc] ARM-X对Tenda AC15的固件模拟 固件：http://down.tendacn.com/uploadfile/AC15/US_AC15V1.0BR_V15.03.05.18_multi_TD01.zip binwalk -Me 提取  12345678910111213141516171819202122lxl@ubuntu:~/Desktop/tmp/17-armx/_US">
+<meta name="twitter:image" content="http://21guns.top/Users/lxl/Library/Application%20Support/typora-user-images/image-20210205172956654.png">
+
+<link rel="canonical" href="http://21guns.top/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ARM-X对Tenda AC15的固件模拟 | have a nice day</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">have a nice day</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://21guns.top/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="21Guns">
+      <meta itemprop="description" content>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="have a nice day">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ARM-X对Tenda AC15的固件模拟
+        </h1>
+
+        <div class="post-meta">
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-12 14:41:33" itemprop="dateCreated datePublished" datetime="2021-10-12T14:41:33+08:00">2021-10-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-21 16:16:10" itemprop="dateModified" datetime="2022-02-21T16:16:10+08:00">2022-02-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IOT安全/" itemprop="url" rel="index"><span itemprop="name">IOT安全</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[toc]</p>
+<h1 id="ARM-X对Tenda-AC15的固件模拟"><a href="#ARM-X对Tenda-AC15的固件模拟" class="headerlink" title="ARM-X对Tenda AC15的固件模拟"></a>ARM-X对Tenda AC15的固件模拟</h1><ul>
+<li>固件：<a href="http://down.tendacn.com/uploadfile/AC15/US_AC15V1.0BR_V15.03.05.18_multi_TD01.zip" target="_blank" rel="noopener">http://down.tendacn.com/uploadfile/AC15/US_AC15V1.0BR_V15.03.05.18_multi_TD01.zip</a></li>
+<li>binwalk -Me 提取</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp/17-armx/_US_AC15V1.0BR_V15.03.05.18_multi_TD01.bin.extracted/squashfs-root$ ll</span><br><span class="line">total 100</span><br><span class="line">drwxr-xr-x  15 lxl lxl  4096 May 10  2017 ./</span><br><span class="line">drwxr-xr-x 395 lxl lxl 40960 Feb  5 17:02 ../</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 bin/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 cfg/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 dev/</span><br><span class="line">lrwxrwxrwx   1 lxl lxl     8 May 10  2017 etc -&gt; /var/etc</span><br><span class="line">drwxr-xr-x   8 lxl lxl  4096 May 10  2017 etc_ro/</span><br><span class="line">lrwxrwxrwx   1 lxl lxl     9 May 10  2017 home -&gt; /var/home</span><br><span class="line">lrwxrwxrwx   1 lxl lxl    11 May 10  2017 init -&gt; bin/busybox*</span><br><span class="line">drwxr-xr-x   3 lxl lxl  4096 May 10  2017 lib/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 mnt/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 proc/</span><br><span class="line">lrwxrwxrwx   1 lxl lxl     9 May 10  2017 root -&gt; /var/root</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 sbin/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 sys/</span><br><span class="line">drwxr-xr-x   2 lxl lxl  4096 May 10  2017 tmp/</span><br><span class="line">drwxr-xr-x   6 lxl lxl  4096 May 10  2017 usr/</span><br><span class="line">drwxr-xr-x   6 lxl lxl  4096 May 10  2017 var/</span><br><span class="line">lrwxrwxrwx   1 lxl lxl    11 May 10  2017 webroot -&gt; var/webroot/</span><br><span class="line">drwxr-xr-x   8 lxl lxl  4096 May 10  2017 webroot_ro/</span><br></pre></td></tr></table></figure>
+<ul>
+<li>获取内核版本</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># binwalk看大概信息，5C被压缩数据</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/17-armx$ binwalk US_AC15V1.0BR_V15.03.05.18_multi_TD01.bin </span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">64            0x40            TRX firmware header, little endian, image size: 10559488 bytes, CRC32: 0xFA817870, flags: 0x0, version: 1, header size: 28 bytes, loader offset: 0x1C, linux kernel offset: 0x1C9CD4, rootfs offset: 0x0</span><br><span class="line">92            0x5C            LZMA compressed data, properties: 0x5D, dictionary size: 65536 bytes, uncompressed size: 4585280 bytes</span><br><span class="line">1875220       0x1C9D14        Squashfs filesystem, little endian, version 4.0, compression:xz, size: 8680744 bytes, 926 inodes, blocksize: 131072 bytes, created: 2017-05-10 14:10:50</span><br><span class="line"></span><br><span class="line"><span class="comment"># 看5C中敏感字符串</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/17-armx$ strings _US_AC15V1.0BR_V15.03.05.18_multi_TD01.bin.extracted/5C &gt; str.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 如下</span></span><br><span class="line">root=/dev/mtdblock2 console=ttyS0,115200 init=init earlyprintk debug</span><br><span class="line">Linux version 2.6.36.4brcmarm (root@linux-bkb8) (gcc version 4.5.3 (Buildroot 2012.02) ) <span class="comment">#1 SMP PREEMPT Wed May 10 21:54:27 CST 2017</span></span><br><span class="line">2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7</span><br></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># "root=/dev/mtdblock2 console=ttyS0,115200 init=init earlyprintk debug"中init=init，init就是sbin/init</span></span><br><span class="line"><span class="comment"># init检查inittab中命令并依次调用</span></span><br><span class="line">lxl@ubuntu:~/Desktop/tmp/17-armx/_US_AC15V1.0BR_V15.03.05.18_multi_TD01.bin.extracted/squashfs-root$ cat etc_ro/inittab </span><br><span class="line">::sysinit:/etc_ro/init.d/rcS</span><br><span class="line">ttyS0::respawn:/sbin/sulogin</span><br><span class="line">::ctrlaltdel:/bin/umount -a -r</span><br><span class="line">::shutdown:/usr/sbin/wl radio off</span><br><span class="line">::shutdown:/usr/sbin/wl -i eth2 radio off</span><br></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line">lxl@ubuntu:~/Desktop/tmp/17-armx/_US_AC15V1.0BR_V15.03.05.18_multi_TD01.bin.extracted/squashfs-root$ cat etc_ro/init.d/rcS</span><br><span class="line"><span class="meta">#! /bin/sh</span></span><br><span class="line"></span><br><span class="line">PATH=/sbin:/bin:/usr/sbin:/usr/bin/</span><br><span class="line"><span class="built_in">export</span> PATH</span><br><span class="line"></span><br><span class="line">mount -t ramfs none /var/ <span class="comment"># 将ramfs挂载</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">mkdir -p /var/etc</span><br><span class="line">mkdir -p /var/media</span><br><span class="line">mkdir -p /var/webroot</span><br><span class="line">mkdir -p /var/etc/iproute</span><br><span class="line">mkdir -p /var/run</span><br><span class="line">cp -rf /etc_ro/* /etc/<span class="comment"># 复制etc</span></span><br><span class="line">cp -rf /webroot_ro/* /webroot/<span class="comment"># 复制web目录</span></span><br><span class="line">mkdir -p /var/etc/upan</span><br><span class="line">mount -a</span><br><span class="line"></span><br><span class="line">mount -t ramfs /dev</span><br><span class="line">mkdir /dev/pts</span><br><span class="line">mount -t devpts devpts /dev/pts</span><br><span class="line">mount -t tmpfs none /var/etc/upan -o size=2M</span><br><span class="line">mdev -s</span><br><span class="line">mkdir /var/run</span><br><span class="line"><span class="comment">#mount -t jffs2 /dev/mtdblock7 /cfg</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'/sbin/mdev'</span> &gt; /proc/sys/kernel/hotplug</span><br><span class="line"><span class="comment">#echo 'sd[a-z][0-9] 0:0 0660 @/usr/sbin/autoUsb.sh $MDEV' &gt;&gt; /etc/mdev.conf</span></span><br><span class="line"><span class="comment">#echo 'sd[a-z] 0:0 0660 $/usr/sbin/DelUsb.sh $MDEV' &gt;&gt; /etc/mdev.conf</span></span><br><span class="line"><span class="comment">#echo 'lp[0-9] 0:0 0660 */usr/sbin/IppPrint.sh'&gt;&gt; /etc/mdev.conf</span></span><br><span class="line"><span class="comment">#wds rule start</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'wds*.* 0:0 0660 */etc/wds.sh $ACTION $INTERFACE'</span> &gt; /etc/mdev.conf</span><br><span class="line"><span class="comment">#wsd rule end</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">'sd[a-z][0-9] 0:0 0660 @/usr/sbin/usb_up.sh $MDEV $DEVPATH'</span> &gt;&gt; /etc/mdev.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">'-sd[a-z] 0:0 0660 $/usr/sbin/usb_down.sh $MDEV $DEVPATH'</span>&gt;&gt; /etc/mdev.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">'sd[a-z] 0:0 0660 @/usr/sbin/usb_up.sh $MDEV $DEVPATH'</span>&gt;&gt; /etc/mdev.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">'.* 0:0 0660 */usr/sbin/IppPrint.sh $ACTION $INTERFACE'</span>&gt;&gt; /etc/mdev.conf</span><br><span class="line"><span class="comment">#echo '115.159.183.96 cloud.tenda.com.cn' &gt;&gt; /etc/hosts</span></span><br><span class="line">mkdir -p /var/ppp</span><br><span class="line">insmod /lib/modules/fastnat.ko </span><br><span class="line">insmod /lib/modules/bm.ko</span><br><span class="line"><span class="comment">#insmod /lib/modules/ai.ko </span></span><br><span class="line">insmod /lib/modules/mac_filter.ko </span><br><span class="line"><span class="comment">#insmod /lib/modules/ip_mac_bind.ko</span></span><br><span class="line">insmod /lib/modules/privilege_ip.ko</span><br><span class="line">insmod /lib/modules/qos.ko</span><br><span class="line">insmod /lib/modules/url_filter.ko</span><br><span class="line">insmod /lib/modules/loadbalance.ko</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"0 0 0 0"</span>&gt;/proc/sys/kernel/printk</span><br><span class="line"><span class="comment">#insmod /lib/modules/app_filter.ko</span></span><br><span class="line"><span class="comment">#insmod /lib/modules/port_filter.ko</span></span><br><span class="line"><span class="comment">#insmod /lib/modules/arp_fence.ko</span></span><br><span class="line"><span class="comment">#insmod /lib/modules/ddos_ip_fence.ko</span></span><br><span class="line">insmod /lib/modules/jnl.ko</span><br><span class="line">insmod /lib/modules/ufsd.ko</span><br><span class="line">insmod /lib/modules/fastnat_configure.ko</span><br><span class="line">chmod +x /etc/mdev.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动如下的守护进程</span></span><br><span class="line">cfmd &amp;</span><br><span class="line"><span class="built_in">echo</span> <span class="string">''</span> &gt; /proc/sys/kernel/hotplug</span><br><span class="line">udevd &amp;</span><br><span class="line">logserver &amp;</span><br><span class="line"></span><br><span class="line">tendaupload &amp;</span><br><span class="line"><span class="keyword">if</span> [ -e /etc/nginx/conf/nginx_init.sh ]; <span class="keyword">then</span></span><br><span class="line">	sh /etc/nginx/conf/nginx_init.sh</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">moniter &amp;</span><br><span class="line">telnetd &amp;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>启动顺序：init、inittab、rcS、各种守护进程</li>
+</ul>
+<p><img src="/Users/lxl/Library/Application Support/typora-user-images/image-20210205172956654.png" alt="image-20210205172956654" style="zoom:50%;"></p>
+<ul>
+<li>创建armx新设备</li>
+</ul>
+<p><img src="/Users/lxl/Library/Application Support/typora-user-images/image-20210205173147354.png" alt="image-20210205173147354"></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建相应目录</span></span><br><span class="line">armx:~$ <span class="built_in">cd</span> /armx</span><br><span class="line">armx:/armx$ cp -r template/ <span class="built_in">test</span>-tenda</span><br><span class="line"></span><br><span class="line"><span class="comment"># 选择内核</span></span><br><span class="line"><span class="comment"># 如上得到字符串“Linux version 2.6.36.4“可知内核版本</span></span><br><span class="line"><span class="comment"># armx中已有5个，考虑到向后兼容性，选择2.6.39.4</span></span><br><span class="line">armx:/armx/<span class="built_in">test</span>-tenda$ ls kernel/</span><br><span class="line">zImage-2.6.28-versatile-nothumb</span><br><span class="line">zImage-2.6.29.6-versatile</span><br><span class="line">zImage-2.6.31-versatile-nothumb</span><br><span class="line">zImage-2.6.31.14-realview-rv130-nothumb</span><br><span class="line">zImage-2.6.39.4-vexpress</span><br><span class="line">armx:/armx/<span class="built_in">test</span>-tenda$ </span><br><span class="line"></span><br><span class="line"><span class="comment"># 将文件系统复制到rootfs下</span></span><br><span class="line">armx:/armx/<span class="built_in">test</span>-tenda$ ls rootfs/</span><br><span class="line">squashfs-root</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始的config</span></span><br><span class="line">armx:/armx/<span class="built_in">test</span>-tenda$ cat config </span><br><span class="line"><span class="comment"># Sample device configuration file</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">id=MYNEWDEVICE</span><br><span class="line">nvram=nvram.ini</span><br><span class="line">rootfs=rootfs</span><br><span class="line">randomize_va_space=0</span><br><span class="line"><span class="comment">#ld_preload=preload</span></span><br><span class="line">initcommands=<span class="string">"/etc/init.d/rcS;/bin/sh"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改后的config文件</span></span><br><span class="line"><span class="comment"># Sample device configuration file</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">id=<span class="built_in">test</span>-tenda</span><br><span class="line">nvram=nvram.ini</span><br><span class="line">rootfs=rootfs/squashfs-root</span><br><span class="line">randomize_va_space=0<span class="comment"># ASLR</span></span><br><span class="line"><span class="comment">#ld_preload=preload</span></span><br><span class="line">initcommands=<span class="string">"/etc_ro/init.d/rcS;/bin/sh"</span><span class="comment"># 启动指令，最后要开shell，/bin/sh</span></span><br><span class="line">initpath=/etc_ro/armxinit<span class="comment"># armx将启动文件放在哪，etc是链接文件，故。</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># nvram配置目前未知，需要运行起来看，缺什么补什么</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 新增设备记录，armx/devices</span></span><br><span class="line"><span class="comment"># test-tenda,qemu-system-arm-4.1.0,vexpress-a9,,,256M,zImage-2.6.39.4-vexpress,VEXPRESS2,just a test for tenda</span></span><br><span class="line"><span class="built_in">test</span>-tenda,<span class="comment"># id</span></span><br><span class="line">qemu-system-arm-4.1.0,<span class="comment"># qemu-binary</span></span><br><span class="line">vexpress-a9,<span class="comment"># machine type</span></span><br><span class="line">,<span class="comment">#cpu-type</span></span><br><span class="line">,<span class="comment">#dtb</span></span><br><span class="line">256M,<span class="comment">#memory</span></span><br><span class="line">zImage-2.6.39.4-vexpress,<span class="comment">#kernel-image</span></span><br><span class="line">VEXPRESS2,<span class="comment">#qemuopts</span></span><br><span class="line">Tenda AC15 Wi-Fi Router<span class="comment">#description</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>尝试启动（第一次）</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动、console后按回车、输入login信息root、选项1-start</span></span><br><span class="line">Starting just a <span class="built_in">test</span> <span class="keyword">for</span> tenda</span><br><span class="line">Loading nvram from nvram.ini</span><br><span class="line">key1=<span class="string">'value1'</span></span><br><span class="line">Can<span class="string">'t open </span></span><br><span class="line"><span class="string">nv_get_config_data: Can'</span>t get config data</span><br><span class="line">key2=<span class="string">'value2'</span></span><br><span class="line">key3=<span class="string">'value3'</span></span><br><span class="line">key4=<span class="string">'value4'</span></span><br><span class="line">key5=<span class="string">'value5'</span></span><br><span class="line">key6=<span class="string">'value6'</span></span><br><span class="line">key7=<span class="string">'value7'</span></span><br><span class="line">key8=<span class="string">'value8'</span></span><br><span class="line">key9=<span class="string">'value9'</span></span><br><span class="line">key10=<span class="string">'value10'</span></span><br><span class="line">&gt;&gt;&gt; Starting <span class="built_in">test</span>-tenda</span><br><span class="line">[+] chroot /armx/<span class="built_in">test</span>-tenda/rootfs/squashfs-root /.armx/armxinit</span><br><span class="line">mkdir: can<span class="string">'t create directory '</span>/var/run<span class="string">': File exists</span></span><br><span class="line"><span class="string">fastnat: version magic '</span>2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 <span class="string">' should be '</span>2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 <span class="string">'</span></span><br><span class="line"><span class="string">insmod: can'</span>t insert <span class="string">'/lib/modules/fastnat.ko'</span>: invalid module format</span><br><span class="line">bm: version magic <span class="string">'2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 '</span> should be <span class="string">'2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 '</span></span><br><span class="line">insmod: can<span class="string">'t insert '</span>/lib/modules/bm.ko<span class="string">': invalid module format</span></span><br><span class="line"><span class="string">mac_filter: version magic '</span>2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 <span class="string">' should be '</span>2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 <span class="string">'</span></span><br><span class="line"><span class="string">insmod: can'</span>t insert <span class="string">'/lib/modules/mac_filter.ko'</span>: invalid module format</span><br><span class="line">privilege_ip: version magic <span class="string">'2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 '</span> should be <span class="string">'2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 '</span></span><br><span class="line">insmod: can<span class="string">'t insert '</span>/lib/modules/privilege_ip.ko<span class="string">': invalid module format</span></span><br><span class="line"><span class="string">qos: version magic '</span>2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 <span class="string">' should be '</span>2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 <span class="string">'</span></span><br><span class="line"><span class="string">insmod: can'</span>t insert <span class="string">'/lib/modules/qos.ko'</span>: invalid module format</span><br><span class="line">url_filter: version magic <span class="string">'2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 '</span> should be <span class="string">'2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 '</span></span><br><span class="line">insmod: can<span class="string">'t insert '</span>/lib/modules/url_filter.ko<span class="string">': invalid module format</span></span><br><span class="line"><span class="string">loadbalance: version magic '</span>2.6.36.4brcmarm SMP preempt mod_unload modversions ARMv7 <span class="string">' should be '</span>2.6.39.4-armexploitlab-therealsaumil SMP mod_unload ARMv7 <span class="string">'</span></span><br><span class="line"><span class="string">insmod: can'</span>t insert <span class="string">'/lib/modules/loadbalance.ko'</span>: invalid module format</span><br><span class="line">insmod: can<span class="string">'t insert '</span>/lib/modules/jnl.ko<span class="string">': invalid module format</span></span><br><span class="line"><span class="string">insmod: can'</span>t insert <span class="string">'/lib/modules/ufsd.ko'</span>: invalid module format</span><br><span class="line">insmod: can<span class="string">'t insert '</span>/lib/modules/fastnat_configure.ko<span class="string">': invalid module format</span></span><br><span class="line"><span class="string">init_core_dump 1816: rlim_cur = 0, rlim_max = -1</span></span><br><span class="line"><span class="string">init_core_dump 1825: open core dump success</span></span><br><span class="line"><span class="string">init_core_dump 1834: rlim_cur = 5242880, rlim_max = 5242880</span></span><br><span class="line"><span class="string">func:InitCfm begin load_mib....</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">######## STARTING PROGRAM #########</span></span><br><span class="line"><span class="string">Could not open mtd device 2</span></span><br><span class="line"><span class="string">[get_mtd_size] Can'</span>t open file:CFM</span><br><span class="line">[get_mtd_size] Can<span class="string">'t open file:CFM_BACKUP</span></span><br><span class="line"><span class="string">malloc buf failed</span></span><br><span class="line"><span class="string">load mib failed.</span></span><br><span class="line"><span class="string">flash_to_file:open Policy failed.</span></span><br><span class="line"><span class="string">going to rewrite flash...</span></span><br><span class="line"><span class="string">open Policy failed.</span></span><br><span class="line"><span class="string">rewrite flash ok...</span></span><br><span class="line"><span class="string">/dev/nvram: No such device</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">###########################################################</span></span><br><span class="line"><span class="string">###nvram partition is destory, restore by default and reboot##</span></span><br><span class="line"><span class="string">###########################################################</span></span><br><span class="line"><span class="string">Could not open mtd device 1</span></span><br><span class="line"><span class="string">envram_init: read flash error</span></span><br><span class="line"><span class="string">/dev/nvram: No such device</span></span><br><span class="line"><span class="string">load nvram from /webroot/nvram_default.cfg...</span></span><br><span class="line"><span class="string">/dev/nvram: No such device</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">/dev/nvram: No such device</span></span><br><span class="line"><span class="string">left wan[0]:0</span></span><br><span class="line"><span class="string">left lan[0]:1</span></span><br><span class="line"><span class="string">left lan[1]:2</span></span><br><span class="line"><span class="string">left lan[2]:3</span></span><br><span class="line"><span class="string">left lan[3]:4</span></span><br><span class="line"><span class="string">vlan_array[0]: value 1  index_num 1 name  cpu_port 0index[0] 0  index[1] 0  index[2] 0  index[3] 0  index[4] 0  </span></span><br><span class="line"><span class="string">vlan_array[1]: value 0  index_num 4 name  cpu_port 0index[0] 1  index[1] 2  index[2] 3  index[3] 4  index[4] 0  </span></span><br><span class="line"><span class="string">vlan_array[2]: value -2  index_num 0 name  cpu_port 0index[0] 0  index[1] 0  index[2] 0  index[3] 0  index[4] 0  </span></span><br><span class="line"><span class="string">vlan_array[3]: value -2  index_num 0 name  cpu_port 0index[0] 0  index[1] 0  index[2] 0  index[3] 0  index[4] 0  </span></span><br><span class="line"><span class="string">vlan_array[4]: value -2  index_num 0 name  cpu_port 0index[0] 0  index[1] 0  index[2] 0  index[3] 0  index[4] 0  </span></span><br><span class="line"><span class="string">nvram unset vlan1ports</span></span><br><span class="line"><span class="string">/dev/nvram: No such device</span></span><br><span class="line"><span class="string">nvram unset vlan2ports</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">nvram unset vlan3ports</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">nvram unset vlan4ports</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">nvram unset vlan5ports</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">nvram set vlan2ports="0  5"</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">nvram set vlan1ports="1  2  3  4  5*"</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">/dev/nvram: No such file or directory</span></span><br><span class="line"><span class="string">The system is going down NOW!irectory</span></span><br><span class="line"><span class="string">Terminated</span></span><br><span class="line"><span class="string">Sent SIGTERM to all processes</span></span><br><span class="line"><span class="string">Sent SIGKILL to all processes</span></span><br><span class="line"><span class="string">Requesting system reboot</span></span><br><span class="line"><span class="string">Uncompressing Linux... done, booting the kernel.</span></span><br><span class="line"><span class="string">Initializing cgroup subsys cpuset</span></span><br><span class="line"><span class="string">Linux version 2.6.39.4-armexploitlab-therealsaumil (saumil@saraswati) (gcc version 4.4.0 (Faraday C/C++ Compiler Release 20100325) ) #30 SMP Wed May 27 22:02:39 IST 2020</span></span><br><span class="line"><span class="string">CPU: ARMv7 Processor [410fc090] revision 0 (ARMv7), cr=10c53c7f</span></span><br><span class="line"><span class="string">CPU: VIPT nonaliasing data cache, VIPT nonaliasing instruction cache</span></span><br><span class="line"><span class="string">Machine: ARM-Versatile Express</span></span><br><span class="line"><span class="string">Memory policy: ECC disabled, Data cache writealloc</span></span><br><span class="line"><span class="string">sched_clock: 32 bits at 24MHz, resolution 41ns, wraps every 178956ms</span></span><br><span class="line"><span class="string">PERCPU: Embedded 7 pages/cpu @c075a000 s7232 r8192 d13248 u32768</span></span><br><span class="line"><span class="string">Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 65024</span></span><br><span class="line"><span class="string">Kernel command line: pty.legacy_count=16 console=ttyAMA0 rw root=/dev/mmcblk0 rootwait rootfstype=ext2 ARMX=test-tenda</span></span><br><span class="line"><span class="string">PID hash table entries: 1024 (order: 0, 4096 bytes)</span></span><br><span class="line"><span class="string">Dentry cache hash table entries: 32768 (order: 5, 131072 bytes)</span></span><br><span class="line"><span class="string">Inode-cache hash table entries: 16384 (order: 4, 65536 bytes)</span></span><br><span class="line"><span class="string">Memory: 256MB = 256MB total</span></span><br><span class="line"><span class="string">Memory: 254380k/254380k available, 7764k reserved, 0K highmem</span></span><br><span class="line"><span class="string">Virtual kernel memory layout:</span></span><br><span class="line"><span class="string">    vector  : 0xffff0000 - 0xffff1000   (   4 kB)</span></span><br><span class="line"><span class="string">    fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)</span></span><br><span class="line"><span class="string">    DMA     : 0xffc00000 - 0xffe00000   (   2 MB)</span></span><br><span class="line"><span class="string">    vmalloc : 0xd0800000 - 0xf8000000   ( 632 MB)</span></span><br><span class="line"><span class="string">    lowmem  : 0xc0000000 - 0xd0000000   ( 256 MB)</span></span><br><span class="line"><span class="string">    pkmap   : 0xbfe00000 - 0xc0000000   (   2 MB)</span></span><br><span class="line"><span class="string">    modules : 0xbf000000 - 0xbfe00000   (  14 MB)</span></span><br><span class="line"><span class="string">      .init : 0xc0008000 - 0xc003a000   ( 200 kB)</span></span><br><span class="line"><span class="string">      .text : 0xc003a000 - 0xc050865c   (4922 kB)</span></span><br><span class="line"><span class="string">      .data : 0xc050a000 - 0xc05314a0   ( 158 kB)</span></span><br><span class="line"><span class="string">SLUB: Genslabs=13, HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1</span></span><br><span class="line"><span class="string">Hierarchical RCU implementation.</span></span><br><span class="line"><span class="string">	RCU-based detection of stalled CPUs is disabled.</span></span><br><span class="line"><span class="string">NR_IRQS:128</span></span><br><span class="line"><span class="string">Console: colour dummy device 80x30</span></span><br><span class="line"><span class="string">Calibrating delay loop... 892.92 BogoMIPS (lpj=4464640)</span></span><br><span class="line"><span class="string">pid_max: default: 32768 minimum: 301</span></span><br><span class="line"><span class="string">Mount-cache hash table entries: 512</span></span><br><span class="line"><span class="string">CPU: Testing write buffer coherency: ok</span></span><br><span class="line"><span class="string">hw perfevents: enabled with ARMv7 Cortex-A9 PMU driver, 5 counters available</span></span><br><span class="line"><span class="string">Brought up 1 CPUs</span></span><br><span class="line"><span class="string">SMP: Total of 1 processors activated (892.92 BogoMIPS).</span></span><br><span class="line"><span class="string">NET: Registered protocol family 16</span></span><br><span class="line"><span class="string">L310 cache controller enabled</span></span><br><span class="line"><span class="string">l2x0: 8 ways, CACHE_ID 0x410000c8, AUX_CTRL 0x02420000, Cache size: 131072 B</span></span><br><span class="line"><span class="string">hw-breakpoint: debug architecture 0x4 unsupported.</span></span><br><span class="line"><span class="string">Serial: AMBA PL011 UART driver</span></span><br><span class="line"><span class="string">mb:uart0: ttyAMA0 at MMIO 0x10009000 (irq = 37) is a PL011 rev1</span></span><br><span class="line"><span class="string">console [ttyAMA0] enabled</span></span><br><span class="line"><span class="string">mb:uart1: ttyAMA1 at MMIO 0x1000a000 (irq = 38) is a PL011 rev1</span></span><br><span class="line"><span class="string">mb:uart2: ttyAMA2 at MMIO 0x1000b000 (irq = 39) is a PL011 rev1</span></span><br><span class="line"><span class="string">mb:uart3: ttyAMA3 at MMIO 0x1000c000 (irq = 40) is a PL011 rev1</span></span><br><span class="line"><span class="string">bio: create slab &lt;bio-0&gt; at 0</span></span><br><span class="line"><span class="string">SCSI subsystem initialized</span></span><br><span class="line"><span class="string">usbcore: registered new interface driver usbfs</span></span><br><span class="line"><span class="string">usbcore: registered new interface driver hub</span></span><br><span class="line"><span class="string">usbcore: registered new device driver usb</span></span><br><span class="line"><span class="string">Switching to clocksource timer3</span></span><br><span class="line"><span class="string">Switched to NOHz mode on CPU #0</span></span><br><span class="line"><span class="string">NET: Registered protocol family 2</span></span><br><span class="line"><span class="string">IP route cache hash table entries: 2048 (order: 1, 8192 bytes)</span></span><br><span class="line"><span class="string">TCP established hash table entries: 8192 (order: 4, 65536 bytes)</span></span><br><span class="line"><span class="string">TCP bind hash table entries: 8192 (order: 4, 65536 bytes)</span></span><br><span class="line"><span class="string">TCP: Hash tables configured (established 8192 bind 8192)</span></span><br><span class="line"><span class="string">TCP reno registered</span></span><br><span class="line"><span class="string">UDP hash table entries: 128 (order: 0, 4096 bytes)</span></span><br><span class="line"><span class="string">UDP-Lite hash table entries: 128 (order: 0, 4096 bytes)</span></span><br><span class="line"><span class="string">NET: Registered protocol family 1</span></span><br><span class="line"><span class="string">RPC: Registered udp transport module.</span></span><br><span class="line"><span class="string">RPC: Registered tcp transport module.</span></span><br><span class="line"><span class="string">RPC: Registered tcp NFSv4.1 backchannel transport module.</span></span><br><span class="line"><span class="string">PMU: registered new PMU device of type 0</span></span><br><span class="line"><span class="string">squashfs: version 4.0 (2009/01/31) Phillip Lougher</span></span><br><span class="line"><span class="string">JFFS2 version 2.2. (NAND) © 2001-2006 Red Hat, Inc.</span></span><br><span class="line"><span class="string">msgmni has been set to 496</span></span><br><span class="line"><span class="string">io scheduler noop registered (default)</span></span><br><span class="line"><span class="string">clcd-pl11x ct:clcd: PL111 rev2 at 0x10020000</span></span><br><span class="line"><span class="string">clcd-pl11x ct:clcd: CT-CA9X4 hardware, XVGA display</span></span><br><span class="line"><span class="string">v2m_cfg_write: writing 03c8eee0 to 00110001</span></span><br><span class="line"><span class="string">v2m_cfg_write: writing 00000000 to 00710000</span></span><br><span class="line"><span class="string">v2m_cfg_write: writing 00000002 to 00b10000</span></span><br><span class="line"><span class="string">Console: switching to colour frame buffer device 128x48</span></span><br><span class="line"><span class="string">Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled</span></span><br><span class="line"><span class="string">Non-volatile memory driver v1.3</span></span><br><span class="line"><span class="string">armflash-0: Found 2 x16 devices at 0x0 in 32-bit bank. Manufacturer ID 0x000000 Chip ID 0x000000</span></span><br><span class="line"><span class="string">Intel/Sharp Extended Query Table at 0x0031</span></span><br><span class="line"><span class="string">Using buffer write method</span></span><br><span class="line"><span class="string">armflash-1: Found 2 x16 devices at 0x0 in 32-bit bank. Manufacturer ID 0x000000 Chip ID 0x000000</span></span><br><span class="line"><span class="string">Intel/Sharp Extended Query Table at 0x0031</span></span><br><span class="line"><span class="string">Using buffer write method</span></span><br><span class="line"><span class="string">Concatenating MTD devices:</span></span><br><span class="line"><span class="string">(0): "armflash-0"</span></span><br><span class="line"><span class="string">(1): "armflash-1"</span></span><br><span class="line"><span class="string">into device "armflash"</span></span><br><span class="line"><span class="string">RedBoot partition parsing not available</span></span><br><span class="line"><span class="string">afs partition parsing not available</span></span><br><span class="line"><span class="string">bonding: Ethernet Channel Bonding Driver: v3.7.0 (June 2, 2010)</span></span><br><span class="line"><span class="string">bonding: Warning: either miimon or arp_interval and arp_ip_target module parameters must be specified, otherwise bonding will not detect link failures! see bonding.txt for details.</span></span><br><span class="line"><span class="string">tun: Universal TUN/TAP device driver, 1.6</span></span><br><span class="line"><span class="string">tun: (C) 1999-2004 Max Krasnyansky &lt;maxk@qualcomm.com&gt;</span></span><br><span class="line"><span class="string">smsc911x: Driver version 2008-10-21.</span></span><br><span class="line"><span class="string">smsc911x-mdio: probed</span></span><br><span class="line"><span class="string">eth0: attached PHY driver [Generic PHY] (mii_bus:phy_addr=ffffffff:01, irq=-1)</span></span><br><span class="line"><span class="string">net eth0: MAC Address: 52:54:00:12:34:56</span></span><br><span class="line"><span class="string">isp1760 isp1760: NXP ISP1760 USB Host Controller</span></span><br><span class="line"><span class="string">isp1760 isp1760: new USB bus registered, assigned bus number 1</span></span><br><span class="line"><span class="string">isp1760 isp1760: Scratch test failed.</span></span><br><span class="line"><span class="string">isp1760 isp1760: can'</span>t setup</span><br><span class="line">isp1760 isp1760: USB bus 1 deregistered</span><br><span class="line">isp1760: Failed to register the HCD device</span><br><span class="line">Initializing USB Mass Storage driver...</span><br><span class="line">usbcore: registered new interface driver usb-storage</span><br><span class="line">USB Mass Storage support registered.</span><br><span class="line">mousedev: PS/2 mouse device common <span class="keyword">for</span> all mice</span><br><span class="line">rtc-pl031 mb:rtc: rtc core: registered pl031 as rtc0</span><br><span class="line">mmci-pl18x mb:mmci: mmc0: PL181 manf 41 rev0 at 0x10005000 irq 41,42 (pio)</span><br><span class="line">sdhci: Secure Digital Host Controller Interface driver</span><br><span class="line">sdhci: Copyright(c) Pierre Ossman</span><br><span class="line">usbcore: registered new interface driver ushc</span><br><span class="line">usbcore: registered new interface driver usbhid</span><br><span class="line">usbhid: USB HID core driver</span><br><span class="line">oprofile: using arm/armv7-ca9</span><br><span class="line">Netfilter messages via NETLINK v0.30.</span><br><span class="line">nf_conntrack version 0.5.0 (3974 buckets, 15896 max)</span><br><span class="line">ctnetlink v0.93: registering with nfnetlink.</span><br><span class="line">ip_set: protocol 6</span><br><span class="line">ip_tables: (C) 2000-2006 Netfilter Core Team</span><br><span class="line">TCP cubic registered</span><br><span class="line">NET: Registered protocol family 10</span><br><span class="line">IPv6 over IPv4 tunneling driver</span><br><span class="line">NET: Registered protocol family 17</span><br><span class="line">Bridge firewalling registered</span><br><span class="line">802.1Q VLAN Support v1.8 Ben Greear &lt;greearb@candelatech.com&gt;</span><br><span class="line">All bugs added by David S. Miller &lt;davem@redhat.com&gt;</span><br><span class="line">VFP support v0.3: implementor 41 architecture 3 part 30 variant 9 rev 0</span><br><span class="line">mmc0: host does not support reading <span class="built_in">read</span>-only switch. assuming write-enable.</span><br><span class="line">mmc0: new SD card at address 4567</span><br><span class="line">rtc-pl031 mb:rtc: setting system clock to 2021-02-07 02:34:52 UTC (1612665292)</span><br><span class="line">mmcblk0: mmc0:4567 QEMU! 48.0 MiB </span><br><span class="line"> mmcblk0: unknown partition table</span><br><span class="line">input: AT Raw Set 2 keyboard as /devices/mb:kmi0/serio0/input/input0</span><br><span class="line">input: ImExPS/2 Generic Explorer Mouse as /devices/mb:kmi1/serio1/input/input1</span><br><span class="line">EXT2-fs (mmcblk0): warning: mounting unchecked fs, running e2fsck is recommended</span><br><span class="line">VFS: Mounted root (ext2 filesystem) on device 179:0.</span><br><span class="line">Freeing init memory: 200K</span><br><span class="line">Starting logging: OK</span><br><span class="line">Initializing random number generator... EXT2-fs (mmcblk0): error: ext2_lookup: deleted inode referenced: 1274</span><br><span class="line">EXT2-fs (mmcblk0): error: remounting filesystem <span class="built_in">read</span>-only</span><br><span class="line">EXT2-fs (mmcblk0): error: ext2_lookup: deleted inode referenced: 1274</span><br><span class="line">EXT2-fs (mmcblk0): error: remounting filesystem <span class="built_in">read</span>-only</span><br><span class="line"><span class="built_in">read</span>-only file system detected...done</span><br><span class="line">Starting network...</span><br><span class="line">net eth0: SMSC911x/921x identified at 0xd08c0000, IRQ: 47</span><br><span class="line">Starting crond OK</span><br><span class="line">Starting dropbear sshd: OK</span><br><span class="line">Starting ARM-X OK</span><br><span class="line"></span><br><span class="line">    _ ___ __  ___  __</span><br><span class="line">   / \ _ \  \/ \ \/ /  by Saumil Shah | The ARM Exploit Laboratory</span><br><span class="line">  / _ \  / |\/) )  (   @therealsaumil | blog.exploitlab.net</span><br><span class="line"> /_/ \_\_\_| /_/_/\_\  2.6.39.4-armexploitlab-therealsaumil [armv7l]</span><br><span class="line"></span><br><span class="line">ARM-X DEVICE CONSOLE</span><br><span class="line"></span><br><span class="line">ARM-X login:</span><br></pre></td></tr></table></figure>
+<ul>
+<li>111</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 找到InitCfm函数的定义（cfmd中引用，so中定义</span></span><br><span class="line">lxl@MBP  ~/Desktop/tmp/cur/17-armx-tenda/squashfs-root  grep -r <span class="string">"InitCfm"</span> .</span><br><span class="line">grep: ./home: No such file or directory</span><br><span class="line">Binary file ./bin/cfmd matches</span><br><span class="line">grep: ./etc: No such file or directory</span><br><span class="line">grep: ./root: Permission denied</span><br><span class="line">Binary file ./lib/libCfm.so matches</span><br><span class="line">grep: ./lib/modules/2.6.36.4brcmarm/<span class="built_in">source</span>: No such file or directory</span><br><span class="line">grep: ./lib/modules/2.6.36.4brcmarm/build: No such file or directory</span><br><span class="line"></span><br><span class="line"><span class="comment"># </span></span><br><span class="line">//here，对这些函数的分析看不懂了</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>参考：<a href="https://github.com/therealsaumil/armx/blob/master/docs/emulating-tenda-ac15.md" target="_blank" rel="noopener">https://github.com/therealsaumil/armx/blob/master/docs/emulating-tenda-ac15.md</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>21Guns
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://21guns.top/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/" title="ARM-X对Tenda AC15的固件模拟">http://21guns.top/2021/10/12/iot/ARM-X对Tenda AC15的固件模拟/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOT安全/" rel="tag"># IOT安全</a>
+              <a href="/tags/固件模拟/" rel="tag"># 固件模拟</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/10/02/iot/IOT安全-文章学习笔记-3/" rel="prev" title="IOT安全-文章学习笔记-3">
+      <i class="fa fa-chevron-left"></i> IOT安全-文章学习笔记-3
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/10/21/iot/Linksys velop无需认证的命令注入漏洞/" rel="next" title="Linksys velop无需认证的命令注入漏洞">
+      Linksys velop无需认证的命令注入漏洞 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ARM-X对Tenda-AC15的固件模拟"><span class="nav-number">1.</span> <span class="nav-text">ARM-X对Tenda AC15的固件模拟</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="21Guns" src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">21Guns</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">71</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="vx:lxllxllx1" title="Wechat → vx:lxllxllx1" rel="noopener" target="_blank"><i class="fab fa-weixin fa-fw"></i>Wechat</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/21Gun5" title="GitHub → https://github.com/21Gun5" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">21Guns</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.5" zindex="0" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
